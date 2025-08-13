@@ -177,7 +177,8 @@
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
       "sending": "Envoi...",
-      "sendRequest": "Envoyer la demande"
+      "sendRequest": "Envoyer la demande",
+      "loginToSend": "Connectez-vous pour envoyer"
     },
     "torsionForm": {
       "title": " Ressorts de Torsion",
@@ -215,7 +216,9 @@
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
       "sending": "Envoi...",
-      "sendRequest": "Envoyer la demande"
+      "sendRequest": "Envoyer la demande",
+    "loginToSend": "Vous devez être connecté pour envoyer un devis.",
+      "reservedClients": "Réservé aux clients"
     },
     "filForm": {
       "title": " Fil dressé / coupé",
@@ -243,7 +246,8 @@
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
       "sending": "Envoi...",
-      "sendRequest": "Envoyer la demande"
+      "sendRequest": "Envoyer la demande",
+        "loginToSend": "Connectez-vous pour envoyer"
     },
     "grilleForm": {
       "title": " Grille métallique",
@@ -276,7 +280,8 @@
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
       "sending": "Envoi...",
-      "sendRequest": "Envoyer la demande"
+      "sendRequest": "Envoyer la demande",
+      "loginToSend": "Connectez-vous pour envoyer"
     },
     "autreForm": {
       "title": "🔧 Autre article en fil métallique",
@@ -298,7 +303,8 @@
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
       "sending": "Envoi...",
-      "sendRequest": "Envoyer la demande"
+      "sendRequest": "Envoyer la demande",
+        "loginToSend": "Connectez-vous pour envoyer"
     }
   }
 }

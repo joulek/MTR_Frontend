@@ -1,7 +1,12 @@
+// components/forms/FilDresseForm.jsx
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import schemaImg from "@/public/devis/dresser.png";
+
+/* --- petite étoile rouge pour champs requis --- */
+const RequiredMark = () => <span className="text-red-500" aria-hidden="true"> *</span>;
 
 export default function FilDresseForm() {
   const t = useTranslations("auth.filForm");
@@ -9,123 +14,368 @@ export default function FilDresseForm() {
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState("");
   const [err, setErr] = useState("");
+  const [user, setUser] = useState(null);
 
-  const unitOptions = t.raw("unitOptions") || [];
-  const materialChecks = t.raw("materialChecks") || [];
-  const selectPlaceholder = t.has("selectPlaceholder") ? t("selectPlaceholder") : "--";
+  const finishedRef = useRef(false);
+  const alertRef = useRef(null);
+
+  // Dropzone
+  const [files, setFiles] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // i18n options
+  const unitOptions      = t.raw("unitOptions")      || ["mm", "m"];
+  const qtyUnitOptions   = t.raw("quantityWanted")    || ["pieces", "kg"];
+  const materialOptions  = t.raw("materialChecks")  || [
+    "Acier galvanisé","Acier Noir","Acier ressort","Acier inoxydable"
+  ];
+  const selectPlaceholder =
+    t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
+
+  // Session
+  useEffect(() => {
+    fetch("/api/session", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUser(data || null))
+      .catch(() => setUser(null));
+  }, []);
+
+  // Scroll vers l'alerte
+  useEffect(() => {
+    if (alertRef.current && (loading || ok || err)) {
+      alertRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [loading, ok, err]);
+
+  // Auto-hide succès
+  useEffect(() => {
+    if (!ok) return;
+    const id = setTimeout(() => setOk(""), 5000);
+    return () => clearTimeout(id);
+  }, [ok]);
+
+  function handleFileList(list) {
+    const arr = Array.from(list || []);
+    setFiles(arr);
+    if (fileInputRef.current) {
+      const dt = new DataTransfer();
+      arr.forEach((f) => dt.items.add(f));
+      fileInputRef.current.files = dt.files;
+    }
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer?.files?.length) handleFileList(e.dataTransfer.files);
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setOk(""); setErr(""); setLoading(true);
-    try {
-      const fd = new FormData(e.currentTarget);
-      fd.append("type", "fil");
 
-      const res = await fetch("/api/devis", { method: "POST", body: fd });
-      const text = await res.text();
-      let data; try { data = JSON.parse(text); } catch { data = { message: text }; }
-      if (!res.ok) return setErr(data?.message || t("sendError"));
-      setOk(t("sendSuccess"));
-      e.currentTarget.reset();
-    } catch { setErr(t("networkError")); }
-    finally { setLoading(false); }
+    const form = e.currentTarget;
+    setOk("");
+    setErr("");
+    finishedRef.current = false;
+
+    if (!user?.authenticated) {
+      setErr("Vous devez être connecté pour envoyer un devis.");
+      return;
+    }
+    if (user.role !== "client") {
+      setErr("Seuls les clients peuvent envoyer une demande de devis.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const fd = new FormData(form);
+      // ✅ normalise les noms des champs pour correspondre au modèle
+      // (si tu as gardé des <input name="longueurValeur" ...> etc., rien à changer)
+      fd.append("type", "fil-dresse");
+
+      const userId = localStorage.getItem("id");
+      if (userId) fd.append("user", userId);
+
+      const res = await fetch("/api/devis/fil-dresse", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+
+      let payload = null;
+      try { payload = await res.json(); } catch {}
+
+      if (res.ok) {
+        finishedRef.current = true;
+        setErr("");
+        setOk(t.has("sendSuccess") ? t("sendSuccess") : "Demande confirmée. Merci !");
+        form.reset();
+        setFiles([]);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      const msg = payload?.message || `Erreur lors de l’envoi. (HTTP ${res.status})`;
+      setErr(msg);
+    } catch (e) {
+      console.error("submit fil-dresse error:", e);
+      if (!finishedRef.current) {
+        const isAbort = e?.name === "AbortError";
+        setErr(isAbort ? "Délai dépassé, réessayez." : "Erreur réseau.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const disabled = loading || !user?.authenticated || user?.role !== "client";
+
   return (
-    <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <h2 className="md:col-span-2 text-xl font-bold text-[#002147]">{t("title")}</h2>
-
-      <Input name="longueur" label={t("length")} required />
-
-      <div className="hidden md:flex md:row-span-4 md:col-start-2 justify-center items-start">
-        <Image
-          src="/devis/dresser.png"
-          alt={t.has("schemaAlt") ? t("schemaAlt") : "Wire bundle"}
-          width={420} height={260} className="rounded-lg shadow" priority
-        />
+    <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
+      {/* Titre */}
+      <div className="text-center mb-6">
+        <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#002147]">
+          {t("title")}
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">{t.has("subtitle") ? t("subtitle") : ""}</p>
       </div>
 
-      <Input name="diametre" label={t("diameter")} required />
-      <Select name="unite" label={t("unit")} required options={unitOptions} placeholder={selectPlaceholder} />
-      <Input name="quantite" label={t("quantityWanted")} required />
-
-      <div className="space-y-2">
-        <label className="block font-semibold text-[#002147]">{t("material")}</label>
-        <div className="space-y-1">
-          {materialChecks.map((m) => (
-            <Checkbox key={m} name="matiere" value={m} label={m} />
-          ))}
+      <form onSubmit={onSubmit}>
+        {/* Schéma */}
+        <SectionTitle>{t.has("schemaTitle") ? t("schemaTitle") : "Schéma"}</SectionTitle>
+        <div className="mb-6 flex justify-center">
+          <Image
+            src={schemaImg}
+            alt={t.has("schemaAlt") ? t("schemaAlt") : "Barres de fil dressé"}
+            width={420}
+            height={260}
+            className="rounded-xl ring-1 ring-gray-100"
+            priority
+          />
         </div>
-      </div>
 
-      <div className="md:col-span-2">
-        <label className="block font-semibold text-[#002147]">{t("docs")}</label>
-        <input
-          type="file" name="docs" multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt"
-          className="mt-1 block w-full"
-        />
-      </div>
+        {/* Dimensions & choix */}
+        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Caractéristiques"}</SectionTitle>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          {/* Longueur (valeur + unité) */}
+          <div className="space-y-1">
+            <label className="block font-medium text-[#002147]">
+              {t("length")} <RequiredMark />
+            </label>
+            <div className="flex gap-2">
+              <Input name="longueurValeur" type="number" min="0" required />
+              <SelectBase
+                name="longueurUnite"
+                options={unitOptions}
+                placeholder={selectPlaceholder}
+                required
+              />
+            </div>
+          </div>
 
-      <TextArea name="exigences" label={t("specialReq")} />
-      <TextArea name="remarques" label={t("otherRemarks")} />
+          {/* Diamètre */}
+          <Input name="diametre" label={t("diameter")} type="number" min="0" required />
 
-      <Messages ok={ok} err={err} />
-      <Submit loading={loading} t={t} />
-    </form>
+          {/* Quantité (valeur + unité) */}
+          <div className="space-y-1">
+            <label className="block font-medium text-[#002147]">
+              {t("quantityWanted")} <RequiredMark />
+            </label>
+            <div className="flex gap-2">
+              <Input name="quantiteValeur" type="number" min="0" required />
+              <SelectBase
+                name="quantiteUnite"
+                options={qtyUnitOptions}
+                placeholder={selectPlaceholder}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Matière (une seule valeur attendue par le modèle) */}
+          <SelectBase
+            name="matiere"
+            label={t("material")}
+            options={materialOptions}
+            placeholder={selectPlaceholder}
+            required
+          />
+        </div>
+
+        {/* Fichiers */}
+        <SectionTitle className="mt-8">{t("docs")} <RequiredMark /></SectionTitle>
+        <p className="text-sm text-gray-500 mb-3">
+          Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
+        </p>
+
+        <label
+          htmlFor="docs"
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={onDrop}
+          className={`flex flex-col items-center justify-center cursor-pointer rounded-2xl text-center transition
+                      min-h-[160px] md:min-h-[200px] p-8 bg-white
+                      border-2 border-dashed ${isDragging ? "border-yellow-500 ring-2 ring-yellow-300" : "border-yellow-500"}`}
+        >
+          {files.length === 0 ? (
+            <p className="text-base font-medium text-[#002147]">
+              Cliquez ou glissez-déposez vos fichiers ici
+            </p>
+          ) : (
+            <div className="w-full text-center">
+              <p className="text-sm font-semibold text-[#002147] mb-2">
+                {files.length} fichier{files.length > 1 ? "s" : ""} sélectionné{files.length > 1 ? "s" : ""} :
+              </p>
+              <p className="mx-auto max-w-[900px] truncate text-[15px] text-[#002147]">
+                {files.map((f) => f.name).join(", ")}
+              </p>
+              <p className="text-xs text-[#002147]/70 mt-1">
+                {(files.reduce((s, f) => s + f.size, 0) / 1024).toFixed(0)} Ko au total
+              </p>
+            </div>
+          )}
+
+          <input
+            id="docs"
+            ref={fileInputRef}
+            type="file"
+            name="docs"
+            multiple
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt"
+            className="hidden"
+            onChange={(e) => handleFileList(e.target.files)}
+          />
+        </label>
+
+        {/* Textes libres */}
+        <div className="grid grid-cols-1 gap-4 md:gap-6 mt-6">
+          <TextArea name="exigences" label={t("specialReq")} />
+          <TextArea name="remarques" label={t("otherRemarks")} />
+        </div>
+
+        {/* Submit + alertes */}
+        <div className="mt-8">
+          <button
+            type="submit"
+            disabled={disabled}
+            className={`w-full rounded-xl font-semibold py-3 transition-all
+              ${disabled
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-gradient-to-r from-[#002147] to-[#01346b] text-white shadow-lg hover:shadow-xl hover:translate-y-[-1px] active:translate-y-[0px]"}`}
+          >
+            {loading
+              ? "Envoi en cours…"
+              : !user?.authenticated
+                ? t("loginToSend")
+                : user?.role !== "client"
+                  ? t("reservedClients")
+                  : t("sendRequest")}
+          </button>
+
+          <div ref={alertRef} aria-live="polite" className="mt-3">
+            {loading ? (
+              <Alert type="info"    message="Votre demande de devis est en cours d'envoi, veuillez patienter…" />
+            ) : err ? (
+              <Alert type="error"   message={err} />
+            ) : ok ? (
+              <Alert type="success" message={ok} />
+            ) : null}
+          </div>
+        </div>
+      </form>
+    </section>
   );
 }
 
-function Input({ label, name, required }) {
+/* === UI helpers (mêmes styles que Compression/Torsion) === */
+function SectionTitle({ children, className = "" }) {
   return (
-    <div className="space-y-1">
-      <label className="block font-semibold text-[#002147]">{label}{required && " *"}</label>
-      <input name={name} required={required} className="w-full rounded-xl border border-gray-200 px-4 py-2" />
+    <div className={`mb-3 mt-4 ${className}`}>
+      <div className="flex items-center gap-3">
+        <span className="h-5 w-1.5 rounded-full bg-[#002147]" />
+        <h3 className="text-lg font-semibold text-[#002147]">{children}</h3>
+      </div>
+      <div className="mt-2 h-px w-full bg-gradient-to-r from-[#002147]/20 via-gray-200 to-transparent" />
     </div>
   );
 }
-function Select({ label, name, options = [], required, placeholder="--" }) {
+function Alert({ type = "info", message }) {
+  const base = "w-full rounded-xl px-4 py-3 text-sm font-medium border flex items-start gap-2";
+  const styles =
+    type === "error"
+      ? "bg-red-50 text-red-700 border-red-200"
+      : type === "success"
+        ? "bg-green-50 text-green-700 border-green-200"
+        : "bg-blue-50 text-blue-700 border-blue-200";
+  return (
+    <div className={`${base} ${styles}`}>
+      <span className="mt-0.5">•</span>
+      <span>{message}</span>
+    </div>
+  );
+}
+function Input({ label, name, required, type="text", min }) {
   return (
     <div className="space-y-1">
-      <label className="block font-semibold text-[#002147]">{label}{required && " *"}</label>
-      <select name={name} required={required} className="w-full rounded-xl border border-gray-200 px-4 py-2">
-        <option value="">{placeholder}</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      {label && (
+        <label className="block font-medium text-[#002147]">
+          {label}{required && <RequiredMark />}
+        </label>
+      )}
+      <input
+        name={name}
+        type={type}
+        min={min}
+        required={required}
+        className="w-full rounded-xl border border-gray-200 px-4 py-2.5
+                   text-[#002147] placeholder:text-gray-400
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]" />
+    </div>
+  );
+}
+function SelectBase({ label, name, options = [], required, placeholder = "Sélectionnez…" }) {
+  // ✅ normalise tout en tableau de strings
+  const opts = Array.isArray(options)
+    ? options
+    : options && typeof options === "object"
+      ? Object.values(options)
+      : typeof options === "string"
+        ? options.split("|").map(s => s.trim()).filter(Boolean)
+        : [];
+
+  return (
+    <div className="space-y-1 w-full">
+      {label && (
+        <label className="block font-medium text-[#002147]">
+          {label}{required && <RequiredMark />}
+        </label>
+      )}
+      <select
+        name={name}
+        required={required}
+        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-white
+                   text-[#002147] text-[15px] font-medium
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
+        <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
+        {opts.map((o) => (
+          <option key={o} value={o} style={{ color: "#002147" }}>{o}</option>
+        ))}
       </select>
     </div>
   );
 }
+
 function TextArea({ label, name }) {
   return (
-    <div className="space-y-1 md:col-span-2">
-      <label className="block font-semibold text-[#002147]">{label}</label>
-      <textarea name={name} rows={4} className="w-full rounded-xl border border-gray-200 px-4 py-2" />
-    </div>
-  );
-}
-function Checkbox({ name, value, label }) {
-  return (
-    <label className="flex items-center gap-2">
-      <input type="checkbox" name={name} value={value} className="accent-[#002147]" />
-      <span>{label}</span>
-    </label>
-  );
-}
-function Messages({ ok, err }) {
-  return (
-    <div className="md:col-span-2">
-      {err && <p className="text-sm text-red-600 font-semibold">{err}</p>}
-      {ok && <p className="text-sm text-green-600 font-semibold">{ok}</p>}
-    </div>
-  );
-}
-function Submit({ loading, t }) {
-  return (
-    <div className="md:col-span-2">
-      <button type="submit" disabled={loading}
-        className="w-full rounded-xl bg-[#002147] text-white font-bold py-3 disabled:opacity-50">
-        {loading ? t("sending") : t("sendRequest")}
-      </button>
+    <div className="space-y-1">
+      <label className="block font-medium text-[#002147]">{label}</label>
+      <textarea
+        name={name}
+        rows={4}
+        className="w-full rounded-xl border border-gray-200 px-4 py-2.5
+                   text-[#002147] placeholder:text-gray-400
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]" />
     </div>
   );
 }

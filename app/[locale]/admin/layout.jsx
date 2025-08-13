@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
-
-
 import {
   FaBars, FaTimes, FaTachometerAlt, FaShoppingCart, FaFileAlt,
   FaUsers, FaSignOutAlt
