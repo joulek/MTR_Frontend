@@ -58,7 +58,13 @@ export default function DevisGrilleList() {
   if (err) return <p className="text-red-600">{err}</p>;
 
   return (
+    
     <div className="overflow-x-auto">
+       <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-[#002147]">Devis – Grille list </h1>
+        
+      </div>
+
       <table className="min-w-full text-sm">
         <thead className="bg-gray-100">
           <tr>

@@ -6,7 +6,7 @@ import Image from "next/image";
 import schemaImg from "@/public/devis/dresser.png";
 
 /* --- petite étoile rouge pour champs requis --- */
-const RequiredMark = () => <span className="text-red-500" aria-hidden="true"> *</span>;
+const RequiredMark = () => <span className="text-red-500" aria-hidden> *</span>;
 
 export default function FilDresseForm() {
   const t = useTranslations("auth.filForm");
@@ -24,16 +24,25 @@ export default function FilDresseForm() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // i18n options
-  const unitOptions      = t.raw("unitOptions")      || ["mm", "m"];
-  const qtyUnitOptions   = t.raw("quantityWanted")    || ["pieces", "kg"];
-  const materialOptions  = t.raw("materialChecks")  || [
-    "Acier galvanisé","Acier Noir","Acier ressort","Acier inoxydable"
+  // i18n/options (⚠️ valeurs canoniques attendues par le backend)
+  const lengthUnitOptions = [
+    { value: "mm", label: "mm" },
+    { value: "m",  label: "m"  },
   ];
-  const selectPlaceholder =
-    t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
+  const qtyUnitOptions = [
+    { value: "pieces", label: t.has("unitPieces") ? t("unitPieces") : "pièces" },
+    { value: "kg",     label: "kg" },
+  ];
+  const materialOptions = [
+    // doivent correspondre EXACTEMENT à l'enum du schéma Mongo
+    { value: "Acier galvanisé",   label: t.has("matGalva") ? t("matGalva") : "Acier galvanisé" },
+    { value: "Acier Noir",        label: t.has("matNoir") ? t("matNoir") : "Acier Noir" },
+    { value: "Acier ressort",     label: t.has("matRessort") ? t("matRessort") : "Acier ressort" },
+    { value: "Acier inoxydable",  label: t.has("matInox") ? t("matInox") : "Acier inoxydable" },
+  ];
+  const selectPlaceholder = t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
 
-  // Session
+  // Récup session
   useEffect(() => {
     fetch("/api/session", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -41,14 +50,14 @@ export default function FilDresseForm() {
       .catch(() => setUser(null));
   }, []);
 
-  // Scroll vers l'alerte
+  // scroll vers l’alerte
   useEffect(() => {
     if (alertRef.current && (loading || ok || err)) {
       alertRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [loading, ok, err]);
 
-  // Auto-hide succès
+  // auto-hide succès
   useEffect(() => {
     if (!ok) return;
     const id = setTimeout(() => setOk(""), 5000);
@@ -79,25 +88,24 @@ export default function FilDresseForm() {
     finishedRef.current = false;
 
     if (!user?.authenticated) {
-      setErr("Vous devez être connecté pour envoyer un devis.");
+      setErr(t.has("loginToSend") ? t("loginToSend") : "Vous devez être connecté pour envoyer un devis.");
       return;
     }
     if (user.role !== "client") {
-      setErr("Seuls les clients peuvent envoyer une demande de devis.");
+      setErr(t.has("reservedClients") ? t("reservedClients") : "Seuls les clients peuvent envoyer une demande de devis.");
       return;
     }
 
     setLoading(true);
     try {
       const fd = new FormData(form);
-      // ✅ normalise les noms des champs pour correspondre au modèle
-      // (si tu as gardé des <input name="longueurValeur" ...> etc., rien à changer)
-      fd.append("type", "fil-dresse");
+      fd.append("type", "filDresse"); // info côté back si besoin
 
       const userId = localStorage.getItem("id");
       if (userId) fd.append("user", userId);
 
-      const res = await fetch("/api/devis/fil-dresse", {
+      // 🚀 envoi direct vers la route dédiée
+      const res = await fetch("/api/devis/filDresse", {
         method: "POST",
         body: fd,
         credentials: "include",
@@ -119,10 +127,10 @@ export default function FilDresseForm() {
       const msg = payload?.message || `Erreur lors de l’envoi. (HTTP ${res.status})`;
       setErr(msg);
     } catch (e) {
-      console.error("submit fil-dresse error:", e);
+      console.error("submit filDresse error:", e);
       if (!finishedRef.current) {
         const isAbort = e?.name === "AbortError";
-        setErr(isAbort ? "Délai dépassé, réessayez." : "Erreur réseau.");
+        setErr(isAbort ? "Délai dépassé, réessayez." : (t.has("networkError") ? t("networkError") : "Erreur réseau."));
       }
     } finally {
       setLoading(false);
@@ -136,7 +144,7 @@ export default function FilDresseForm() {
       {/* Titre */}
       <div className="text-center mb-6">
         <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#002147]">
-          {t("title")}
+          {t.has("title") ? t("title") : "Fil Dressé"}
         </h2>
         <p className="mt-1 text-sm text-gray-500">{t.has("subtitle") ? t("subtitle") : ""}</p>
       </div>
@@ -147,7 +155,7 @@ export default function FilDresseForm() {
         <div className="mb-6 flex justify-center">
           <Image
             src={schemaImg}
-            alt={t.has("schemaAlt") ? t("schemaAlt") : "Barres de fil dressé"}
+            alt={t.has("schemaAlt") ? t("schemaAlt") : "Fardeau de fils / fil dressé"}
             width={420}
             height={260}
             className="rounded-xl ring-1 ring-gray-100"
@@ -156,47 +164,32 @@ export default function FilDresseForm() {
         </div>
 
         {/* Dimensions & choix */}
-        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Caractéristiques"}</SectionTitle>
+        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Spécifications"}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {/* Longueur (valeur + unité) */}
-          <div className="space-y-1">
-            <label className="block font-medium text-[#002147]">
-              {t("length")} <RequiredMark />
-            </label>
-            <div className="flex gap-2">
-              <Input name="longueurValeur" type="number" min="0" required />
-              <SelectBase
-                name="longueurUnite"
-                options={unitOptions}
-                placeholder={selectPlaceholder}
-                required
-              />
-            </div>
-          </div>
+          {/* Valeurs conformes au backend */}
+          <Input name="longueurValeur" label={t.has("length") ? t("length") : "Longueur"} required type="number" min="0" />
+          <SelectKV
+            name="longueurUnite"
+            label={t.has("unit") ? t("unit") : "Unité"}
+            options={lengthUnitOptions}
+            placeholder={selectPlaceholder}
+            required
+          />
 
-          {/* Diamètre */}
-          <Input name="diametre" label={t("diameter")} type="number" min="0" required />
+          <Input name="diametre" label={t.has("diameter") ? t("diameter") : "Diamètre"} required type="number" min="0" />
 
-          {/* Quantité (valeur + unité) */}
-          <div className="space-y-1">
-            <label className="block font-medium text-[#002147]">
-              {t("quantityWanted")} <RequiredMark />
-            </label>
-            <div className="flex gap-2">
-              <Input name="quantiteValeur" type="number" min="0" required />
-              <SelectBase
-                name="quantiteUnite"
-                options={qtyUnitOptions}
-                placeholder={selectPlaceholder}
-                required
-              />
-            </div>
-          </div>
+          <Input name="quantiteValeur" label={t.has("quantityWanted") ? t("quantityWanted") : "Quantité"} required type="number" min="1" />
+          <SelectKV
+            name="quantiteUnite"
+            label={t.has("quantityUnit") ? t("quantityUnit") : "Unité de quantité"}
+            options={qtyUnitOptions}
+            placeholder={selectPlaceholder}
+            required
+          />
 
-          {/* Matière (une seule valeur attendue par le modèle) */}
-          <SelectBase
+          <SelectKV
             name="matiere"
-            label={t("material")}
+            label={t.has("material") ? t("material") : "Matière"}
             options={materialOptions}
             placeholder={selectPlaceholder}
             required
@@ -204,7 +197,7 @@ export default function FilDresseForm() {
         </div>
 
         {/* Fichiers */}
-        <SectionTitle className="mt-8">{t("docs")} <RequiredMark /></SectionTitle>
+        <SectionTitle className="mt-8">{t.has("docs") ? t("docs") : "Documents"}</SectionTitle>
         <p className="text-sm text-gray-500 mb-3">
           Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
         </p>
@@ -220,7 +213,7 @@ export default function FilDresseForm() {
         >
           {files.length === 0 ? (
             <p className="text-base font-medium text-[#002147]">
-              Cliquez ou glissez-déposez vos fichiers ici
+              {t.has("dropHere") ? t("dropHere") : "Cliquez ou glissez-déposez vos fichiers ici"}
             </p>
           ) : (
             <div className="w-full text-center">
@@ -250,8 +243,8 @@ export default function FilDresseForm() {
 
         {/* Textes libres */}
         <div className="grid grid-cols-1 gap-4 md:gap-6 mt-6">
-          <TextArea name="exigences" label={t("specialReq")} />
-          <TextArea name="remarques" label={t("otherRemarks")} />
+          <TextArea name="exigences" label={t.has("specialReq") ? t("specialReq") : "Exigences particulières"} />
+          <TextArea name="remarques" label={t.has("otherRemarks") ? t("otherRemarks") : "Autres remarques"} />
         </div>
 
         {/* Submit + alertes */}
@@ -265,17 +258,17 @@ export default function FilDresseForm() {
                 : "bg-gradient-to-r from-[#002147] to-[#01346b] text-white shadow-lg hover:shadow-xl hover:translate-y-[-1px] active:translate-y-[0px]"}`}
           >
             {loading
-              ? "Envoi en cours…"
+              ? (t.has("sending") ? t("sending") : "Envoi en cours…")
               : !user?.authenticated
-                ? t("loginToSend")
+                ? (t.has("loginToSend") ? t("loginToSend") : "Connectez-vous pour envoyer")
                 : user?.role !== "client"
-                  ? t("reservedClients")
-                  : t("sendRequest")}
+                  ? (t.has("reservedClients") ? t("reservedClients") : "Réservé aux clients")
+                  : (t.has("sendRequest") ? t("sendRequest") : "Envoyer la demande")}
           </button>
 
           <div ref={alertRef} aria-live="polite" className="mt-3">
             {loading ? (
-              <Alert type="info"    message="Votre demande de devis est en cours d'envoi, veuillez patienter…" />
+              <Alert type="info"    message={t.has("sendingInfo") ? t("sendingInfo") : "Votre demande de devis est en cours d'envoi, veuillez patienter…"} />
             ) : err ? (
               <Alert type="error"   message={err} />
             ) : ok ? (
@@ -288,7 +281,7 @@ export default function FilDresseForm() {
   );
 }
 
-/* === UI helpers (mêmes styles que Compression/Torsion) === */
+/* === UI helpers (mêmes styles que Compression) === */
 function SectionTitle({ children, className = "" }) {
   return (
     <div className={`mb-3 mt-4 ${className}`}>
@@ -334,16 +327,7 @@ function Input({ label, name, required, type="text", min }) {
     </div>
   );
 }
-function SelectBase({ label, name, options = [], required, placeholder = "Sélectionnez…" }) {
-  // ✅ normalise tout en tableau de strings
-  const opts = Array.isArray(options)
-    ? options
-    : options && typeof options === "object"
-      ? Object.values(options)
-      : typeof options === "string"
-        ? options.split("|").map(s => s.trim()).filter(Boolean)
-        : [];
-
+function SelectKV({ label, name, options = [], required, placeholder="Sélectionnez…" }) {
   return (
     <div className="space-y-1 w-full">
       {label && (
@@ -358,14 +342,15 @@ function SelectBase({ label, name, options = [], required, placeholder = "Sélec
                    text-[#002147] text-[15px] font-medium
                    focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
         <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
-        {opts.map((o) => (
-          <option key={o} value={o} style={{ color: "#002147" }}>{o}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value} style={{ color: "#002147" }}>
+            {o.label}
+          </option>
         ))}
       </select>
     </div>
   );
 }
-
 function TextArea({ label, name }) {
   return (
     <div className="space-y-1">

@@ -105,7 +105,7 @@ const handleLogout = useCallback(() => {
             <nav className="mt-3 space-y-1">
               <NavItem href={`${rootAdmin}`} icon={FaTachometerAlt}>{t("dashboard")}</NavItem>
               <NavItem href={`${rootAdmin}/orders`} icon={FaShoppingCart}>{t("orders")}</NavItem>
-              <NavItem href={`${rootAdmin}/devis/traction`} icon={FaFileAlt}>
+              <NavItem href={`${rootAdmin}/devis`} icon={FaFileAlt}>
                 {t.has("tractionOrders") ? t("tractionOrders") : `${t("orders")} – Traction`}
               </NavItem>
               <NavItem href={`${rootAdmin}/users`} icon={FaUsers}>{t("users")}</NavItem>

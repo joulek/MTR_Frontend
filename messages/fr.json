@@ -76,7 +76,7 @@
       "notAuthenticated": "Non authentifié",
       "pdfError": "Erreur PDF",
       "networkPdfError": "Erreur réseau pendant l’ouverture du PDF",
-      "tractionOrders": "Devis Traction"
+      "tractionOrders": "Devis "
     },
     "devis": {
       "title": "Formulaire de Spécifications Techniques",
@@ -285,6 +285,7 @@
     },
     "autreForm": {
       "title": "🔧 Autre article en fil métallique",
+      "description": "Description de l'article",
       "designation": "Désignation / Référence",
       "dimensions": "Dimensions principales",
       "quantity": "Quantité",
@@ -304,7 +305,8 @@
       "networkError": "Erreur réseau.",
       "sending": "Envoi...",
       "sendRequest": "Envoyer la demande",
-        "loginToSend": "Connectez-vous pour envoyer"
+        "loginToSend": "Connectez-vous pour envoyer",
+        "mainInfo": "Informations principales"
     }
   }
 }

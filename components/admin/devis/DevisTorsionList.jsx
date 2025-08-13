@@ -123,7 +123,7 @@ export default function AdminDevisTorsionPage() {
     <div className="p-6">
       {/* 🔹 Titre et bouton de refresh */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-[#002147]">Devis – Traction</h1>
+        <h1 className="text-2xl font-bold text-[#002147]">Devis – torsion</h1>
         <button
           onClick={refreshList}
           disabled={loading || refreshing}

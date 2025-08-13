@@ -31,7 +31,7 @@ function cleanFilename(name = "") {
   return name;
 }
 
-export default function AdminDevisPage() {
+export default function AdminDevisTorsionPage() {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
@@ -43,14 +43,14 @@ export default function AdminDevisPage() {
     try {
       setErr("");
       setLoading(true);
-      const res = await fetch(`${BACKEND}/api/admin/devis/traction`, {
+      const res = await fetch(`${BACKEND}/api/admin/devis/autre`, {
         method: "GET",
         cache: "no-store",
         credentials: "include",
       });
 
       if (res.status === 401) {
-        router.push(`/fr/login?next=${encodeURIComponent("/fr/admin/devis/traction")}`);
+        router.push(`/fr/login?next=${encodeURIComponent("/fr/admin/devis/autre")}`);
         return;
       }
       if (res.status === 403) {
@@ -84,7 +84,7 @@ export default function AdminDevisPage() {
   // 📄 Ouvrir le PDF principal
   async function viewPdfById(id) {
     try {
-      const res = await fetch(`${BACKEND}/api/admin/devis/traction/${id}/pdf`, {
+      const res = await fetch(`${BACKEND}/api/admin/devis/autre/${id}/pdf`, {
         method: "GET",
         credentials: "include",
       });
@@ -103,7 +103,7 @@ export default function AdminDevisPage() {
   // 📎 Ouvrir un document joint
   async function viewDocByIndex(id, index) {
     try {
-      const res = await fetch(`${BACKEND}/api/admin/devis/traction/${id}/document/${index}`, {
+      const res = await fetch(`${BACKEND}/api/admin/devis/autre/${id}/document/${index}`, {
         method: "GET",
         credentials: "include",
       });
@@ -123,7 +123,7 @@ export default function AdminDevisPage() {
     <div className="p-6">
       {/* 🔹 Titre et bouton de refresh */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-[#002147]">Devis – Traction</h1>
+        <h1 className="text-2xl font-bold text-[#002147]">Devis – autres</h1>
         <button
           onClick={refreshList}
           disabled={loading || refreshing}
