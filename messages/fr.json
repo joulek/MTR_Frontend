@@ -1,0 +1,304 @@
+{
+  "auth": {
+    "loginTitle": "Se connecter",
+    "registerTitle": "Créer un compte",
+    "lastName": "Nom",
+    "firstName": "Prénom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "accountType": "Type de compte",
+    "personal": "Personnel",
+    "company": "Société",
+    "cin": "CIN",
+    "currentPosition": "Poste actuel",
+    "companyName": "Nom de la société",
+    "taxId": "Matricule fiscale",
+    "password": "Mot de passe",
+    "registerBtn": "S’inscrire",
+    "haveAccount": "Déjà un compte ?",
+    "goLogin": "Se connecter",
+    "joinClientSpace": "Rejoignez notre espace client",
+    "promoText": "Demandez vos devis, suivez vos commandes et gérez vos interventions industrielles.",
+    "rememberMe": "Se souvenir de moi",
+    "forgot": "Mot de passe oublié ?",
+    "noAccount": "Pas de compte ?",
+    "goRegister": "S'inscrire",
+    "loginBtn": "Se connecter",
+    "placeholders": {
+      "lastName": "Dupont",
+      "firstName": "Jean",
+      "email": "exemple@email.com",
+      "phone": "+216 xx xxx xxx",
+      "address": "Rue / Ville / Code postal",
+      "cin": "Ex : 01234567",
+      "currentPosition": "Ex : Ingénieur Qualité",
+      "companyName": "Ex : Manufacture Tunisienne des Ressorts",
+      "taxId": "Ex : MF1234567",
+      "password": "******"
+    },
+    "loading": "Chargement...",
+    "errors": {
+      "network": "Erreur réseau, veuillez réessayer.",
+      "loginFailed": "Identifiants incorrects.",
+      "accountTypeRequired": "Veuillez choisir le type de compte."
+    },
+    "messages": {
+      "registerSuccess": "Compte créé avec succès !",
+      "registerFailed": "Création du compte a échoué !"
+    },
+    "client": {
+      "welcome": "Bienvenue {name}",
+      "you": "vous",
+      "home": "Accueil",
+      "profile": "Mon Profil",
+      "orders": "Mes commandes",
+      "logout": "Se déconnecter",
+      "dashboardTitle": "Bienvenue dans votre espace client",
+      "dashboardSubtitle": "Suivez vos commandes et mettez à jour vos informations.",
+      "quotes": "Demander un devis"
+    },
+    "admin": {
+      "title": "Panneau d'administration",
+      "dashboard": "Tableau de bord",
+      "orders": "Commandes",
+      "users": "Utilisateurs",
+      "logout": "Se déconnecter",
+      "welcomeDashboard": "Bienvenue sur le Dashboard Admin",
+      "dashboardSubtitle": "Gérez vos utilisateurs, commandes et paramètres.",
+      "number": "N°",
+      "client": "Client",
+      "email": "Email",
+      "date": "Date",
+      "open": "Ouvrir",
+      "noOrders": "Aucun devis",
+      "error": "Erreur",
+      "notAuthenticated": "Non authentifié",
+      "pdfError": "Erreur PDF",
+      "networkPdfError": "Erreur réseau pendant l’ouverture du PDF",
+      "tractionOrders": "Devis Traction"
+    },
+    "devis": {
+      "title": "Formulaire de Spécifications Techniques",
+      "subtitle": "Choisissez un type de produit pour afficher le formulaire correspondant.",
+      "types": {
+        "compression": " Ressort de Compression",
+        "traction": " Ressort de Traction",
+        "torsion": " Ressort de Torsion",
+        "fil": " Fil dressé / coupé",
+        "grille": " Grille métallique",
+        "autre": " Autre article en fil métallique"
+      }
+    },
+    "tractionForm": {
+      "title": " Ressorts de Traction",
+      "diameterWire": "Diamètre du fil (d)",
+      "diameterExt": "Diamètre extérieur (De)",
+      "freeLength": "Longueur libre (Lo)",
+      "totalCoils": "Nombre total de spires",
+      "quantity": "Quantité",
+      "material": "Matière",
+      "materialOptions": [
+        "Fil ressort noir (SM, SH)",
+        "Fil ressort galvanisé",
+        "Fil ressort inox"
+      ],
+      "windingDirection": "Sens d’enroulement",
+      "windingOptions": [
+        "Enroulement gauche",
+        "Enroulement droite"
+      ],
+      "ringPosition": "Position des anneaux",
+      "ringOptions": [
+        "0°",
+        "90°",
+        "180°",
+        "270°"
+      ],
+      "hookType": "Type d’accrochage",
+      "hookOptions": [
+        "Anneau Allemand",
+        "Double Anneau Allemand",
+        "Anneau tangent",
+        "Anneau allongé",
+        "Boucle Anglaise",
+        "Anneau tournant",
+        "Conification avec vis"
+      ],
+      "docs": "Documents associés",
+      "specialReq": "Exigences particulières",
+      "otherRemarks": "Autres remarques",
+      "mustBeLogged": "Vous devez être connecté pour envoyer un devis.",
+      "clientOnly": "Seuls les clients peuvent envoyer une demande de devis.",
+      "sendSuccess": "Demande envoyée avec succès !",
+      "sendError": "Erreur lors de l’envoi.",
+      "networkError": "Erreur réseau.",
+      "sending": "Envoi...",
+      "loginToSend": "Connectez-vous pour envoyer",
+      "reservedClients": "Réservé aux clients",
+      "sendRequest": "Envoyer la demande"
+    },
+    "compressionForm": {
+      "title": " Ressorts de Compression",
+      "schemaAlt": "Schéma ressort de compression",
+      "diameterWire": "Diamètre du fil (d)",
+      "diameterExt": "Diamètre extérieur (DE)",
+      "boreDiameter": "Diamètre de l’alésage (H)",
+      "guideDiameter": "Diamètre de guide (S)",
+      "diameterInt": "Diamètre intérieur (DI)",
+      "freeLength": "Longueur libre (Lo)",
+      "totalCoils": "Nombre total de spires",
+      "pitch": "Pas",
+      "quantity": "Quantité",
+      "material": "Matière",
+      "materialOptions": [
+        "Fil ressort noir (SM, SH)",
+        "Fil ressort galvanisé",
+        "Fil ressort inox"
+      ],
+      "windingDirection": "Sens d’enroulement",
+      "windingOptions": [
+        "Enroulement gauche",
+        "Enroulement droite"
+      ],
+      "extremityType": "Type d’extrémité du ressort",
+      "extremityOptions": [
+        "ERM",
+        "EL",
+        "ELM",
+        "ERNM"
+      ],
+      "extremityAlt": "Type d’extrémité du ressort",
+      "docs": "Documents associés",
+      "specialReq": "Exigences particulières",
+      "otherRemarks": "Autres remarques",
+      "selectPlaceholder": "-- Choisir --",
+      "sendSuccess": "Demande envoyée avec succès !",
+      "sendError": "Erreur lors de l’envoi.",
+      "networkError": "Erreur réseau.",
+      "sending": "Envoi...",
+      "sendRequest": "Envoyer la demande"
+    },
+    "torsionForm": {
+      "title": " Ressorts de Torsion",
+      "schemaAlt": "Schéma ressort torsion",
+      "diameterWire": "Diamètre du fil (d)",
+      "diameterExt": "Diamètre extérieur (De)",
+      "diameterInt": "Diamètre intérieur (Di)",
+      "bodyLength": "Longueur du corps (Lc)",
+      "angle": "Angle de torsion (°)",
+      "totalCoils": "Nombre total de spires",
+      "L1": "Longueur branche 1 (L1)",
+      "L2": "Longueur branche 2 (L2)",
+      "orientation": "Orientation des branches",
+      "orientationOptions": [
+        "Symétriques",
+        "Asymétriques"
+      ],
+      "windingDirection": "Sens d’enroulement",
+      "windingOptions": [
+        "Enroulement gauche",
+        "Enroulement droite"
+      ],
+      "quantity": "Quantité",
+      "material": "Matière",
+      "materialOptions": [
+        "Fil ressort noir (SM, SH)",
+        "Fil ressort galvanisé",
+        "Fil ressort inox"
+      ],
+      "docs": "Documents associés",
+      "specialReq": "Exigences particulières",
+      "otherRemarks": "Autres remarques",
+      "selectPlaceholder": "-- Choisir --",
+      "sendSuccess": "Demande envoyée avec succès !",
+      "sendError": "Erreur lors de l’envoi.",
+      "networkError": "Erreur réseau.",
+      "sending": "Envoi...",
+      "sendRequest": "Envoyer la demande"
+    },
+    "filForm": {
+      "title": " Fil dressé / coupé",
+      "schemaAlt": "Faisceau de fils métalliques",
+      "length": "Longueur du fil dressé (mm ou m)",
+      "diameter": "Diamètre du fil (mm)",
+      "unit": "Unité de quantité",
+      "unitOptions": [
+        "Pièces",
+        "Kg"
+      ],
+      "quantityWanted": "Quantité souhaitée",
+      "material": "Matière",
+      "materialChecks": [
+        "Acier galvanisé",
+        "Acier Noir",
+        "Acier ressort",
+        "Acier inoxydable"
+      ],
+      "docs": "Document associé (tout type de fichier)",
+      "specialReq": "Exigences particulières",
+      "otherRemarks": "Autres remarques",
+      "selectPlaceholder": "-- Choisir --",
+      "sendSuccess": "Demande envoyée avec succès !",
+      "sendError": "Erreur lors de l’envoi.",
+      "networkError": "Erreur réseau.",
+      "sending": "Envoi...",
+      "sendRequest": "Envoyer la demande"
+    },
+    "grilleForm": {
+      "title": " Grille métallique",
+      "schemaAlt": "Grille métallique avec zoom",
+      "L": "Longueur (L)",
+      "l": "Largeur (l)",
+      "nbLong": "Nombre de tiges longitudinales",
+      "nbTrans": "Nombre de tiges transversales",
+      "pas1": "Espacement longitudinal (Pas 1)",
+      "pas2": "Espacement transversal (Pas 2)",
+      "D2": "Diamètre du fil des tiges (D₂)",
+      "D1": "Diamètre du fil du cadre (D₁)",
+      "quantity": "Quantité",
+      "material": "Matière",
+      "materialChecks": [
+        "Acier galvanisé",
+        "Acier Noir",
+        "Inox"
+      ],
+      "finish": "Finition / traitement",
+      "finishChecks": [
+        "Zingage",
+        "Peinture",
+        "Aucun"
+      ],
+      "docs": "Documents (plan, croquis)",
+      "specialReq": "Exigences particulières",
+      "otherRemarks": "Autres remarques",
+      "sendSuccess": "Demande envoyée avec succès !",
+      "sendError": "Erreur lors de l’envoi.",
+      "networkError": "Erreur réseau.",
+      "sending": "Envoi...",
+      "sendRequest": "Envoyer la demande"
+    },
+    "autreForm": {
+      "title": "🔧 Autre article en fil métallique",
+      "designation": "Désignation / Référence",
+      "dimensions": "Dimensions principales",
+      "quantity": "Quantité",
+      "material": "Matière",
+      "materialOptions": [
+        "Acier",
+        "Acier galvanisé",
+        "Inox",
+        "Autre"
+      ],
+      "docs": "Documents (plan, croquis, photo)",
+      "specialReq": "Exigences particulières",
+      "otherRemarks": "Autres remarques",
+      "selectPlaceholder": "-- Choisir --",
+      "sendSuccess": "Demande envoyée avec succès !",
+      "sendError": "Erreur lors de l’envoi.",
+      "networkError": "Erreur réseau.",
+      "sending": "Envoi...",
+      "sendRequest": "Envoyer la demande"
+    }
+  }
+}

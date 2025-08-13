@@ -1,0 +1,303 @@
+{
+  "auth": {
+    "loginTitle": "Sign in",
+    "registerTitle": "Create account",
+    "lastName": "Last name",
+    "firstName": "First name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "accountType": "Account type",
+    "personal": "Personal",
+    "company": "Company",
+    "cin": "National ID",
+    "currentPosition": "Current position",
+    "companyName": "Company name",
+    "taxId": "Tax ID",
+    "password": "Password",
+    "registerBtn": "Register",
+    "haveAccount": "Already have an account?",
+    "goLogin": "Sign in",
+    "joinClientSpace": "Join our client space",
+    "promoText": "Request quotes, track your orders, and manage your industrial interventions.",
+    "rememberMe": "Remember me",
+    "forgot": "Forgot password?",
+    "noAccount": "No account?",
+    "goRegister": "Register",
+    "loginBtn": "Sign in",
+    "placeholders": {
+      "lastName": "Smith",
+      "firstName": "John",
+      "email": "example@email.com",
+      "phone": "+216 xx xxx xxx",
+      "address": "Street / City / Postal code",
+      "cin": "Ex: 01234567",
+      "currentPosition": "Ex: Quality Engineer",
+      "companyName": "Ex: Tunisian Spring Manufacturer",
+      "taxId": "Ex: MF1234567",
+      "password": "******"
+    },
+    "loading": "Loading...",
+    "errors": {
+      "network": "Network error, please try again.",
+      "loginFailed": "Incorrect credentials.",
+      "accountTypeRequired": "Please choose an account type."
+    },
+    "messages": {
+      "registerSuccess": "Account created successfully!",
+      "registerFailed": "Account creation failed!"
+    },
+    "client": {
+      "welcome": "Welcome {name}",
+      "home": "Home",
+      "profile": "My Profile",
+      "orders": "My Orders",
+      "logout": "Log out",
+      "dashboardTitle": "Welcome to your client area",
+      "dashboardSubtitle": "Track your orders and update your information.",
+      "quotes": "Request a Quote"
+    },
+    "admin": {
+      "title": "Admin Panel",
+      "dashboard": "Dashboard",
+      "orders": "Orders",
+      "users": "Users",
+      "logout": "Log out",
+      "welcomeDashboard": "Welcome to the Admin Dashboard",
+      "dashboardSubtitle": "Manage your users, orders and settings.",
+      "number": "No.",
+      "client": "Client",
+      "email": "Email",
+      "date": "Date",
+      "open": "Open",
+      "noOrders": "No quotes",
+      "error": "Error",
+      "notAuthenticated": "Not authenticated",
+      "pdfError": "PDF Error",
+      "networkPdfError": "Network error while opening PDF",
+      "tractionOrders": "Extension Spring Quotes"
+    },
+    "devis": {
+      "title": "Technical Specifications Form",
+      "subtitle": "Choose a product type to display the corresponding form.",
+      "types": {
+        "compression": " Compression Spring",
+        "traction": " Extension Spring",
+        "torsion": "Torsion Spring",
+        "fil": " Straightened / Cut Wire",
+        "grille": " Metal Grid",
+        "autre": " Other Metal Wire Product"
+      }
+    },
+    "tractionForm": {
+      "title": " Extension Springs",
+      "diameterWire": "Wire diameter (d)",
+      "diameterExt": "Outer diameter (De)",
+      "freeLength": "Free length (Lo)",
+      "totalCoils": "Total coils",
+      "quantity": "Quantity",
+      "material": "Material",
+      "materialOptions": [
+        "Black spring wire (SM, SH)",
+        "Galvanized spring wire",
+        "Stainless steel spring wire"
+      ],
+      "windingDirection": "Winding direction",
+      "windingOptions": [
+        "Left winding",
+        "Right winding"
+      ],
+      "ringPosition": "Ring position",
+      "ringOptions": [
+        "0°",
+        "90°",
+        "180°",
+        "270°"
+      ],
+      "hookType": "Hook type",
+      "hookOptions": [
+        "German hook",
+        "Double German hook",
+        "Tangent hook",
+        "Extended hook",
+        "English loop",
+        "Swivel hook",
+        "Conical with screw"
+      ],
+      "docs": "Associated documents",
+      "specialReq": "Special requirements",
+      "otherRemarks": "Other remarks",
+      "mustBeLogged": "You must be logged in to send a quote.",
+      "clientOnly": "Only clients can send a quote request.",
+      "sendSuccess": "Request sent successfully!",
+      "sendError": "Error while sending.",
+      "networkError": "Network error.",
+      "sending": "Sending...",
+      "loginToSend": "Login to send",
+      "reservedClients": "Reserved for clients",
+      "sendRequest": "Send request"
+    },
+    "compressionForm": {
+      "title": " Compression Springs",
+      "schemaAlt": "Compression spring diagram",
+      "diameterWire": "Wire diameter (d)",
+      "diameterExt": "Outer diameter (DE)",
+      "boreDiameter": "Bore diameter (H)",
+      "guideDiameter": "Guide diameter (S)",
+      "diameterInt": "Inner diameter (DI)",
+      "freeLength": "Free length (Lo)",
+      "totalCoils": "Total coils",
+      "pitch": "Pitch",
+      "quantity": "Quantity",
+      "material": "Material",
+      "materialOptions": [
+        "Black spring wire (SM, SH)",
+        "Galvanized spring wire",
+        "Stainless steel spring wire"
+      ],
+      "windingDirection": "Winding direction",
+      "windingOptions": [
+        "Left winding",
+        "Right winding"
+      ],
+      "extremityType": "Spring end type",
+      "extremityOptions": [
+        "ERM",
+        "EL",
+        "ELM",
+        "ERNM"
+      ],
+      "extremityAlt": "Spring ends",
+      "docs": "Associated documents",
+      "specialReq": "Special requirements",
+      "otherRemarks": "Other remarks",
+      "selectPlaceholder": "-- Select --",
+      "sendSuccess": "Request sent successfully!",
+      "sendError": "Error while sending.",
+      "networkError": "Network error.",
+      "sending": "Sending...",
+      "sendRequest": "Send request"
+    },
+    "torsionForm": {
+      "title": " Torsion Springs",
+      "schemaAlt": "Torsion spring diagram",
+      "diameterWire": "Wire diameter (d)",
+      "diameterExt": "Outer diameter (De)",
+      "diameterInt": "Inner diameter (Di)",
+      "bodyLength": "Body length (Lc)",
+      "angle": "Torsion angle (°)",
+      "totalCoils": "Total coils",
+      "L1": "Leg length 1 (L1)",
+      "L2": "Leg length 2 (L2)",
+      "orientation": "Leg orientation",
+      "orientationOptions": [
+        "Symmetrical",
+        "Asymmetrical"
+      ],
+      "windingDirection": "Winding direction",
+      "windingOptions": [
+        "Left winding",
+        "Right winding"
+      ],
+      "quantity": "Quantity",
+      "material": "Material",
+      "materialOptions": [
+        "Black spring wire (SM, SH)",
+        "Galvanized spring wire",
+        "Stainless steel spring wire"
+      ],
+      "docs": "Associated documents",
+      "specialReq": "Special requirements",
+      "otherRemarks": "Other remarks",
+      "selectPlaceholder": "-- Select --",
+      "sendSuccess": "Request sent successfully!",
+      "sendError": "Error while sending.",
+      "networkError": "Network error.",
+      "sending": "Sending...",
+      "sendRequest": "Send request"
+    },
+    "filForm": {
+      "title": " Straightened / Cut Wire",
+      "schemaAlt": "Metal wire bundle",
+      "length": "Straightened wire length (mm or m)",
+      "diameter": "Wire diameter (mm)",
+      "unit": "Quantity unit",
+      "unitOptions": [
+        "Pieces",
+        "Kg"
+      ],
+      "quantityWanted": "Desired quantity",
+      "material": "Material",
+      "materialChecks": [
+        "Galvanized steel",
+        "Black steel",
+        "Spring steel",
+        "Stainless steel"
+      ],
+      "docs": "Associated document (any file type)",
+      "specialReq": "Special requirements",
+      "otherRemarks": "Other remarks",
+      "selectPlaceholder": "-- Select --",
+      "sendSuccess": "Request sent successfully!",
+      "sendError": "Error while sending.",
+      "networkError": "Network error.",
+      "sending": "Sending...",
+      "sendRequest": "Send request"
+    },
+    "grilleForm": {
+      "title": " Metal Grid",
+      "schemaAlt": "Metal grid with zoom",
+      "L": "Length (L)",
+      "l": "Width (l)",
+      "nbLong": "Number of longitudinal bars",
+      "nbTrans": "Number of transverse bars",
+      "pas1": "Longitudinal spacing (Pitch 1)",
+      "pas2": "Transverse spacing (Pitch 2)",
+      "D2": "Wire diameter of bars (D₂)",
+      "D1": "Wire diameter of frame (D₁)",
+      "quantity": "Quantity",
+      "material": "Material",
+      "materialChecks": [
+        "Galvanized steel",
+        "Black steel",
+        "Stainless steel"
+      ],
+      "finish": "Finish / treatment",
+      "finishChecks": [
+        "Zinc plating",
+        "Paint",
+        "None"
+      ],
+      "docs": "Documents (drawing, sketch)",
+      "specialReq": "Special requirements",
+      "otherRemarks": "Other remarks",
+      "sendSuccess": "Request sent successfully!",
+      "sendError": "Error while sending.",
+      "networkError": "Network error.",
+      "sending": "Sending...",
+      "sendRequest": "Send request"
+    },
+    "autreForm": {
+      "title": "🔧 Other Metal Wire Product",
+      "designation": "Designation / Reference",
+      "dimensions": "Main dimensions",
+      "quantity": "Quantity",
+      "material": "Material",
+      "materialOptions": [
+        "Steel",
+        "Galvanized steel",
+        "Stainless steel",
+        "Other"
+      ],
+      "docs": "Documents (drawing, sketch, photo)",
+      "specialReq": "Special requirements",
+      "otherRemarks": "Other remarks",
+      "selectPlaceholder": "-- Select --",
+      "sendSuccess": "Request sent successfully!",
+      "sendError": "Error while sending.",
+      "networkError": "Network error.",
+      "sending": "Sending...",
+      "sendRequest": "Send request"
+    }
+  }
+}
