@@ -11,31 +11,12 @@ import GrilleMetalliqueForm from "@/components/forms/GrilleMetalliqueForm";
 import AutreArticleForm from "@/components/forms/AutreArticleForm";
 
 import compressionImg from "@/public/devis/compression_logo.png";
-import tractionImg from "@/public/devis/traction_logo.png";
-import torsionImg from "@/public/devis/torsion_logo.png";
+import tractionImg from "@/public/devis/ressort_traction_1.jpg";
+import torsionImg from "@/public/devis/torsion_ressorts.png";
 import fillImg from "@/public/devis/dresser.png";
 import grillImg from "@/public/devis/grille.png";
+import autreImg from "@/public/devis/autre.jpg";
 
-
-
-/* --- Icônes pour les types sans image --- */
-const IconWire = ({ className = "w-5 h-5" }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M3 12h18M6 7h12M6 17h12" />
-  </svg>
-);
-const IconGrid = ({ className = "w-5 h-5" }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="4" y="4" width="16" height="16" rx="2" />
-    <path d="M12 4v16M4 12h16" />
-  </svg>
-);
-const IconOther = ({ className = "w-5 h-5" }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3 3" />
-  </svg>
-);
 
 export default function DevisPage() {
   const [type, setType] = useState("compression");
@@ -47,7 +28,7 @@ export default function DevisPage() {
     { key: "torsion", label: t("types.torsion") || "", img: torsionImg },
     { key: "fil", label: t("types.fil") || "", img: fillImg },
     { key: "grille", label: t("types.grille") || "", img: grillImg },
-    { key: "autre", label: t("types.autre") || "", Icon: IconOther },
+    { key: "autre", label: t("types.autre") || "", img: autreImg },
   ];
 
   const renderForm = () => {
@@ -90,7 +71,7 @@ export default function DevisPage() {
                         src={img}
                         alt={label}
                         fill
-                        sizes="20px"
+                        sizes="80px"
                         className="object-cover"
                         priority={false}
                       />

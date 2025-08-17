@@ -93,11 +93,16 @@
     "tractionForm": {
       "title": " Ressorts de Traction",
       "diameterWire": "Diamètre du fil (d)",
+      "schema": "Schéma",
+      "maindim": "Spécifications principales",
       "diameterExt": "Diamètre extérieur (De)",
       "freeLength": "Longueur libre (Lo)",
       "totalCoils": "Nombre total de spires",
       "quantity": "Quantité",
+      "selectPlaceholder": "-- Choisir --",
       "material": "Matière",
+      "acceptedTypes": "Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Cliquez ou glissez-déposez vos fichiers ici",
       "materialOptions": [
         "Fil ressort noir (SM, SH)",
         "Fil ressort galvanisé",
@@ -133,7 +138,7 @@
       "sendSuccess": "Demande envoyée avec succès !",
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
-      "sending": "Envoi...",
+      "sending": "Votre demande est en cours d'envoi, veuillez patienter...",
       "loginToSend": "Connectez-vous pour envoyer",
       "reservedClients": "Réservé aux clients",
       "sendRequest": "Envoyer la demande"
@@ -141,6 +146,8 @@
     "compressionForm": {
       "title": " Ressorts de Compression",
       "schemaAlt": "Schéma ressort de compression",
+      "schema": "Schéma",
+      "maindim": "Spécifications principales",
       "diameterWire": "Diamètre du fil (d)",
       "diameterExt": "Diamètre extérieur (DE)",
       "boreDiameter": "Diamètre de l’alésage (H)",
@@ -148,6 +155,8 @@
       "diameterInt": "Diamètre intérieur (DI)",
       "freeLength": "Longueur libre (Lo)",
       "totalCoils": "Nombre total de spires",
+      "acceptedTypes": "Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Cliquez ou glissez-déposez vos fichiers ici",
       "pitch": "Pas",
       "quantity": "Quantité",
       "material": "Matière",
@@ -176,14 +185,18 @@
       "sendSuccess": "Demande envoyée avec succès !",
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
-      "sending": "Envoi...",
+      "sending": "Votre demande est en cours d'envoi, veuillez patienter...",
       "sendRequest": "Envoyer la demande",
       "loginToSend": "Connectez-vous pour envoyer"
     },
     "torsionForm": {
       "title": " Ressorts de Torsion",
       "schemaAlt": "Schéma ressort torsion",
+      "schema": "Schéma",
+      "maindim": "Spécifications principales",
       "diameterWire": "Diamètre du fil (d)",
+      "acceptedTypes": "Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Cliquez ou glissez-déposez vos fichiers ici",
       "diameterExt": "Diamètre extérieur (De)",
       "diameterInt": "Diamètre intérieur (Di)",
       "bodyLength": "Longueur du corps (Lc)",
@@ -215,17 +228,22 @@
       "sendSuccess": "Demande envoyée avec succès !",
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
-      "sending": "Envoi...",
+      "sending": "Votre demande est en cours d'envoi, veuillez patienter...",
       "sendRequest": "Envoyer la demande",
-    "loginToSend": "Vous devez être connecté pour envoyer un devis.",
+      "loginToSend": "Connectez-vous pour envoyer",
       "reservedClients": "Réservé aux clients"
     },
     "filForm": {
       "title": " Fil dressé / coupé",
       "schemaAlt": "Faisceau de fils métalliques",
+      "schema": "Schéma",
+      "acceptedTypes": "Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Cliquez ou glissez-déposez vos fichiers ici",
+      "maindim": "Spécifications principales",
       "length": "Longueur du fil dressé (mm ou m)",
       "diameter": "Diamètre du fil (mm)",
       "unit": "Unité de quantité",
+      "unitLong": "Unité de Longueur",
       "unitOptions": [
         "Pièces",
         "Kg"
@@ -245,13 +263,17 @@
       "sendSuccess": "Demande envoyée avec succès !",
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
-      "sending": "Envoi...",
+      "sending": "Votre demande est en cours d'envoi, veuillez patienter...",
       "sendRequest": "Envoyer la demande",
-        "loginToSend": "Connectez-vous pour envoyer"
+      "loginToSend": "Connectez-vous pour envoyer"
     },
     "grilleForm": {
       "title": " Grille métallique",
       "schemaAlt": "Grille métallique avec zoom",
+      "schema": "Schéma",
+      "acceptedTypes": "Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Cliquez ou glissez-déposez vos fichiers ici",
+      "maindim": "Spécifications principales",
       "L": "Longueur (L)",
       "l": "Largeur (l)",
       "nbLong": "Nombre de tiges longitudinales",
@@ -279,13 +301,16 @@
       "sendSuccess": "Demande envoyée avec succès !",
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
-      "sending": "Envoi...",
+      "sending": "Votre demande est en cours d'envoi, veuillez patienter...",
       "sendRequest": "Envoyer la demande",
-      "loginToSend": "Connectez-vous pour envoyer"
+      "loginToSend": "Connectez-vous pour envoyer",
+      "selectPlaceholder": "-- Choisir --"
     },
     "autreForm": {
-      "title": "🔧 Autre article en fil métallique",
+      "title": "Autre article en fil métallique",
       "description": "Description de l'article",
+      "acceptedTypes": "Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Cliquez ou glissez-déposez vos fichiers ici",
       "designation": "Désignation / Référence",
       "dimensions": "Dimensions principales",
       "quantity": "Quantité",
@@ -303,10 +328,85 @@
       "sendSuccess": "Demande envoyée avec succès !",
       "sendError": "Erreur lors de l’envoi.",
       "networkError": "Erreur réseau.",
-      "sending": "Envoi...",
+      "sending": "Votre demande est en cours d'envoi, veuillez patienter...",
       "sendRequest": "Envoyer la demande",
-        "loginToSend": "Connectez-vous pour envoyer",
-        "mainInfo": "Informations principales"
+      "loginToSend": "Connectez-vous pour envoyer",
+      "mainInfo": "Informations principales"
+    }
+  },
+  "profile": {
+    "userFallback": "Utilisateur",
+    "lang": {
+      "fr": "Français",
+      "en": "English"
+    },
+    "account": {
+      "title": "Compte",
+      "unknownEmail": "email inconnu",
+      "fields": {
+        "lastName": "Nom",
+        "firstName": "Prénom",
+        "phone": "Téléphone",
+        "address": "Adresse",
+        "accountType": "Type de compte", 
+        "loginEmail": "Email" 
+      },
+      "types": {
+        "personal": "Personnel", 
+        "company": "Société" 
+      }
+    },
+    "shortcuts": {
+      "title": "Raccourcis",
+      "home": "Accueil",
+      "homeHint": "Retour à l’accueil",
+      "orders": "Mes commandes",
+      "ordersHint": "Historique & suivi",
+      "help": "Aide & support",
+      "helpHint": "FAQ, contact",
+      "security": "Sécurité",
+      "securityHint": "Info compte en lecture seule"
+    },
+    "settings": {
+      "title": "Paramètres de l’application",
+      "language": "Langue",
+      "languageHint": "Changer la langue du site"
+    },
+    "about": {
+      "title": "À propos",
+      "text": "MTR Industry — Espace client. Version 1.0"
+    }
+  },
+  "support": {
+    "title": "Aide & Support",
+    "intro": "Besoin d’aide ? Consultez notre FAQ ou contactez notre équipe.",
+    "faq": {
+      "title": "Questions fréquentes",
+      "q1": {
+        "t": "Comment changer mon mot de passe ?",
+        "a": "Allez dans Paramètres > Sécurité puis cliquez sur « Modifier mon mot de passe »."
+      },
+      "q2": {
+        "t": "Je n’arrive pas à me connecter, que faire ?",
+        "a": "Vérifiez votre email et mot de passe. Si le problème persiste, utilisez « Mot de passe oublié »."
+      },
+      "q3": {
+        "t": "Comment contacter l’assistance ?",
+        "a": "Vous pouvez nous écrire par email, téléphone ou chat en direct."
+      }
+    },
+    "contact": {
+      "title": "Nous contacter",
+      "email": "support@mtr.com",
+      "phone": "+216 71 234 567",
+      "chat": "Chat en direct (9h–18h)"
+    },
+    "resources": {
+      "title": "Ressources utiles",
+      "guide": "Guide d’utilisation",
+      "faq": "Centre de FAQ complet",
+      "privacy": "Politique de confidentialité"
     }
   }
+
 }

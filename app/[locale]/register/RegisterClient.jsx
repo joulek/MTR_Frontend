@@ -36,6 +36,7 @@ export default function RegisterPage() {
       password: fd.get("password"),
       numTel: fd.get("phone"),
       adresse: fd.get("address"),
+      accountType: typeCompte,
     };
 
     if (typeCompte === "personnel") {

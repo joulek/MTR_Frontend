@@ -32,7 +32,7 @@ export default function TractionForm() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Options i18n
+  // Options i18n (labels UI seulement — on ne touche pas)
   const matOptions = t.raw("materialOptions") || [];
   const windOptions = t.raw("windingOptions") || [];
   const ringOptions = t.raw("ringOptions") || [];
@@ -77,6 +77,66 @@ export default function TractionForm() {
     if (e.dataTransfer?.files?.length) handleFileList(e.dataTransfer.files);
   }
 
+  // ========= AJOUT MINIMAL : normalisation EN -> FR exact attendu par le backend =========
+  const EN_MAT = [
+    "Black spring wire (SM, SH)",
+    "Galvanized spring wire",
+    "Stainless steel spring wire",
+  ];
+  const FR_MAT = [
+    "Fil ressort noir (SM, SH)",
+    "Fil ressort galvanisé",
+    "Fil ressort inox",
+  ];
+
+  const EN_WIND = ["Left winding", "Right winding"];
+  const FR_WIND = ["Enroulement gauche", "Enroulement droite"];
+
+  // ringOptions = ['0°','90°','180°','270°'] : identiques FR/EN → pas de mapping
+
+  const EN_HOOK = [
+    "German hook",
+    "Double German hook",
+    "Tangent hook",
+    "Extended hook",
+    "English loop",
+    "Swivel hook",
+    "Conical with screw",
+  ];
+  const FR_HOOK = [
+    "Anneau Allemand",
+    "Double Anneau Allemand",
+    "Anneau tangent",
+    "Anneau allongé",
+    "Boucle Anglaise",
+    "Anneau tournant",
+    "Conification avec vis",
+  ];
+
+  // Synonymes possibles saisis côté UI
+  const EXTRA = {
+    MAT: { "acier inoxydable": "Fil ressort inox" },
+    WIND: { "droite": "Enroulement droite", "gauche": "Enroulement gauche" },
+  };
+
+  function normalizeByIndex(fd, name, EN, FR) {
+    const v = fd.get(name);
+    if (!v) return;
+    // Déjà FR correct
+    if (FR.includes(v)) return;
+    // Matching strict EN
+    const i = EN.indexOf(v);
+    if (i >= 0) {
+      fd.set(name, FR[i]);
+      return;
+    }
+    // Synonymes libres (lowercase)
+    const low = String(v).toLowerCase().trim();
+    if (name === "matiere" && EXTRA.MAT[low]) fd.set(name, EXTRA.MAT[low]);
+    if (name === "enroulement" && EXTRA.WIND[low]) fd.set(name, EXTRA.WIND[low]);
+  }
+  // ===============================================================================
+
   const onSubmit = async (e) => {
     e.preventDefault();
 
@@ -101,6 +161,12 @@ export default function TractionForm() {
 
       const userId = localStorage.getItem("id");
       if (userId) fd.append("user", userId);
+
+      // ✅ Normalisation juste avant l'envoi (aucun changement d'UI)
+      normalizeByIndex(fd, "matiere", EN_MAT, FR_MAT);
+      normalizeByIndex(fd, "enroulement", EN_WIND, FR_WIND);
+      // positionAnneaux = identique FR/EN ('0°', '90°', ...) → rien à faire
+      normalizeByIndex(fd, "typeAccrochage", EN_HOOK, FR_HOOK);
 
       const res = await fetch("/api/devis/traction", {
         method: "POST",
@@ -149,14 +215,12 @@ export default function TractionForm() {
         <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#002147]">
           {t("title")}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {t.has("subtitle") ? t("subtitle") : ""}
-        </p>
+
       </div>
 
       <form onSubmit={onSubmit}>
         {/* --- Form fields --- */}
-        <SectionTitle>{t.has("schemaTitle") ? t("schemaTitle") : "Schéma"}</SectionTitle>
+        <SectionTitle>{t("schema")}</SectionTitle>
         <div className="mb-6 flex justify-center">
           <Image
             src={schemaImg}
@@ -168,7 +232,7 @@ export default function TractionForm() {
           />
         </div>
 
-        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Dimensions principales"}</SectionTitle>
+        <SectionTitle>{t("maindim")}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <Input name="d" label={t("diameterWire")} required />
           <Input name="De" label={t("diameterExt")} required />
@@ -192,8 +256,19 @@ export default function TractionForm() {
               name="positionAnneaux"
               required
               className="w-full rounded-xl border-2 border-[#002147] px-4 py-2.5 bg-white
-                         text-[#002147] text-[15px] font-medium
-                         focus:outline-none focus:ring-2 focus:ring-[#002147]/40 focus:border-[#002147]">
+             text-[#002147] text-[15px] font-medium
+             focus:outline-none focus:ring-2 focus:ring-[#002147]/40 focus:border-[#002147] pr-10"
+              style={{
+                appearance: "none",
+                WebkitAppearance: "none",
+                MozAppearance: "none",
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 0.875rem center",
+                backgroundSize: "1rem 1rem",
+              }}
+            >
               <option value="" style={{ color: "#64748b" }}>
                 {selectPlaceholder === "Sélectionnez…" ? "Sélectionnez une position…" : selectPlaceholder}
               </option>
@@ -236,8 +311,19 @@ export default function TractionForm() {
               name="typeAccrochage"
               required
               className="w-full rounded-xl border-2 border-[#002147] px-4 py-2.5 bg-white
-                         text-[#002147] text-[15px] font-medium
-                         focus:outline-none focus:ring-2 focus:ring-[#002147]/40 focus:border-[#002147]">
+             text-[#002147] text-[15px] font-medium
+             focus:outline-none focus:ring-2 focus:ring-[#002147]/40 focus:border-[#002147] pr-10"
+              style={{
+                appearance: "none",
+                WebkitAppearance: "none",
+                MozAppearance: "none",
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 0.875rem center",
+                backgroundSize: "1rem 1rem",
+              }}
+            >
               <option value="" style={{ color: "#64748b" }}>
                 {selectPlaceholder === "Sélectionnez…" ? "Sélectionnez un type…" : selectPlaceholder}
               </option>
@@ -252,7 +338,7 @@ export default function TractionForm() {
 
         <SectionTitle className="mt-8">{t("docs")} <RequiredMark /></SectionTitle>
         <p className="text-sm text-gray-500 mb-3">
-          Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
+          {t("acceptedTypes")}
         </p>
 
         <label
@@ -266,7 +352,7 @@ export default function TractionForm() {
         >
           {files.length === 0 ? (
             <p className="text-base font-medium text-[#002147]">
-              Cliquez ou glissez-déposez vos fichiers ici
+              {t("dropHere")}
             </p>
           ) : (
             <div className="w-full text-center">
@@ -337,7 +423,7 @@ export default function TractionForm() {
   );
 }
 
-/* === UI helpers === */
+/* === UI helpers (inchangés) === */
 function SectionTitle({ children, className = "" }) {
   return (
     <div className={`mb-3 mt-4 ${className}`}>
@@ -392,8 +478,7 @@ function SelectBase({ label, name, options = [], required, placeholder = "Sélec
     <div className="space-y-1 w-full">
       {label && (
         <label className="block font-medium text-[#002147]">
-          {label}
-          {required && <RequiredMark />}
+          {label}{required && <RequiredMark />}
         </label>
       )}
       <select
@@ -401,7 +486,18 @@ function SelectBase({ label, name, options = [], required, placeholder = "Sélec
         required={required}
         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-white
                    text-[#002147] text-[15px] font-medium
-                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147] pr-10"
+        style={{
+          appearance: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 0.875rem center",
+          backgroundSize: "1rem 1rem",
+        }}
+      >
         <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
         {options.map((o) => (
           <option key={o} value={o} style={{ color: "#002147" }}>{o}</option>

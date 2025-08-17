@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
-// 🔁 remplace ces chemins selon tes fichiers
 import schemaImg from "@/public/devis/compression02.png";
-import typeImg   from "@/public/devis/compression01.png";
+import typeImg from "@/public/devis/compression01.png";
 
-/* --- petite étoile rouge pour champs requis --- */
 const RequiredMark = () => <span className="text-red-500" aria-hidden="true"> *</span>;
 
 export default function CompressionForm() {
@@ -27,11 +25,37 @@ export default function CompressionForm() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // i18n options
-  const matOptions       = t.raw("materialOptions")   || [];
-  const windOptions      = t.raw("windingOptions")    || [];
-  const extremityOptions = t.raw("extremityOptions")  || [];
+  // --------- 🔁 i18n OPTIONS (labels) + ✅ valeurs ENUM attendues par le backend ----------
+  // Matériaux: valeurs FR stables (ENUM backend) + labels traduits (EN/FR) alignés par index
+  const MATERIAL_VALUES = [
+    "Fil ressort noir (SM, SH)",
+    "Fil ressort galvanisé",
+    "Fil ressort inox",
+  ];
+  const materialLabels = t.raw("materialOptions") || MATERIAL_VALUES;
+  const materialOptions = MATERIAL_VALUES.map((value, i) => ({
+    value,
+    label: materialLabels[i] ?? value,
+  }));
+
+  // Enroulement: valeurs FR stables (ENUM backend) + labels traduits (EN/FR)
+  const WIND_VALUES = ["Enroulement gauche", "Enroulement droite"];
+  const windLabels = t.raw("windingOptions") || WIND_VALUES;
+  const windOptions = WIND_VALUES.map((value, i) => ({
+    value,
+    label: windLabels[i] ?? value,
+  }));
+
+  // Extrémités: mêmes codes en label et value (ERM/EL/ELM/ERNM)
+  const EXTREMITIES = ["ERM", "EL", "ELM", "ERNM"];
+  const extremityLabels = t.raw("extremityOptions") || EXTREMITIES;
+  const extremityOptions = EXTREMITIES.map((value, i) => ({
+    value,
+    label: extremityLabels[i] ?? value,
+  }));
+
   const selectPlaceholder = t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
+  // --------------------------------------------------------------------------------------
 
   // Récup session
   useEffect(() => {
@@ -41,14 +65,12 @@ export default function CompressionForm() {
       .catch(() => setUser(null));
   }, []);
 
-  // scroll vers l’alerte
   useEffect(() => {
     if (alertRef.current && (loading || ok || err)) {
       alertRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [loading, ok, err]);
 
-  // auto-hide succès
   useEffect(() => {
     if (!ok) return;
     const id = setTimeout(() => setOk(""), 5000);
@@ -60,7 +82,7 @@ export default function CompressionForm() {
     setFiles(arr);
     if (fileInputRef.current) {
       const dt = new DataTransfer();
-      arr.forEach(f => dt.items.add(f));
+      arr.forEach((f) => dt.items.add(f));
       fileInputRef.current.files = dt.files;
     }
   }
@@ -90,10 +112,28 @@ export default function CompressionForm() {
     setLoading(true);
     try {
       const fd = new FormData(form);
-      fd.append("type", "compression"); // info côté back si besoin
+      fd.append("type", "compression");
 
       const userId = localStorage.getItem("id");
       if (userId) fd.append("user", userId);
+
+      // (Sécurité) Normalisation si une page enverrait un label au lieu d'une valeur :
+      const mat = fd.get("matiere");
+      const wind = fd.get("enroulement");
+      const ext = fd.get("extremite");
+      // Si la valeur n'est pas une des valeurs FR attendues, tente de retomber sur la valeur FR par index
+      if (!MATERIAL_VALUES.includes(mat)) {
+        const i = materialLabels.indexOf(mat);
+        if (i >= 0) fd.set("matiere", MATERIAL_VALUES[i]);
+      }
+      if (!WIND_VALUES.includes(wind)) {
+        const i = windLabels.indexOf(wind);
+        if (i >= 0) fd.set("enroulement", WIND_VALUES[i]);
+      }
+      if (!EXTREMITIES.includes(ext)) {
+        const i = extremityLabels.indexOf(ext);
+        if (i >= 0) fd.set("extremite", EXTREMITIES[i]);
+      }
 
       const res = await fetch("/api/devis/compression", {
         method: "POST",
@@ -102,7 +142,9 @@ export default function CompressionForm() {
       });
 
       let payload = null;
-      try { payload = await res.json(); } catch {}
+      try {
+        payload = await res.json();
+      } catch { }
 
       if (res.ok) {
         finishedRef.current = true;
@@ -131,17 +173,15 @@ export default function CompressionForm() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
-      {/* Titre */}
       <div className="text-center mb-6">
         <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#002147]">
           {t("title")}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">{t.has("subtitle") ? t("subtitle") : ""}</p>
       </div>
 
       <form onSubmit={onSubmit}>
-        {/* Schéma */}
-        <SectionTitle>{t.has("schemaTitle") ? t("schemaTitle") : "Schéma"}</SectionTitle>
+        <SectionTitle>{t("schema")}</SectionTitle>
+
         <div className="mb-6 flex justify-center">
           <Image
             src={schemaImg}
@@ -153,43 +193,41 @@ export default function CompressionForm() {
           />
         </div>
 
-        {/* Dimensions */}
-        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Dimensions principales"}</SectionTitle>
+        <SectionTitle>{t("maindim")}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <Input name="d"        label={t("diameterWire")} required />
-          <Input name="DE"       label={t("diameterExt")} required />
-          <Input name="H"        label={t("boreDiameter")} />
-          <Input name="S"        label={t("guideDiameter")} />
-          <Input name="DI"       label={t("diameterInt")} required />
-          <Input name="Lo"       label={t("freeLength")} required />
+          <Input name="d" label={t("diameterWire")} required />
+          <Input name="DE" label={t("diameterExt")} required />
+          <Input name="H" label={t("boreDiameter")} />
+          <Input name="S" label={t("guideDiameter")} />
+          <Input name="DI" label={t("diameterInt")} required />
+          <Input name="Lo" label={t("freeLength")} required />
           <Input name="nbSpires" label={t("totalCoils")} required />
-          <Input name="pas"      label={t("pitch")} />
+          <Input name="pas" label={t("pitch")} />
           <Input name="quantite" label={t("quantity")} type="number" min="1" required />
 
           <SelectBase
             name="matiere"
             label={t("material")}
-            options={matOptions}
+            options={materialOptions}   // [{value,label}]
             placeholder={selectPlaceholder}
             required
           />
           <SelectBase
             name="enroulement"
             label={t("windingDirection")}
-            options={windOptions}
+            options={windOptions}       // [{value,label}]
             placeholder={selectPlaceholder}
             required
           />
           <SelectBase
             name="extremite"
             label={t("extremityType")}
-            options={extremityOptions}
+            options={extremityOptions}  // [{value,label}]
             placeholder={selectPlaceholder}
             required
           />
         </div>
 
-        {/* Image des extrémités */}
         <div className="mt-4 flex justify-center">
           <Image
             src={typeImg}
@@ -200,10 +238,9 @@ export default function CompressionForm() {
           />
         </div>
 
-        {/* Fichiers */}
         <SectionTitle className="mt-8">{t("docs")} <RequiredMark /></SectionTitle>
         <p className="text-sm text-gray-500 mb-3">
-          Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
+          {t("acceptedTypes")}
         </p>
 
         <label
@@ -217,7 +254,7 @@ export default function CompressionForm() {
         >
           {files.length === 0 ? (
             <p className="text-base font-medium text-[#002147]">
-              Cliquez ou glissez-déposez vos fichiers ici
+              {t("dropHere")}
             </p>
           ) : (
             <div className="w-full text-center">
@@ -245,13 +282,11 @@ export default function CompressionForm() {
           />
         </label>
 
-        {/* Textes libres */}
         <div className="grid grid-cols-1 gap-4 md:gap-6 mt-6">
           <TextArea name="exigences" label={t("specialReq")} />
           <TextArea name="remarques" label={t("otherRemarks")} />
         </div>
 
-        {/* Submit + alertes */}
         <div className="mt-8">
           <button
             type="submit"
@@ -272,9 +307,9 @@ export default function CompressionForm() {
 
           <div ref={alertRef} aria-live="polite" className="mt-3">
             {loading ? (
-              <Alert type="info"    message="Votre demande de devis est en cours d'envoi, veuillez patienter…" />
+              <Alert type="info" message="Votre demande de devis est en cours d'envoi, veuillez patienter…" />
             ) : err ? (
-              <Alert type="error"   message={err} />
+              <Alert type="error" message={err} />
             ) : ok ? (
               <Alert type="success" message={ok} />
             ) : null}
@@ -285,7 +320,6 @@ export default function CompressionForm() {
   );
 }
 
-/* === UI helpers (mêmes styles que Traction/Torsion) === */
 function SectionTitle({ children, className = "" }) {
   return (
     <div className={`mb-3 mt-4 ${className}`}>
@@ -312,7 +346,7 @@ function Alert({ type = "info", message }) {
     </div>
   );
 }
-function Input({ label, name, required, type="text", min }) {
+function Input({ label, name, required, type = "text", min }) {
   return (
     <div className="space-y-1">
       {label && (
@@ -331,7 +365,7 @@ function Input({ label, name, required, type="text", min }) {
     </div>
   );
 }
-function SelectBase({ label, name, options = [], required, placeholder="Sélectionnez…" }) {
+function SelectBase({ label, name, options = [], required, placeholder = "Sélectionnez…" }) {
   return (
     <div className="space-y-1 w-full">
       {label && (
@@ -344,11 +378,28 @@ function SelectBase({ label, name, options = [], required, placeholder="Sélecti
         required={required}
         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-white
                    text-[#002147] text-[15px] font-medium
-                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147] pr-10"
+        style={{
+          appearance: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 0.875rem center",
+          backgroundSize: "1rem 1rem",
+        }}
+      >
         <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o} style={{ color: "#002147" }}>{o}</option>
-        ))}
+        {options.map((o, idx) => {
+          const value = typeof o === "string" ? o : o.value;
+          const label = typeof o === "string" ? o : o.label;
+          return (
+            <option key={`${value}-${idx}`} value={value} style={{ color: "#002147" }}>
+              {label}
+            </option>
+          );
+        })}
       </select>
     </div>
   );

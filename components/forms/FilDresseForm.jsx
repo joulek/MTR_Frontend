@@ -27,20 +27,39 @@ export default function FilDresseForm() {
   // i18n/options (⚠️ valeurs canoniques attendues par le backend)
   const lengthUnitOptions = [
     { value: "mm", label: "mm" },
-    { value: "m",  label: "m"  },
+    { value: "m", label: "m" },
   ];
+
+  // ---- Select "Unit" : labels i18n + valeurs backend stables ----
+  const unitLabels = t.raw("unitOptions") || ["pièces", "kg"];
   const qtyUnitOptions = [
-    { value: "pieces", label: t.has("unitPieces") ? t("unitPieces") : "pièces" },
-    { value: "kg",     label: "kg" },
+    { value: "pieces", label: unitLabels[0] ?? "pièces" },
+    { value: "kg", label: unitLabels[1] ?? "kg" },
   ];
-  const materialOptions = [
-    // doivent correspondre EXACTEMENT à l'enum du schéma Mongo
-    { value: "Acier galvanisé",   label: t.has("matGalva") ? t("matGalva") : "Acier galvanisé" },
-    { value: "Acier Noir",        label: t.has("matNoir") ? t("matNoir") : "Acier Noir" },
-    { value: "Acier ressort",     label: t.has("matRessort") ? t("matRessort") : "Acier ressort" },
-    { value: "Acier inoxydable",  label: t.has("matInox") ? t("matInox") : "Acier inoxydable" },
+
+  // ---- Select "Material" : labels i18n + valeurs backend FR exactes ----
+  // Labels côté i18n (en.json: "materialChecks": ["Galvanized steel", ...])
+  const matLabels = t.raw("materialChecks") || [
+    "Acier galvanisé",
+    "Acier Noir",
+    "Acier ressort",
+    "Acier inoxydable",
   ];
-  const selectPlaceholder = t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
+  // Valeurs envoyées (en FR, attendues par le backend)
+  const MAT_VALUES = [
+    "Acier galvanisé",
+    "Acier Noir",
+    "Acier ressort",
+    "Acier inoxydable",
+  ];
+  const materialOptions = MAT_VALUES.map((value, i) => ({
+    value,                    // ← valeur backend
+    label: matLabels[i] ?? value, // ← label UI traduit
+  }));
+
+  const selectPlaceholder = t.has("selectPlaceholder")
+    ? t("selectPlaceholder")
+    : "Sélectionnez…";
 
   // Récup session
   useEffect(() => {
@@ -112,7 +131,7 @@ export default function FilDresseForm() {
       });
 
       let payload = null;
-      try { payload = await res.json(); } catch {}
+      try { payload = await res.json(); } catch { }
 
       if (res.ok) {
         finishedRef.current = true;
@@ -146,12 +165,11 @@ export default function FilDresseForm() {
         <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#002147]">
           {t.has("title") ? t("title") : "Fil Dressé"}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">{t.has("subtitle") ? t("subtitle") : ""}</p>
       </div>
 
       <form onSubmit={onSubmit}>
         {/* Schéma */}
-        <SectionTitle>{t.has("schemaTitle") ? t("schemaTitle") : "Schéma"}</SectionTitle>
+        <SectionTitle>{t("schema")}</SectionTitle>
         <div className="mb-6 flex justify-center">
           <Image
             src={schemaImg}
@@ -164,13 +182,13 @@ export default function FilDresseForm() {
         </div>
 
         {/* Dimensions & choix */}
-        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Spécifications"}</SectionTitle>
+        <SectionTitle>{t("maindim")}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* Valeurs conformes au backend */}
           <Input name="longueurValeur" label={t.has("length") ? t("length") : "Longueur"} required type="number" min="0" />
           <SelectKV
             name="longueurUnite"
-            label={t.has("unit") ? t("unit") : "Unité"}
+            label={t.has("unitLong") ? t("unitLong") : "Unité de longueur"}
             options={lengthUnitOptions}
             placeholder={selectPlaceholder}
             required
@@ -181,7 +199,7 @@ export default function FilDresseForm() {
           <Input name="quantiteValeur" label={t.has("quantityWanted") ? t("quantityWanted") : "Quantité"} required type="number" min="1" />
           <SelectKV
             name="quantiteUnite"
-            label={t.has("quantityUnit") ? t("quantityUnit") : "Unité de quantité"}
+            label={t.has("unit") ? t("unit") : "Unité de quantité"}
             options={qtyUnitOptions}
             placeholder={selectPlaceholder}
             required
@@ -199,7 +217,7 @@ export default function FilDresseForm() {
         {/* Fichiers */}
         <SectionTitle className="mt-8">{t.has("docs") ? t("docs") : "Documents"}</SectionTitle>
         <p className="text-sm text-gray-500 mb-3">
-          Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
+          {t("acceptedTypes")}
         </p>
 
         <label
@@ -213,8 +231,7 @@ export default function FilDresseForm() {
         >
           {files.length === 0 ? (
             <p className="text-base font-medium text-[#002147]">
-              {t.has("dropHere") ? t("dropHere") : "Cliquez ou glissez-déposez vos fichiers ici"}
-            </p>
+              {t("dropHere")}            </p>
           ) : (
             <div className="w-full text-center">
               <p className="text-sm font-semibold text-[#002147] mb-2">
@@ -268,9 +285,9 @@ export default function FilDresseForm() {
 
           <div ref={alertRef} aria-live="polite" className="mt-3">
             {loading ? (
-              <Alert type="info"    message={t.has("sendingInfo") ? t("sendingInfo") : "Votre demande de devis est en cours d'envoi, veuillez patienter…"} />
+              <Alert type="info" message={t.has("sendingInfo") ? t("sendingInfo") : "Votre demande de devis est en cours d'envoi, veuillez patienter…"} />
             ) : err ? (
-              <Alert type="error"   message={err} />
+              <Alert type="error" message={err} />
             ) : ok ? (
               <Alert type="success" message={ok} />
             ) : null}
@@ -308,7 +325,7 @@ function Alert({ type = "info", message }) {
     </div>
   );
 }
-function Input({ label, name, required, type="text", min }) {
+function Input({ label, name, required, type = "text", min }) {
   return (
     <div className="space-y-1">
       {label && (
@@ -327,7 +344,7 @@ function Input({ label, name, required, type="text", min }) {
     </div>
   );
 }
-function SelectKV({ label, name, options = [], required, placeholder="Sélectionnez…" }) {
+function SelectKV({ label, name, options = [], required, placeholder = "Sélectionnez…" }) {
   return (
     <div className="space-y-1 w-full">
       {label && (
@@ -340,7 +357,18 @@ function SelectKV({ label, name, options = [], required, placeholder="Sélection
         required={required}
         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-white
                    text-[#002147] text-[15px] font-medium
-                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147] pr-10"
+        style={{
+          appearance: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 0.875rem center",
+          backgroundSize: "1rem 1rem",
+        }}
+      >
         <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value} style={{ color: "#002147" }}>
@@ -351,6 +379,7 @@ function SelectKV({ label, name, options = [], required, placeholder="Sélection
     </div>
   );
 }
+
 function TextArea({ label, name }) {
   return (
     <div className="space-y-1">

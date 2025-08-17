@@ -12,8 +12,8 @@ import DevisFillList from "@/components/admin/devis/DevisFillList";
 import DevisGrilleList from "@/components/admin/devis/DevisGrilleList";
 // Images
 import compressionImg from "@/public/devis/compression_logo.png";
-import tractionImg from "@/public/devis/traction_logo.png";
-import torsionImg from "@/public/devis/torsion_logo.png";
+import tractionImg from "@/public/devis/ressort_traction_1.jpg";
+import torsionImg from "@/public/devis/torsion_ressorts.png";
 import fillImg from "@/public/devis/dresser.png";
 import grillImg from "@/public/devis/grille.png";
 import autresImg from "@/public/devis/autre.jpg";

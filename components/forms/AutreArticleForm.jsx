@@ -24,6 +24,48 @@ export default function AutreArticleForm() {
   const matOptions = t.raw("materialOptions") || [];
   const selectPlaceholder = t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
 
+  // ✅ AJOUT MINIMAL : mapping des libellés anglais -> valeurs FR attendues par le backend
+  // (aucun changement d’UI, on convertit seulement au moment de l’envoi)
+  const EN_MAT = [
+    "Galvanized steel wire",
+    "Black steel wire",
+    "Spring steel wire",
+    "Stainless steel spring wire",
+    "Galvanized steel",
+    "Black steel",
+    "Spring steel",
+    "Stainless steel"
+  ];
+  const FR_MAT = [
+    "Acier galvanisé",
+    "Acier Noir",
+    "Acier ressort",
+    "Acier inoxydable"
+  ];
+  function normalizeMatiere(fd) {
+    const v = fd.get("matiere");
+    if (!v) return;
+    // déjà FR ?
+    if (FR_MAT.includes(v)) return;
+    // cherche correspondance exacte d'abord
+    let idx = EN_MAT.indexOf(String(v));
+    if (idx >= 0) {
+      // regrouper 8 EN vers 4 FR (par paires)
+      const frIndex = Math.min(idx, 3);
+      fd.set("matiere", FR_MAT[frIndex]);
+      return;
+    }
+    // tolérer casse/espaces
+    const low = String(v).toLowerCase().trim();
+    const enLow = EN_MAT.map(s => s.toLowerCase());
+    idx = enLow.indexOf(low);
+    if (idx >= 0) {
+      const frIndex = Math.min(idx, 3);
+      fd.set("matiere", FR_MAT[frIndex]);
+    }
+  }
+  // -------------------------------------------------------------------------------
+
   // Récup session
   useEffect(() => {
     fetch("/api/session", { cache: "no-store" })
@@ -83,11 +125,11 @@ export default function AutreArticleForm() {
 
       // ----- MAPPING requis par le contrôleur -----
       const designation = (fd.get("designation") || "").toString().trim();
-      const dimensions  = (fd.get("dimensions")  || "").toString().trim();
-      const matiere     = (fd.get("matiere")     || "").toString().trim();
-      const exigences   = (fd.get("exigences")   || "").toString().trim();
-      const remarques   = (fd.get("remarques")   || "").toString().trim();
-      const descLibre   = (fd.get("description") || "").toString().trim(); // <-- nouveau champ
+      const dimensions = (fd.get("dimensions") || "").toString().trim();
+      const matiere = (fd.get("matiere") || "").toString().trim();
+      const exigences = (fd.get("exigences") || "").toString().trim();
+      const remarques = (fd.get("remarques") || "").toString().trim();
+      const descLibre = (fd.get("description") || "").toString().trim(); // <-- nouveau champ
 
       const titre = designation || (matiere ? `Article (${matiere})` : "Article");
 
@@ -96,8 +138,8 @@ export default function AutreArticleForm() {
       if (!description) {
         const parts = [];
         if (dimensions) parts.push(`Dimensions : ${dimensions}`);
-        if (exigences)  parts.push(`Exigences : ${exigences}`);
-        if (remarques)  parts.push(`Remarques : ${remarques}`);
+        if (exigences) parts.push(`Exigences : ${exigences}`);
+        if (remarques) parts.push(`Remarques : ${remarques}`);
         description = parts.join("\n");
       }
 
@@ -108,6 +150,9 @@ export default function AutreArticleForm() {
       const userId = localStorage.getItem("id");
       if (userId) fd.append("user", userId);
 
+      // ✅ NORMALISATION EN -> FR (aucun impact visuel/UX)
+      normalizeMatiere(fd);
+
       const res = await fetch("/api/devis/autre", {
         method: "POST",
         body: fd,
@@ -115,7 +160,7 @@ export default function AutreArticleForm() {
       });
 
       let payload = null;
-      try { payload = await res.json(); } catch {}
+      try { payload = await res.json(); } catch { }
 
       if (res.ok) {
         finishedRef.current = true;
@@ -149,11 +194,11 @@ export default function AutreArticleForm() {
 
       <form onSubmit={onSubmit}>
         {/* Champs principaux */}
-        <SectionTitle>{t("mainInfo") || "Informations principales"}</SectionTitle>
+        <SectionTitle>{t("mainInfo")}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <Input name="designation" label={t("designation")} required />
-          <Input name="dimensions"  label={t("dimensions")} />
-          <Input name="quantite"    label={t("quantity")} type="number" min="1" required />
+          <Input name="dimensions" label={t("dimensions")} />
+          <Input name="quantite" label={t("quantity")} type="number" min="1" required />
           <SelectBase
             name="matiere"
             label={t("material")}
@@ -165,13 +210,13 @@ export default function AutreArticleForm() {
 
         {/* Description libre */}
         <div className="grid grid-cols-1 gap-4 md:gap-6 mt-6">
-          <TextArea name="description" label={t("description") || "Description"} />
+          <TextArea name="description" label={t("description")} />
         </div>
 
         {/* Fichiers */}
         <SectionTitle className="mt-8">{t("docs")} <RequiredMark /></SectionTitle>
         <p className="text-sm text-gray-500 mb-3">
-          Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
+          {t("acceptedTypes")}
         </p>
         <label
           htmlFor="docs"
@@ -184,7 +229,7 @@ export default function AutreArticleForm() {
         >
           {files.length === 0 ? (
             <p className="text-base font-medium text-[#002147]">
-              Cliquez ou glissez-déposez vos fichiers ici
+              {t("dropHere")}
             </p>
           ) : (
             <div className="w-full text-center">
@@ -238,9 +283,9 @@ export default function AutreArticleForm() {
 
           <div ref={alertRef} aria-live="polite" className="mt-3">
             {loading ? (
-              <Alert type="info"    message={t("sending")} />
+              <Alert type="info" message={t("sending")} />
             ) : err ? (
-              <Alert type="error"   message={err} />
+              <Alert type="error" message={err} />
             ) : ok ? (
               <Alert type="success" message={ok} />
             ) : null}
@@ -310,7 +355,18 @@ function SelectBase({ label, name, options = [], required, placeholder }) {
         required={required}
         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-white
                    text-[#002147] text-[15px] font-medium
-                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147] pr-10"
+        style={{
+          appearance: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 0.875rem center",
+          backgroundSize: "1rem 1rem",
+        }}
+      >
         <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
         {options.map((o) => (
           <option key={o} value={o} style={{ color: "#002147" }}>{o}</option>
@@ -319,6 +375,7 @@ function SelectBase({ label, name, options = [], required, placeholder }) {
     </div>
   );
 }
+
 function TextArea({ label, name }) {
   return (
     <div className="space-y-1">

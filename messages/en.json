@@ -93,10 +93,15 @@
       "title": " Extension Springs",
       "diameterWire": "Wire diameter (d)",
       "diameterExt": "Outer diameter (De)",
+      "schema": "Schema",
+      "acceptedTypes": "Accepted types: .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Click or drag and drop your files here",
+      "maindim": "Main specifications",
       "freeLength": "Free length (Lo)",
       "totalCoils": "Total coils",
       "quantity": "Quantity",
       "material": "Material",
+      "selectPlaceholder": "-- Select --",
       "materialOptions": [
         "Black spring wire (SM, SH)",
         "Galvanized spring wire",
@@ -132,7 +137,7 @@
       "sendSuccess": "Request sent successfully!",
       "sendError": "Error while sending.",
       "networkError": "Network error.",
-      "sending": "Sending...",
+      "sending": "Your request is being sent, please wait...",
       "loginToSend": "Login to send",
       "reservedClients": "Reserved for clients",
       "sendRequest": "Send request"
@@ -140,6 +145,10 @@
     "compressionForm": {
       "title": " Compression Springs",
       "schemaAlt": "Compression spring diagram",
+      "schema": "Schema",
+      "acceptedTypes": "Accepted types: .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Click or drag and drop your files here",
+      "maindim": "Main specifications",
       "diameterWire": "Wire diameter (d)",
       "diameterExt": "Outer diameter (DE)",
       "boreDiameter": "Bore diameter (H)",
@@ -150,6 +159,7 @@
       "pitch": "Pitch",
       "quantity": "Quantity",
       "material": "Material",
+      "loginToSend": "Login to send",
       "materialOptions": [
         "Black spring wire (SM, SH)",
         "Galvanized spring wire",
@@ -175,16 +185,21 @@
       "sendSuccess": "Request sent successfully!",
       "sendError": "Error while sending.",
       "networkError": "Network error.",
-      "sending": "Sending...",
+      "sending": "Your request is being sent, please wait...",
       "sendRequest": "Send request"
     },
     "torsionForm": {
       "title": " Torsion Springs",
       "schemaAlt": "Torsion spring diagram",
+      "acceptedTypes": "Accepted types: .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Click or drag and drop your files here",
       "diameterWire": "Wire diameter (d)",
+      "maindim": "Main specifications",
+      "schema": "Schema",
       "diameterExt": "Outer diameter (De)",
       "diameterInt": "Inner diameter (Di)",
       "bodyLength": "Body length (Lc)",
+      "loginToSend": "Login to send",
       "angle": "Torsion angle (°)",
       "totalCoils": "Total coils",
       "L1": "Leg length 1 (L1)",
@@ -213,15 +228,21 @@
       "sendSuccess": "Request sent successfully!",
       "sendError": "Error while sending.",
       "networkError": "Network error.",
-      "sending": "Sending...",
+      "sending": "Your request is being sent, please wait...",
       "sendRequest": "Send request"
     },
     "filForm": {
       "title": " Straightened / Cut Wire",
       "schemaAlt": "Metal wire bundle",
+      "schema": "Schema",
+      "acceptedTypes": "Accepted types: .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Click or drag and drop your files here",
+      "maindim": "Main specifications",
       "length": "Straightened wire length (mm or m)",
       "diameter": "Wire diameter (mm)",
+      "loginToSend": "Login to send",
       "unit": "Quantity unit",
+      "unitLong": "Length unit",
       "unitOptions": [
         "Pieces",
         "Kg"
@@ -241,13 +262,18 @@
       "sendSuccess": "Request sent successfully!",
       "sendError": "Error while sending.",
       "networkError": "Network error.",
-      "sending": "Sending...",
+      "sending": "Your request is being sent, please wait...",
       "sendRequest": "Send request"
     },
     "grilleForm": {
       "title": " Metal Grid",
       "schemaAlt": "Metal grid with zoom",
+      "schema": "Schema",
+      "acceptedTypes": "Accepted types: .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Click or drag and drop your files here",
+      "maindim": "Main specifications",
       "L": "Length (L)",
+      "loginToSend": "Login to send",
       "l": "Width (l)",
       "nbLong": "Number of longitudinal bars",
       "nbTrans": "Number of transverse bars",
@@ -255,6 +281,7 @@
       "pas2": "Transverse spacing (Pitch 2)",
       "D2": "Wire diameter of bars (D₂)",
       "D1": "Wire diameter of frame (D₁)",
+      "selectPlaceholder": "-- Select --",
       "quantity": "Quantity",
       "material": "Material",
       "materialChecks": [
@@ -274,13 +301,17 @@
       "sendSuccess": "Request sent successfully!",
       "sendError": "Error while sending.",
       "networkError": "Network error.",
-      "sending": "Sending...",
+      "sending": "Your request is being sent, please wait...",
       "sendRequest": "Send request"
     },
     "autreForm": {
-      "title": "🔧 Other Metal Wire Product",
+      "title": " Other Metal Wire Product",
       "designation": "Designation / Reference",
+      "acceptedTypes": "Accepted types: .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt",
+      "dropHere": "Click or drag and drop your files here",
       "dimensions": "Main dimensions",
+      "mainInfo": "Main information",
+      "loginToSend": "Login to send",
       "quantity": "Quantity",
       "material": "Material",
       "materialOptions": [
@@ -296,8 +327,84 @@
       "sendSuccess": "Request sent successfully!",
       "sendError": "Error while sending.",
       "networkError": "Network error.",
-      "sending": "Sending...",
-      "sendRequest": "Send request"
+      "sending": "Your request is being sent, please wait...",
+      "sendRequest": "Send request",
+      "description": "Description"
+    }
+  },
+  "profile": {
+    "userFallback": "User",
+    "lang": {
+      "fr": "French",
+      "en": "English"
+    },
+    "account": {
+      "title": "Account",
+      "unknownEmail": "Unknown email",
+      "fields": {
+        "lastName": "Last name",
+        "firstName": "First name",
+        "phone": "Phone",
+        "address": "Address",
+        "accountType": "Account type", 
+        "loginEmail": "Email" 
+      },
+      "types": {
+        "personal": "Personal", 
+        "company": "Company" 
+      }
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "home": "Home",
+      "homeHint": "Back to homepage",
+      "orders": "My orders",
+      "ordersHint": "History & tracking",
+      "help": "Help & support",
+      "helpHint": "FAQ, contact",
+      "security": "Security",
+      "securityHint": "Read-only account info"
+    },
+    "settings": {
+      "title": "App settings",
+      "language": "Language",
+      "languageHint": "Change the site language"
+    },
+    "about": {
+      "title": "About",
+      "text": "MTR Industry — Customer space. Version 1.0"
+    }
+  },
+  "support": {
+    "title": "Help & Support",
+    "intro": "Need help? Check our FAQ or contact our team.",
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": {
+        "t": "How do I change my password?",
+        "a": "Go to Settings > Security, then click “Change my password”."
+      },
+      "q2": {
+        "t": "I can't sign in, what should I do?",
+        "a": "Check your email and password. If it still fails, use “Forgot password”."
+      },
+      "q3": {
+        "t": "How can I contact support?",
+        "a": "You can reach us by email, phone or live chat."
+      }
+    },
+    "contact": {
+      "title": "Contact us",
+      "email": "support@mtr.com",
+      "phone": "+216 71 234 567",
+      "chat": "Live chat (9am–6pm)"
+    },
+    "resources": {
+      "title": "Useful resources",
+      "guide": "User guide",
+      "faq": "Full FAQ center",
+      "privacy": "Privacy policy"
     }
   }
+
 }

@@ -25,9 +25,36 @@ export default function GrilleMetalliqueForm() {
   const fileInputRef = useRef(null);
 
   // i18n options
-  const materialOptions = t.raw("materialChecks") || ["Acier galvanisé","Acier Noir"];
-  const finishOptions   = t.raw("finishChecks")   || ["Zingage","Peinture","Aucun"];
+  const materialOptions = t.raw("materialChecks") || ["Acier galvanisé", "Acier Noir"];
+  const finishOptions = t.raw("finishChecks") || ["Zingage", "Peinture", "Aucun"];
   const selectPlaceholder = t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
+
+  // --- AJOUT MINIMAL : normaliser EN -> FR au moment de l’envoi (aucun impact UI) ---
+  const FR_MAT = ["Acier galvanisé", "Acier Noir", "Inox"];
+  const EN_TO_FR_MAT = [
+    { fr: "Acier galvanisé", en: ["Galvanized steel", "Galvanized steel wire", "Galvanised steel", "Galvanised steel wire", "Galvanization steel"] },
+    { fr: "Acier Noir", en: ["Black steel", "Black steel wire", "Blackened steel"] },
+    { fr: "Inox", en: ["Stainless steel", "Stainless steel wire", "Inox", "Stainless"] },
+  ];
+  const FR_FIN = ["Zingage", "Peinture", "Aucun"];
+  const EN_TO_FR_FIN = [
+    { fr: "Zingage", en: ["Zinc plating", "Galvanizing", "Galvanising", "Galvanization", "Galvanisation"] },
+    { fr: "Peinture", en: ["Painting", "Painted", "Paint"] },
+    { fr: "Aucun", en: ["None", "No finish", "Without finish"] },
+  ];
+  function normalizeOne(fd, name, frList, groups) {
+    const v = fd.get(name);
+    if (!v) return;
+    if (frList.includes(v)) return; // déjà FR
+    const low = String(v).toLowerCase().trim();
+    for (const { fr, en } of groups) {
+      if (en.some(e => e.toLowerCase() === low)) {
+        fd.set(name, fr);
+        return;
+      }
+    }
+  }
+  // -------------------------------------------------------------------------------
 
   // Récup session
   useEffect(() => {
@@ -91,6 +118,10 @@ export default function GrilleMetalliqueForm() {
       const userId = localStorage.getItem("id");
       if (userId) fd.append("user", userId);
 
+      // ✅ Normalisation (si l’utilisateur est en EN)
+      normalizeOne(fd, "matiere", FR_MAT, EN_TO_FR_MAT);
+      normalizeOne(fd, "finition", FR_FIN, EN_TO_FR_FIN);
+
       const res = await fetch("/api/devis/grille", {
         method: "POST",
         body: fd,
@@ -98,7 +129,7 @@ export default function GrilleMetalliqueForm() {
       });
 
       let payload = null;
-      try { payload = await res.json(); } catch {}
+      try { payload = await res.json(); } catch { }
 
       if (res.ok) {
         finishedRef.current = true;
@@ -132,14 +163,12 @@ export default function GrilleMetalliqueForm() {
         <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#002147]">
           {t("title")}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {t.has("subtitle") ? t("subtitle") : ""}
-        </p>
+
       </div>
 
       <form onSubmit={onSubmit}>
         {/* Schéma */}
-        <SectionTitle>{t.has("schemaTitle") ? t("schemaTitle") : "Schéma"}</SectionTitle>
+        <SectionTitle>{t("schema")}</SectionTitle>
         <div className="mb-6 flex justify-center">
           <Image
             src={grilleImg}
@@ -152,16 +181,16 @@ export default function GrilleMetalliqueForm() {
         </div>
 
         {/* Dimensions / Spec */}
-        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Dimensions principales"}</SectionTitle>
+        <SectionTitle>{t("maindim")}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <Input name="L"        label={t("L")} required />
-          <Input name="l"        label={t("l")} required />
-          <Input name="nbLong"   label={t("nbLong")} required />
-          <Input name="nbTrans"  label={t("nbTrans")} required />
-          <Input name="pas1"     label={t("pas1")} required />
-          <Input name="pas2"     label={t("pas2")} required />
-          <Input name="D2"       label={t("D2")} required />
-          <Input name="D1"       label={t("D1")} required />
+          <Input name="L" label={t("L")} required />
+          <Input name="l" label={t("l")} required />
+          <Input name="nbLong" label={t("nbLong")} required />
+          <Input name="nbTrans" label={t("nbTrans")} required />
+          <Input name="pas1" label={t("pas1")} required />
+          <Input name="pas2" label={t("pas2")} required />
+          <Input name="D2" label={t("D2")} required />
+          <Input name="D1" label={t("D1")} required />
           <Input name="quantite" label={t("quantity")} type="number" min="1" required />
 
           <SelectBase
@@ -183,8 +212,8 @@ export default function GrilleMetalliqueForm() {
         {/* Fichiers */}
         <SectionTitle className="mt-8">{t("docs")} <RequiredMark /></SectionTitle>
         <p className="text-sm text-gray-500 mb-3">
-          Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
-        </p>
+          {t("acceptedTypes")}       
+           </p>
 
         <label
           htmlFor="docs"
@@ -197,8 +226,7 @@ export default function GrilleMetalliqueForm() {
         >
           {files.length === 0 ? (
             <p className="text-base font-medium text-[#002147]">
-              Cliquez ou glissez-déposez vos fichiers ici
-            </p>
+              {t("dropHere")}            </p>
           ) : (
             <div className="w-full text-center">
               <p className="text-sm font-semibold text-[#002147] mb-2">
@@ -252,9 +280,9 @@ export default function GrilleMetalliqueForm() {
 
           <div ref={alertRef} aria-live="polite" className="mt-3">
             {loading ? (
-              <Alert type="info"    message="Votre demande de devis est en cours d'envoi, veuillez patienter…" />
+              <Alert type="info" message="Votre demande de devis est en cours d'envoi, veuillez patienter…" />
             ) : err ? (
-              <Alert type="error"   message={err} />
+              <Alert type="error" message={err} />
             ) : ok ? (
               <Alert type="success" message={ok} />
             ) : null}
@@ -292,7 +320,7 @@ function Alert({ type = "info", message }) {
     </div>
   );
 }
-function Input({ label, name, required, type="text", min }) {
+function Input({ label, name, required, type = "text", min }) {
   return (
     <div className="space-y-1">
       {label && (
@@ -311,7 +339,7 @@ function Input({ label, name, required, type="text", min }) {
     </div>
   );
 }
-function SelectBase({ label, name, options = [], required, placeholder="Sélectionnez…" }) {
+function SelectBase({ label, name, options = [], required, placeholder = "Sélectionnez…" }) {
   return (
     <div className="space-y-1 w-full">
       {label && (
@@ -324,7 +352,18 @@ function SelectBase({ label, name, options = [], required, placeholder="Sélecti
         required={required}
         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-white
                    text-[#002147] text-[15px] font-medium
-                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147] pr-10"
+        style={{
+          appearance: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 0.875rem center",
+          backgroundSize: "1rem 1rem",
+        }}
+      >
         <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
         {options.map((o) => (
           <option key={o} value={o} style={{ color: "#002147" }}>{o}</option>
@@ -333,6 +372,7 @@ function SelectBase({ label, name, options = [], required, placeholder="Sélecti
     </div>
   );
 }
+
 function TextArea({ label, name }) {
   return (
     <div className="space-y-1">

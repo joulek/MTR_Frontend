@@ -24,11 +24,92 @@ export default function TorsionForm() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // i18n options
-  const materialOptions   = t.raw("materialOptions")   || [];
-  const windingOptions    = t.raw("windingOptions")    || []; // enroulement
-  const orientationOptions= t.raw("orientationOptions")|| []; // optionnel
+  // i18n options (affichage seulement)
+  const materialOptions = t.raw("materialOptions") || [];
+  const windingOptions = t.raw("windingOptions") || []; // enroulement
+  const orientationOptions = t.raw("orientationOptions") || []; // optionnel
   const selectPlaceholder = t.has("selectPlaceholder") ? t("selectPlaceholder") : "Sélectionnez…";
+
+  // --------------------------------------------------------------------
+  //  ✅ Ajout minimal : mapping des labels EN -> valeurs FR attendues
+  //     (aucun changement d’UI, on convertit juste avant l’envoi)
+  const FR_MATIERES = [
+    "Fil ressort noir (SM, SH)",
+    "Fil ressort galvanisé",
+    "Fil ressort inox",
+  ];
+  const EN_MATIERES = [
+    "Black spring wire (SM, SH)",
+    "Galvanized spring wire",
+    "Stainless steel spring wire",
+  ];
+
+  const FR_ENROULEMENTS = ["Enroulement gauche", "Enroulement droite"];
+  const EN_ENROULEMENTS = ["Left winding", "Right winding"];
+
+  // Certains projets ont aussi des types d’accrochage sur torsion :
+  const FR_ACCROCHAGES = [
+    "Anneau Allemand",
+    "Double Anneau Allemand",
+    "Anneau tangent",
+    "Anneau allongé",
+    "Boucle Anglaise",
+    "Anneau tournant",
+    "Conification avec vis",
+  ];
+  const EN_ACCROCHAGES = [
+    "German hook",
+    "Double German hook",
+    "Tangent hook",
+    "Extended hook",
+    "English loop",
+    "Swivel hook",
+    "Conical with screw",
+  ];
+
+  // Petits synonymes tolérés
+  const EXTRA_SYNONYMS = {
+    matiere: {
+      "acier inoxydable": "Fil ressort inox",
+      inox: "Fil ressort inox",
+      galvanized: "Fil ressort galvanisé",
+    },
+    enroulement: {
+      gauche: "Enroulement gauche",
+      droite: "Enroulement droite",
+      left: "Enroulement gauche",
+      right: "Enroulement droite",
+    },
+  };
+
+  function normalizeField(fd, name, frList, enList, extras = {}) {
+    let v = fd.get(name);
+    if (!v) return;
+    if (frList.includes(v)) return; // déjà FR exact
+
+    // Essai 1: correspondance exacte EN
+    const i = enList.indexOf(v);
+    if (i >= 0) {
+      fd.set(name, frList[i]);
+      return;
+    }
+    // Essai 2: en lower-case
+    const low = String(v).toLowerCase().trim();
+    const iLow = enList.map(s => s.toLowerCase()).indexOf(low);
+    if (iLow >= 0) {
+      fd.set(name, frList[iLow]);
+      return;
+    }
+    // Essai 3: synonymes
+    if (extras[low]) fd.set(name, extras[low]);
+  }
+  function normalizeDual(fd, baseName, frList, enList, extras = {}) {
+    const a = baseName;
+    const b = `spec.${baseName}`;
+    if (fd.has(b)) normalizeField(fd, b, frList, enList, extras);
+    if (fd.has(a)) normalizeField(fd, a, frList, enList, extras);
+  }
+  // --------------------------------------------------------------------
 
   // Récup session
   useEffect(() => {
@@ -92,6 +173,12 @@ export default function TorsionForm() {
       const userId = localStorage.getItem("id");
       if (userId) fd.append("user", userId);
 
+      // ✅ Normalisation EN -> FR (aucun changement d’UI, seulement la donnée envoyée)
+      normalizeDual(fd, "matiere", FR_MATIERES, EN_MATIERES, EXTRA_SYNONYMS.matiere);
+      normalizeDual(fd, "enroulement", FR_ENROULEMENTS, EN_ENROULEMENTS, EXTRA_SYNONYMS.enroulement);
+      // si ton form inclut aussi typeAccrochage pour torsion :
+      normalizeDual(fd, "typeAccrochage", FR_ACCROCHAGES, EN_ACCROCHAGES);
+
       const res = await fetch("/api/devis/torsion", {
         method: "POST",
         body: fd,
@@ -99,7 +186,7 @@ export default function TorsionForm() {
       });
 
       let payload = null;
-      try { payload = await res.json(); } catch {}
+      try { payload = await res.json(); } catch { }
 
       if (res.ok) {
         finishedRef.current = true;
@@ -133,12 +220,11 @@ export default function TorsionForm() {
         <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#002147]">
           {t("title")}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">{t.has("subtitle") ? t("subtitle") : ""}</p>
       </div>
 
       <form onSubmit={onSubmit}>
         {/* Schéma */}
-        <SectionTitle>{t.has("schemaTitle") ? t("schemaTitle") : "Schéma"}</SectionTitle>
+        <SectionTitle>{t("schema")}</SectionTitle>
         <div className="mb-6 flex justify-center">
           <Image
             src={torsionImg}
@@ -151,16 +237,16 @@ export default function TorsionForm() {
         </div>
 
         {/* Dimensions */}
-        <SectionTitle>{t.has("mainDims") ? t("mainDims") : "Dimensions principales"}</SectionTitle>
+        <SectionTitle>{t("maindim")}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <Input name="d"         label={t("diameterWire")} required />
-          <Input name="De"        label={t("diameterExt")} required />
-          <Input name="Lc"        label={t("bodyLength")} required />
-          <Input name="angle"     label={t("angle")} required />
-          <Input name="nbSpires"  label={t("totalCoils")} required />
-          <Input name="L1"        label={t("L1")} required />
-          <Input name="L2"        label={t("L2")} required />
-          <Input name="quantite"  label={t("quantity")} type="number" min="1" required />
+          <Input name="d" label={t("diameterWire")} required />
+          <Input name="De" label={t("diameterExt")} required />
+          <Input name="Lc" label={t("bodyLength")} required />
+          <Input name="angle" label={t("angle")} required />
+          <Input name="nbSpires" label={t("totalCoils")} required />
+          <Input name="L1" label={t("L1")} required />
+          <Input name="L2" label={t("L2")} required />
+          <Input name="quantite" label={t("quantity")} type="number" min="1" required />
           <SelectBase
             name="matiere"
             label={t("material")}
@@ -175,7 +261,7 @@ export default function TorsionForm() {
             placeholder={selectPlaceholder}
             required
           />
-          {/* Optionnel : orientation si tu l’utilises côté i18n (non requise par le schéma) */}
+          {/* Optionnel : orientation si je l’utilises côté i18n (non requise par le schéma) */}
           {orientationOptions.length > 0 && (
             <SelectBase
               name="orientation"
@@ -189,7 +275,7 @@ export default function TorsionForm() {
         {/* Fichiers */}
         <SectionTitle className="mt-8">{t("docs")} <RequiredMark /></SectionTitle>
         <p className="text-sm text-gray-500 mb-3">
-          Types acceptés : .pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .txt
+          {t("acceptedTypes")}
         </p>
 
         <label
@@ -203,7 +289,7 @@ export default function TorsionForm() {
         >
           {files.length === 0 ? (
             <p className="text-base font-medium text-[#002147]">
-              Cliquez ou glissez-déposez vos fichiers ici
+              {t("dropHere")}
             </p>
           ) : (
             <div className="w-full text-center">
@@ -238,7 +324,7 @@ export default function TorsionForm() {
         </div>
 
         {/* Submit + alertes */}
-             <div className="mt-8">
+        <div className="mt-8">
           <button
             type="submit"
             disabled={disabled}
@@ -275,7 +361,7 @@ export default function TorsionForm() {
   );
 }
 
-/* === UI helpers (mêmes styles que TractionForm) === */
+/* === UI helpers (mêmes styles que ta version) === */
 function SectionTitle({ children, className = "" }) {
   return (
     <div className={`mb-3 mt-4 ${className}`}>
@@ -302,7 +388,7 @@ function Alert({ type = "info", message }) {
     </div>
   );
 }
-function Input({ label, name, required, type="text", min }) {
+function Input({ label, name, required, type = "text", min }) {
   return (
     <div className="space-y-1">
       {label && (
@@ -321,7 +407,7 @@ function Input({ label, name, required, type="text", min }) {
     </div>
   );
 }
-function SelectBase({ label, name, options = [], required, placeholder="Sélectionnez…" }) {
+function SelectBase({ label, name, options = [], required, placeholder = "Sélectionnez…" }) {
   return (
     <div className="space-y-1 w-full">
       {label && (
@@ -334,7 +420,18 @@ function SelectBase({ label, name, options = [], required, placeholder="Sélecti
         required={required}
         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-white
                    text-[#002147] text-[15px] font-medium
-                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]">
+                   focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147] pr-10"
+        style={{
+          appearance: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23002147' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E\")",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 0.875rem center",
+          backgroundSize: "1rem 1rem",
+        }}
+      >
         <option value="" style={{ color: "#64748b" }}>{placeholder}</option>
         {options.map((o) => (
           <option key={o} value={o} style={{ color: "#002147" }}>{o}</option>
