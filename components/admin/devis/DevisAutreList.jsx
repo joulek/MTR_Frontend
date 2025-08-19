@@ -31,7 +31,7 @@ function cleanFilename(name = "") {
   return name;
 }
 
-export default function AdminDevisTorsionPage() {
+export default function DevisAutrePage() {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);

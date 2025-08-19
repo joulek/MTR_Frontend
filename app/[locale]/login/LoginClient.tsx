@@ -14,13 +14,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  const handleSubmit = async (e) => {
+  const [remember, setRemember] = useState(false);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
     const email = formData.get("email");
     const password = formData.get("password");
 
@@ -30,26 +30,21 @@ export default function LoginPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ email, password }),
+          credentials: "include", // pour recevoir le cookie HttpOnly
+          body: JSON.stringify({ email, password, rememberMe: remember }), // ← NEW
         }
       );
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // مهم برشة
-        body: JSON.stringify({ email, password }),
-      });
 
       const data = await res.json();
 
       if (!res.ok) {
         setError(data?.message || t("errors.loginFailed"));
       } else {
-        localStorage.setItem("userData", JSON.stringify(data));
+        // tu peux garder un tout petit cache côté client si tu veux
+        localStorage.setItem("userRole", data.role || data.user?.role || "");
+        localStorage.setItem("rememberMe", remember ? "1" : "0");
+
         const role = data.role || data.user?.role;
-        document.cookie = `token=${data.token}; path=/; max-age=604800`; // 7j
-        document.cookie = `role=${role}; path=/; max-age=604800`;
         if (role === "admin") router.push(`/${locale}/admin`);
         else if (role === "client") router.push(`/${locale}/client`);
         else router.push(`/${locale}/home`);
@@ -174,11 +169,13 @@ export default function LoginPage() {
 
               {/* Options */}
               <div className="flex items-center justify-between text-sm">
-                <label
-                  className="inline-flex items-center gap-2 select-none text-[#555555]"
-                  style={{ fontFamily: "'Lora', serif" }}
-                >
-                  <input type="checkbox" className="accent-[#002147]" />
+                <label className="inline-flex items-center gap-2 select-none text-[#555]" style={{ fontFamily: "'Lora', serif" }}>
+                  <input
+                    type="checkbox"
+                    className="accent-[#002147]"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)} // ← NEW
+                  />
                   {t("rememberMe")}
                 </label>
                 <a

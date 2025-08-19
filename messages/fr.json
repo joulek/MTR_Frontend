@@ -424,6 +424,46 @@
       "faq": "Centre de FAQ complet",
       "privacy": "Politique de confidentialité"
     }
+  },
+  "admin": {
+    "products": {
+      "title": "Produits",
+      "new": "Nouveau produit",
+      "name": "Nom",
+      "description": "Description",
+      "category": "Catégorie",
+      "images": "Images",
+      "chooseCategory": "-- Choisir une catégorie --",
+      "create": "Ajouter",
+      "update": "Mettre à jour",
+      "delete": "Supprimer",
+      "list": "Liste des produits",
+      "noData": "Aucun produit",
+      "actions": "Actions",
+      "created": "Produit créé avec succès",
+      "updated": "Produit mis à jour",
+      "deleted": "Produit supprimé",
+      "loading": "Chargement...",
+      "confirmDelete": "Confirmer la suppression ?"
+    },
+    "categories": {
+      "title": "Catégories",
+      "new": "Nouvelle catégorie",
+      "name": "Nom",
+      "description": "Description",
+      "create": "Ajouter",
+      "update": "Mettre à jour",
+      "delete": "Supprimer",
+      "list": "Liste des catégories",
+      "noData": "Aucune catégorie",
+      "actions": "Actions",
+      "created": "Catégorie créée avec succès",
+      "updated": "Catégorie mise à jour",
+      "deleted": "Catégorie supprimée",
+      "loading": "Chargement...",
+      "confirmDelete": "Confirmer la suppression ?"
+    }
   }
-
 }
+
+

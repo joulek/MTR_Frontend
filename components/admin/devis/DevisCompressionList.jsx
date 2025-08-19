@@ -31,7 +31,7 @@ function cleanFilename(name = "") {
   return name;
 }
 
-export default function AdminDevisPage() {
+export default function DevisCompressionList() {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
