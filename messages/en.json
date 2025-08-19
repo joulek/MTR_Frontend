@@ -1,5 +1,17 @@
 {
   "auth": {
+    "forgot": "Forgot password?",
+  "forgotTitle": "Forgot password",
+  "forgotHint": "Enter your email, we will send you a reset link (valid for 1h).",
+  "sendReset": "Send reset link",
+  "forgotSent": "If an account exists, an email has been sent.",
+  "resetTitle": "Reset password",
+  "resetHint": "Choose a new password.",
+  "newPassword": "New password",
+  "confirmPassword": "Confirm password",
+  "resetSubmit": "Reset",
+  "resetSuccess": "Password successfully reset! Redirecting...",
+  "backToLogin": "← Back to login",
     "loginTitle": "Sign in",
     "registerTitle": "Create account",
     "lastName": "Last name",
@@ -334,33 +346,37 @@
   },
   "profile": {
     "userFallback": "User",
-    "lang": {
-      "fr": "French",
-      "en": "English"
-    },
+    "lang": { "fr": "French", "en": "English" },
     "account": {
       "title": "Account",
-      "unknownEmail": "Unknown email",
+      "unknownEmail": "unknown email",
+      "personalInfo": "Personal details",
+      "companyInfo": "Company details",
       "fields": {
         "lastName": "Last name",
         "firstName": "First name",
         "phone": "Phone",
         "address": "Address",
-        "accountType": "Account type", 
-        "loginEmail": "Email" 
+        "accountType": "Account type",
+        "loginEmail": "Email",
+        "cin": "National ID",
+        "currentPosition": "Current position",
+        "matriculeFiscal": "Tax ID",
+        "companyName": "Company name"
       },
       "types": {
-        "personal": "Personal", 
-        "company": "Company" 
+        "personal": "Personal",
+        "company": "Company",
+        "undefined": "Undefined"
       }
     },
     "shortcuts": {
       "title": "Shortcuts",
       "home": "Home",
-      "homeHint": "Back to homepage",
+      "homeHint": "Back to home",
       "orders": "My orders",
       "ordersHint": "History & tracking",
-      "help": "Help & support",
+      "help": "Help",
       "helpHint": "FAQ, contact",
       "security": "Security",
       "securityHint": "Read-only account info"
@@ -368,13 +384,15 @@
     "settings": {
       "title": "App settings",
       "language": "Language",
-      "languageHint": "Change the site language"
+      "languageHint": "Change site language"
     },
     "about": {
       "title": "About",
-      "text": "MTR Industry — Customer space. Version 1.0"
-    }
-  },
+      "text": "MTR Industry — Client space. Version 1.0"
+    },
+    "loading": "Loading…"
+  }
+,
   "support": {
     "title": "Help & Support",
     "intro": "Need help? Check our FAQ or contact our team.",

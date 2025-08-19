@@ -1,5 +1,17 @@
 {
   "auth": {
+    "forgot": "Mot de passe oublié ?",
+    "forgotTitle": "Mot de passe oublié",
+    "forgotHint": "Entrez votre email, nous vous enverrons un lien de réinitialisation (valide 1h).",
+     "sendReset": "Envoyer le lien",
+    "forgotSent": "Si un compte existe, un email a été envoyé.",
+    "resetTitle": "Réinitialiser le mot de passe",
+    "resetHint": "Choisissez un nouveau mot de passe.",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "resetSubmit": "Réinitialiser",
+    "resetSuccess": "Mot de passe réinitialisé avec succès ! Redirection...",
+    "backToLogin": "← Retour à la connexion",
     "loginTitle": "Se connecter",
     "registerTitle": "Créer un compte",
     "lastName": "Nom",
@@ -336,24 +348,28 @@
   },
   "profile": {
     "userFallback": "Utilisateur",
-    "lang": {
-      "fr": "Français",
-      "en": "English"
-    },
+    "lang": { "fr": "Français", "en": "English" },
     "account": {
       "title": "Compte",
       "unknownEmail": "email inconnu",
+      "personalInfo": "Informations personnelles",
+      "companyInfo": "Informations société",
       "fields": {
         "lastName": "Nom",
         "firstName": "Prénom",
         "phone": "Téléphone",
         "address": "Adresse",
-        "accountType": "Type de compte", 
-        "loginEmail": "Email" 
+        "accountType": "Type de compte",
+        "loginEmail": "Email",
+        "cin": "CIN",
+        "currentPosition": "Poste actuel",
+        "matriculeFiscal": "Matricule fiscal",
+        "companyName": "Nom de la société"
       },
       "types": {
-        "personal": "Personnel", 
-        "company": "Société" 
+        "personal": "Personnel",
+        "company": "Société",
+        "undefined": "Non défini"
       }
     },
     "shortcuts": {
@@ -375,7 +391,8 @@
     "about": {
       "title": "À propos",
       "text": "MTR Industry — Espace client. Version 1.0"
-    }
+    },
+    "loading": "Chargement…"
   },
   "support": {
     "title": "Aide & Support",

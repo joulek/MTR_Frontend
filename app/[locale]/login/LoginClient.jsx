@@ -182,7 +182,7 @@ export default function LoginPage() {
                   {t("rememberMe")}
                 </label>
                 <a
-                  href="#"
+                 href={`/${locale}/forgot-password`}
                   className="font-semibold hover:underline text-[#002147]"
                   style={{ fontFamily: "'Lora', serif" }}
                 >

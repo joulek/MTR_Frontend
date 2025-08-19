@@ -20,69 +20,72 @@ export default function RegisterPage() {
   const [okMsg, setOkMsg] = useState("");
 
 
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErr("");
-    setOkMsg("");
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setErr("");
+  setOkMsg("");
+  setLoading(true);
 
-    const fd = new FormData(e.currentTarget);
+  const form = e.currentTarget; // capture avant await (pour reset sûr)
+  const fd = new FormData(form);
 
-    const payload = {
-      nom: fd.get("lastName"), // correspond à "nom" backend
-      prenom: fd.get("firstName"),
-      email: fd.get("email"),
-      password: fd.get("password"),
-      numTel: fd.get("phone"),
-      adresse: fd.get("address"),
-      accountType: typeCompte,
+  // payload de base (les noms doivent matcher le backend)
+  const payload = {
+    nom: String(fd.get("lastName") || ""),     // -> nom
+    prenom: String(fd.get("firstName") || ""), // -> prenom
+    email: String(fd.get("email") || ""),
+    password: String(fd.get("password") || ""),
+    numTel: String(fd.get("phone") || ""),
+    adresse: String(fd.get("address") || ""),
+    accountType: typeCompte,                   // "personnel" | "societe"
+  };
+
+  // blocs dynamiques
+  if (typeCompte === "personnel") {
+    payload.personal = {
+      cin: Number(fd.get("cin") || 0),
+      posteActuel: String(fd.get("posteActuelPersonnel") || ""),
     };
+  } else if (typeCompte === "societe") {
+    payload.company = {
+      nomSociete: String(fd.get("nomSociete") || ""),
+      matriculeFiscal: String(fd.get("matriculeFiscale") || ""), // <-- orthographe backend
+      posteActuel: String(fd.get("posteActuelSociete") || ""),
+    };
+  }
 
-    if (typeCompte === "personnel") {
-      payload.personal = {
-        cin: Number(fd.get("cin")),
-        posteActuel: fd.get("posteActuelPersonnel"),
-      };
-    } else if (typeCompte === "societe") {
-      payload.societe = {
-        nomSociete: fd.get("nomSociete"),
-        matriculeFiscale: fd.get("matriculeFiscale"),
-        posteActuel: fd.get("posteActuelSociete"),
-      };
-    }
-
-
-    if (payload.typeCompte === "personnel") {
-      payload.cin = fd.get("cin") || "";
-      payload.posteActuel = fd.get("posteActuelPersonnel") || "";
-    } else if (payload.typeCompte === "societe") {
-      payload.nomSociete = fd.get("nomSociete") || "";
-      payload.matriculeFiscale = fd.get("matriculeFiscale") || "";
-      payload.posteActuel = fd.get("posteActuelSociete") || "";
-    }
-    const res = await fetch("/api/register", {
+  // requête backend (utilise bien ton endpoint réel)
+  try {
+    const res = await fetch(`${BACKEND}/api/auth/register-client`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include", // pour poser les cookies HTTP-only
       body: JSON.stringify(payload),
     });
+
     const data = await res.json();
 
     if (!res.ok) {
       setErr(data?.message || "Échec de l'inscription");
-    } else {
-      setOkMsg("Compte créé avec succès !");
-      router.push(`/${locale}/login`);
-
-      // Tu peux stocker si besoin:
-      // localStorage.setItem("userData", JSON.stringify(data));
-      // et rediriger ensuite, ex:
-      // router.push("/login");
-      e.currentTarget.reset();
-      setTypeCompte("");
-      setLoading(false);
+      setStatus("error");
+      return;
     }
-  };
+
+    setOkMsg("Compte créé avec succès !");
+    setStatus("success");
+    form.reset();
+    setTypeCompte("");
+    // tu peux soit rediriger direct, soit laisser un petit délai
+    router.push(`/${locale}/client`);
+  } catch (error) {
+    setErr("Erreur réseau");
+    setStatus("error");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-4 py-10">

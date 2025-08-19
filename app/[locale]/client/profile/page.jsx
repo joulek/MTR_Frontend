@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Home, FileText, HelpCircle, Lock } from "lucide-react"; // 👈 icons pro
-
+import { Home, FileText, HelpCircle } from "lucide-react";
 
 const NAVY = "#0B1E3A";
 const YELLOW = "#F7C600";
@@ -88,18 +87,10 @@ function LanguagePicker() {
 
 export default function ClientProfileReadOnly() {
   const t = useTranslations("profile");
-  const typeKeyMap = { personnel: "personal", societe: "company" };
   const router = useRouter();
   const locale = useLocale();
 
-  const [me, setMe] = useState({
-    nom: "",
-    prenom: "",
-    email: "",
-    numTel: "",
-    adresse: "",
-    accountType: "",
-  });
+  const [me, setMe] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +99,7 @@ export default function ClientProfileReadOnly() {
       try {
         const res = await fetch(`${BACKEND}/api/users/me`, {
           method: "GET",
-          credentials: "include", // ⚠️ indispensable pour envoyer les cookies
+          credentials: "include",
         });
 
         if (!res.ok) throw new Error("Unauthorized");
@@ -116,26 +107,19 @@ export default function ClientProfileReadOnly() {
         const u = await res.json();
         if (cancelled) return;
 
-        setMe({
-          nom: u?.nom || "",
-          prenom: u?.prenom || "",
-          email: u?.email || "",
-          numTel: u?.numTel || "",
-          adresse: u?.adresse || "",
-          accountType: u?.accountType || "",
-        });
+        setMe(u);
       } catch (err) {
         console.warn("Non authentifié ou erreur:", err.message);
-        // Optionnel : rediriger vers login si pas connecté
-        // router.push("/login");
       }
     })();
 
     return () => { cancelled = true; };
   }, []);
 
+  if (!me) return <p className="text-center mt-10">{t("loading")}</p>;
+
   const fullName =
-    [me.prenom, me.nom].filter(Boolean).join(" ") || t("userFallback");
+    [me?.prenom, me?.nom].filter(Boolean).join(" ") || t("userFallback");
   const initial = (fullName && fullName[0]) || "U";
 
   return (
@@ -143,10 +127,9 @@ export default function ClientProfileReadOnly() {
       <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* COLONNE GAUCHE : Compte */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Bandeau identité */}
           <Section title={t("account.title")}>
+            {/* Bandeau identité */}
             <div className="flex items-center gap-4">
-              {/* Initiale utilisateur */}
               <div
                 className="grid place-items-center rounded-xl"
                 style={{
@@ -162,68 +145,68 @@ export default function ClientProfileReadOnly() {
                 {initial}
               </div>
               <div className="flex-1">
-                <div className="text-xl font-extrabold" style={{ color: NAVY }}>{fullName}</div>
-                {/* Email sous le nom */}
+                <div className="text-xl font-extrabold" style={{ color: NAVY }}>
+                  {fullName}
+                </div>
                 <div className="text-sm text-gray-500">{me.email || t("account.unknownEmail")}</div>
               </div>
             </div>
 
-            {/* Infos */}
+            {/* Infos communes */}
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InfoItem label={t("account.fields.lastName")} value={me.nom} />
               <InfoItem label={t("account.fields.firstName")} value={me.prenom} />
               <InfoItem label={t("account.fields.phone")} value={me.numTel} />
               <InfoItem label={t("account.fields.address")} value={me.adresse} />
-              <InfoItem
-                label={t("account.fields.accountType")}
-                value={
-                  me.accountType
-                    ? t(`account.types.${typeKeyMap[me.accountType] ?? "personal"}`)
-                    : "-"
-                }
-              />
-
-
-              {/* Email de connexion (dans la liste d'infos aussi) */}
-              <InfoItem
-                label={t("account.fields.loginEmail")}
-                value={me.email}
-              />
+              <InfoItem label={t("account.fields.accountType")} value={me.accountType} />
+              <InfoItem label={t("account.fields.loginEmail")} value={me.email} />
             </div>
+
+            {/* Infos dynamiques */}
+            {me.accountType === "personnel" && (
+              <div className="mt-6">
+                <h3 className="font-bold text-gray-700 mb-3">{t("account.personalInfo")}</h3>
+                <InfoItem label={t("account.fields.cin")} value={me?.personal?.cin} />
+                <InfoItem label={t("account.fields.currentPosition")} value={me?.personal?.posteActuel} />
+              </div>
+            )}
+
+            {me.accountType === "societe" && (
+              <div className="mt-6">
+                <h3 className="font-bold text-gray-700 mb-3">{t("account.companyInfo")}</h3>
+                <InfoItem label={t("account.fields.matriculeFiscal")} value={me?.company?.matriculeFiscal} />
+                <InfoItem label={t("account.fields.companyName")} value={me?.company?.nomSociete} />
+                <InfoItem label={t("account.fields.currentPosition")} value={me?.company?.posteActuel} />
+              </div>
+            )}
           </Section>
 
           {/* Raccourcis */}
           <Section title={t("shortcuts.title")}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Accueil */}
               <Row
                 icon={<Home className="w-5 h-5 text-[#FDC500]" />}
                 label={t("shortcuts.home")}
                 hint={t("shortcuts.homeHint")}
                 onClick={() => router.push(`/${locale}/client`)}
               />
-
-              {/* Commandes */}
               <Row
                 icon={<FileText className="w-5 h-5 text-[#FDC500]" />}
                 label={t("shortcuts.orders")}
                 hint={t("shortcuts.ordersHint")}
                 onClick={() => router.push(`/${locale}/client/orders`)}
               />
-
-              {/* Aide & Support */}
               <Row
                 icon={<HelpCircle className="w-5 h-5 text-[#FDC500]" />}
                 label={t("shortcuts.help")}
                 hint={t("shortcuts.helpHint")}
                 onClick={() => router.push(`/${locale}/support`)}
               />
-
             </div>
           </Section>
         </div>
 
-        {/* COLONNE DROITE : Paramètres */}
+        {/* COLONNE DROITE */}
         <div className="space-y-6">
           <Section title={t("settings.title")}>
             <div className="flex items-center justify-between">
@@ -238,9 +221,7 @@ export default function ClientProfileReadOnly() {
           </Section>
 
           <Section title={t("about.title")}>
-            <div className="text-sm text-gray-600">
-              {t("about.text")}
-            </div>
+            <div className="text-sm text-gray-600">{t("about.text")}</div>
           </Section>
         </div>
       </div>
