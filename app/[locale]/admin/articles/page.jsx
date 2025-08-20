@@ -1,16 +1,35 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  FiSearch,
+  FiXCircle,
+  FiEdit2,
+  FiTrash2,
+  FiPlus,
+  FiX,
+  FiCheck,
+  FiChevronDown,
+} from "react-icons/fi";
+import { useTranslations } from "next-intl";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
+// Largeur/espacement général (même logique que catégories)
+const CARD_WRAPPER = "mx-auto w-full max-w-6xl px-3 sm:px-6";
+
 export default function AdminArticlesPage() {
+  const t = useTranslations("auth.articles");
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Devis list pour le <select>
   const [devisList, setDevisList] = useState([]);
   const [loadingDevis, setLoadingDevis] = useState(false);
+
+  // Recherche (même UX que catégories)
+  const [query, setQuery] = useState("");
 
   // Modales
   const [isOpen, setIsOpen] = useState(false); // Add/Edit
@@ -37,8 +56,6 @@ export default function AdminArticlesPage() {
     try {
       const res = await fetch(`${BACKEND}/api/articles`, { cache: "no-store" });
       const json = await res.json();
-      console.log("Réponse brute devis:", json); // 🔎 log 1
-      console.log("BACKEND URL:", BACKEND); // 🔎 log 2
       setItems(json?.data ?? []);
     } catch (e) {
       console.error(e);
@@ -65,6 +82,15 @@ export default function AdminArticlesPage() {
     fetchDevis();
   }, []);
 
+  // options devis (inclut la valeur courante si manquante)
+  const devisOptions = useMemo(() => {
+    const arr = [...devisList];
+    if (form.numeroDevis && !arr.some((d) => d.numero === form.numeroDevis)) {
+      arr.unshift({ _id: "__current__", numero: form.numeroDevis });
+    }
+    return arr;
+  }, [devisList, form.numeroDevis]);
+
   // ===== UI actions =====
   const openAdd = () => {
     setForm(emptyForm);
@@ -76,7 +102,7 @@ export default function AdminArticlesPage() {
       _id: it._id,
       reference: it.reference ?? "",
       designation: it.designation ?? "",
-      prixHT: it.prixHT ?? "",
+      prixHT: (it.prixHT ?? "").toString(),
       numeroDevis: it.numeroDevis ?? "",
     });
     setIsOpen(true);
@@ -91,16 +117,14 @@ export default function AdminArticlesPage() {
   };
 
   const validForm = () => {
-    if (!form.reference?.trim()) return "Référence obligatoire";
-    if (!form.designation?.trim()) return "Désignation obligatoire";
+    if (!form.reference?.trim()) return t("errors.requiredReference");
+    if (!form.designation?.trim()) return t("errors.requiredDesignation");
     if (
       form.prixHT === "" ||
       isNaN(Number(form.prixHT)) ||
       Number(form.prixHT) < 0
     )
-      return "Prix HT invalide";
-    // Rends-le obligatoire si tu veux :
-    // if (!form.numeroDevis) return "Veuillez sélectionner un N° de devis";
+      return t("errors.invalidHT");
     return null;
   };
 
@@ -167,136 +191,315 @@ export default function AdminArticlesPage() {
     }
   };
 
-  // Options pour le select : on garantit que la valeur actuelle apparaît même si elle
-  // n'est pas dans la liste renvoyée par l'API (utile en mode édition).
-  const devisOptions = (() => {
-    const arr = [...devisList];
-    if (form.numeroDevis && !arr.some((d) => d.numero === form.numeroDevis)) {
-      arr.unshift({ _id: "__current__", numero: form.numeroDevis });
-    }
-    return arr;
-  })();
+  // ===== Filtrage (référence / désignation / n° devis) =====
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((it) => {
+      const r = (it.reference || "").toLowerCase();
+      const d = (it.designation || "").toLowerCase();
+      const n = (it.numeroDevis || "").toLowerCase();
+      return r.includes(q) || d.includes(q) || n.includes(q);
+    });
+  }, [items, query]);
 
-  // ===== RENDER =====
   return (
-    <div className="mx-auto w-full max-w-6xl px-3 sm:px-6 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Articles</h1>
-        <button
-          onClick={openAdd}
-          className="rounded-xl px-4 py-2 bg-black text-white hover:opacity-90 active:opacity-80"
-        >
-          Ajouter
-        </button>
-      </div>
+    <div className="py-6 space-y-6 sm:space-y-8">
+      {/* ======= Header + Search (style Catégories) ======= */}
+      <div className={CARD_WRAPPER}>
+        <header className="space-y-4 text-center">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0B1E3A]">
+            {t("title")}
+          </h1>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-700">
-            <tr>
-              <th className="py-3 px-4 text-left">Référence</th>
-              <th className="py-3 px-4 text-left">Désignation</th>
-              <th className="py-3 px-4 text-right">Prix HT</th>
-              <th className="py-3 px-4 text-right">Prix TTC</th>
-              <th className="py-3 px-4 text-left">N° Devis</th>
-              <th className="py-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td className="py-8 px-4 text-center text-gray-500" colSpan={6}>
-                  Chargement…
-                </td>
-              </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td className="py-8 px-4 text-center text-gray-500" colSpan={6}>
-                  Aucun article.
-                </td>
-              </tr>
-            ) : (
-              items.map((it) => (
-                <tr key={it._id} className="border-t">
-                  <td className="py-3 px-4">{it.reference}</td>
-                  <td className="py-3 px-4">{it.designation}</td>
-                  <td className="py-3 px-4 text-right">
-                    {Number(it.prixHT).toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    {Number(it.prixTTC ?? it.prixHT * 1.2).toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4">{it.numeroDevis || "-"}</td>
-                  <td className="py-3 px-4 text-right space-x-2">
-                    <button
-                      onClick={() => openEdit(it)}
-                      className="rounded-lg px-3 py-1.5 bg-yellow-500 text-white hover:bg-yellow-600"
-                    >
-                      Éditer
-                    </button>
-                    <button
-                      onClick={() => confirmDelete(it)}
-                      className="rounded-lg px-3 py-1.5 bg-red-500 text-white hover:bg-red-600"
-                    >
-                      Supprimer
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal Ajouter/Éditer */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3">
-          <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h2 className="text-lg font-semibold">
-                {isEditing ? "Modifier l’article" : "Ajouter un article"}
-              </h2>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
+          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="relative w-full sm:w-[520px]">
+              <FiSearch
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="w-full rounded-xl border border-gray-300 bg-white px-9 pr-9 py-2 text-sm text-[#0B1E3A]
+                           shadow focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                aria-label={t("searchAria")}
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label={t("clearSearch")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
+                             h-6 w-6 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition"
+                >
+                  <FiXCircle size={16} />
+                </button>
+              )}
             </div>
 
-            <form onSubmit={submitForm} className="px-5 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Référence <span className="text-red-500">*</span>
-                </label>
+            <button
+              onClick={openAdd}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#F7C600] text-[#0B1E3A] px-4 py-2 font-semibold shadow hover:brightness-105 active:translate-y-[1px] transition whitespace-nowrap"
+            >
+              <FiPlus /> {t("addButton")}
+            </button>
+          </div>
+        </header>
+      </div>
+
+      {/* ======= Liste ======= */}
+      <div className={CARD_WRAPPER}>
+        <section className="rounded-2xl border border-[#F7C60022] bg-white shadow-[0_6px_22px_rgba(0,0,0,.06)]">
+          {loading ? (
+            <div className="px-6 py-6 space-y-3 animate-pulse">
+              <div className="h-10 bg-gray-100 rounded-lg" />
+              <div className="h-10 bg-gray-100 rounded-lg" />
+              <div className="h-10 bg-gray-100 rounded-lg" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="px-6 py-6 text-gray-500">{t("noData")}</p>
+          ) : (
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <div className="overflow-x-auto">
+                  <table className="min-w-[840px] w-full table-auto">
+                    <colgroup>
+                      <col className="w-[18%]" />
+                      <col className="w-[32%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[10%]" />
+                    </colgroup>
+
+                    <thead>
+                      <tr className="bg-white">
+                        <th className="p-3 text-left">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {t("table.reference")}
+                          </div>
+                        </th>
+                        <th className="p-3 text-left">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {t("table.designation")}
+                          </div>
+                        </th>
+                        <th className="p-3 text-right">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {t("table.priceHT")}
+                          </div>
+                        </th>
+                        <th className="p-3 text-right">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {t("table.priceTTC")}
+                          </div>
+                        </th>
+                        <th className="p-3 text-left">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {t("table.quoteNumber")}
+                          </div>
+                        </th>
+                        <th className="p-3 text-right">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {t("table.actions")}
+                          </div>
+                        </th>
+                      </tr>
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                        </td>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-gray-100">
+                      {filtered.map((it) => (
+                        <tr
+                          key={it._id}
+                          className="bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors"
+                        >
+                          <td className="p-3 align-middle">
+                            <div className="flex items-center gap-3">
+                              <span className="h-2 w-2 rounded-full bg-[#F7C600]" />
+                              <span className="text-[#0B1E3A] font-medium">
+                                {it.reference}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-3 align-middle">
+                            <span className="text-slate-700">
+                              {it.designation}
+                            </span>
+                          </td>
+                          <td className="p-3 align-middle text-right text-[#0B1E3A]">
+                            {Number(it.prixHT).toFixed(2)}
+                          </td>
+                          <td className="p-3 align-middle text-right text-[#0B1E3A]">
+                            {Number(it.prixTTC ?? it.prixHT * 1.2).toFixed(2)}
+                          </td>
+                          <td className="p-3 align-middle text-[#0B1E3A]">
+                            {it.numeroDevis || t("misc.none")}
+                          </td>
+                          <td className="p-3 align-middle">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => openEdit(it)}
+                                className="inline-flex h-9 items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-3 text-[13px] font-medium text-yellow-800 hover:bg-yellow-100 hover:shadow-sm transition"
+                                title={t("actions.edit")}
+                                aria-label={t("actions.edit")}
+                              >
+                                <FiEdit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => confirmDelete(it)}
+                                className="inline-flex h-9 items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 text-[13px] font-medium text-red-700 hover:bg-red-100 hover:shadow-sm transition"
+                                title={t("actions.delete")}
+                                aria-label={t("actions.delete")}
+                              >
+                                <FiTrash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="md:hidden grid grid-cols-1 gap-3 px-4 py-4">
+                {filtered.map((it) => (
+                  <div
+                    key={it._id}
+                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-gray-500">
+                          {t("table.reference")}
+                        </p>
+                        <p className="font-medium text-[#0B1E3A] flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-[#F7C600]" />
+                          {it.reference}
+                        </p>
+
+                        <p className="mt-3 text-xs font-semibold text-gray-500">
+                          {t("table.designation")}
+                        </p>
+                        <p className="text-[#0B1E3A]">{it.designation}</p>
+
+                        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500">
+                              {t("table.priceHT")}
+                            </p>
+                            <p className="text-[#0B1E3A]">
+                              {Number(it.prixHT).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500">
+                              {t("table.priceTTC")}
+                            </p>
+                            <p className="text-[#0B1E3A]">
+                              {Number(it.prixTTC ?? it.prixHT * 1.2).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className="mt-3 text-xs font-semibold text-gray-500">
+                          {t("table.quoteNumber")}
+                        </p>
+                        <p className="text-[#0B1E3A]">
+                          {it.numeroDevis || (
+                            <span className="text-gray-400">{t("misc.none")}</span>
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <button
+                          onClick={() => openEdit(it)}
+                          className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100 transition"
+                          aria-label={t("actions.edit")}
+                          title={t("actions.edit")}
+                        >
+                          <FiEdit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(it)}
+                          className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition"
+                          aria-label={t("actions.delete")}
+                          title={t("actions.delete")}
+                        >
+                          <FiTrash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+
+      {/* ======= Modale Ajouter/Éditer ======= */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-edit-title"
+        >
+          <div className="relative w-full max-w-xl rounded-3xl bg-white shadow-[0_25px_80px_rgba(0,0,0,.25)] ring-1 ring-gray-100">
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-14 w-14 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-400 shadow-lg ring-4 ring-white flex items-center justify-center text-[#0B1E3A]">
+              {isEditing ? <FiEdit2 size={22} /> : <FiPlus size={22} />}
+            </div>
+
+            <div className="px-6 pt-10 pb-4 border-b border-gray-100 text-center">
+              <h3 id="add-edit-title" className="text-xl font-semibold text-[#0B1E3A]">
+                {isEditing ? t("form.editTitle") : t("form.addTitle")}
+              </h3>
+            </div>
+
+            <form onSubmit={submitForm} className="px-6 py-6 space-y-5">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("labels.reference")} <span className="text-red-500">*</span>
+                </span>
                 <input
                   name="reference"
                   value={form.reference}
                   onChange={onChange}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200"
-                  placeholder="Ex: ART-001"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                  placeholder={t("placeholders.refExample")}
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Désignation <span className="text-red-500">*</span>
-                </label>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("labels.designation")} <span className="text-red-500">*</span>
+                </span>
                 <input
                   name="designation"
                   value={form.designation}
                   onChange={onChange}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200"
-                  placeholder="Ex: Ressort compression Ø10"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                  placeholder={t("placeholders.designationExample")}
                 />
-              </div>
+              </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Prix HT <span className="text-red-500">*</span>
-                  </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("labels.priceHT")} <span className="text-red-500">*</span>
+                  </span>
                   <input
                     name="prixHT"
                     value={form.prixHT}
@@ -304,56 +507,66 @@ export default function AdminArticlesPage() {
                     type="number"
                     step="0.01"
                     min="0"
-                    className="w-full rounded-xl border border-gray-300 px-3 py-2 outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200"
-                    placeholder="Ex: 100.00"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                    placeholder={t("placeholders.priceExample")}
                   />
-                </div>
+                </label>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    N° Devis
-                  </label>
-                  <select
-                    name="numeroDevis"
-                    value={form.numeroDevis}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, numeroDevis: e.target.value }))
-                    }
-                    className="w-full rounded-xl border border-gray-300 px-3 py-2 outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200"
-                  >
-                    <option value="">-- Sélectionner --</option>
-                    {devisOptions.map((d) => (
-                      <option key={(d._id ?? "") + d.numero} value={d.numero}>
-                        {d.numero}
-                      </option>
-                    ))}
-                  </select>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("labels.quoteNumber")}
+                  </span>
+                  <div className="relative">
+                    <select
+                      name="numeroDevis"
+                      value={form.numeroDevis}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, numeroDevis: e.target.value }))
+                      }
+                      className="appearance-none w-full rounded-xl border border-gray-200 bg-white px-3 pr-10 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                    >
+                      <option value="">{t("placeholders.select")}</option>
+                      {devisOptions.map((d) => (
+                        <option key={(d._id ?? "") + d.numero} value={d.numero}>
+                          {d.numero}
+                        </option>
+                      ))}
+                    </select>
+                    <FiChevronDown
+                      size={18}
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                  </div>
                   {loadingDevis && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Chargement des numéros…
+                      {t("loadingQuotes")}
                     </p>
                   )}
-                </div>
+                </label>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="rounded-xl border border-gray-300 px-4 py-2 hover:bg-gray-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#0B1E3A] bg-white px-4 py-2 text-sm hover:bg-gray-50 transition text-[#0B1E3A]"
+                  disabled={submitting}
                 >
-                  Annuler
+                  <FiX /> {t("form.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl px-4 py-2 bg-yellow-500 text-white hover:bg-yellow-600 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition shadow"
                 >
+                  <FiCheck />
                   {submitting
-                    ? "Enregistrement..."
+                    ? isEditing
+                      ? t("form.updating")
+                      : t("form.creating")
                     : isEditing
-                    ? "Mettre à jour"
-                    : "Ajouter"}
+                    ? t("form.update")
+                    : t("form.create")}
                 </button>
               </div>
             </form>
@@ -361,32 +574,44 @@ export default function AdminArticlesPage() {
         </div>
       )}
 
-      {/* Modal Delete */}
+      {/* ======= Modale Suppression ======= */}
       {deleteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-            <div className="px-5 py-4 border-b">
-              <h3 className="text-lg font-semibold">Supprimer l’article</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-title"
+        >
+          <div className="relative w-full max-w-md rounded-3xl bg-white shadow-[0_25px_80px_rgba(0,0,0,.25)] ring-1 ring-gray-100">
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-14 w-14 rounded-full bg-gradient-to-br from-rose-500 to-red-600 shadow-lg ring-4 ring-white flex items-center justify-center text-white">
+              <FiTrash2 size={22} />
             </div>
-            <div className="px-5 py-4">
-              <p>
-                Confirmez-vous la suppression de{" "}
-                <span className="font-medium">{toDelete?.reference}</span> ?
-              </p>
+
+            <div className="px-6 pt-10 pb-4 border-b border-gray-100 text-center">
+              <h3 id="delete-title" className="text-xl font-semibold text-[#0B1E3A]">
+                {t("delete.title")}
+              </h3>
             </div>
-            <div className="px-5 py-4 flex items-center justify-end gap-3">
+
+            <div className="px-6 py-6 text-sm text-gray-700">
+              {t("delete.confirm")}{" "}
+              <span className="font-semibold">{toDelete?.reference}</span> ?
+            </div>
+
+            <div className="px-6 pb-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteOpen(false)}
-                className="rounded-xl border border-gray-300 px-4 py-2 hover:bg-gray-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#0B1E3A] bg-white px-4 py-2 text-sm hover:bg-gray-50 transition text-[#0B1E3A]"
+                disabled={deleting}
               >
-                Annuler
+                <FiX /> {t("form.cancel")}
               </button>
               <button
                 onClick={doDelete}
                 disabled={deleting}
-                className="rounded-xl px-4 py-2 bg-red-500 text-white hover:bg-red-600 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 transition shadow"
               >
-                {deleting ? "Suppression..." : "Supprimer"}
+                <FiTrash2 /> {deleting ? t("delete.deleting") : t("delete.delete")}
               </button>
             </div>
           </div>

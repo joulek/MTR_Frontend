@@ -136,7 +136,7 @@ export default function FilDresseForm() {
       if (res.ok) {
         finishedRef.current = true;
         setErr("");
-        setOk(t.has("sendSuccess") ? t("sendSuccess") : "Demande confirmée. Merci !");
+        setOk(t.has("sendSuccess") ? t("sendSuccess") : "Demande envoyée. Merci !");
         form.reset();
         setFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -279,7 +279,7 @@ export default function FilDresseForm() {
               : !user?.authenticated
                 ? (t.has("loginToSend") ? t("loginToSend") : "Connectez-vous pour envoyer")
                 : user?.role !== "client"
-                  ? (t.has("reservedClients") ? t("reservedClients") : "Réservé aux clients")
+                  ? (t.has("loginToSend") ? t("loginToSend") : "Réservé aux clients")
                   : (t.has("sendRequest") ? t("sendRequest") : "Envoyer la demande")}
           </button>
 

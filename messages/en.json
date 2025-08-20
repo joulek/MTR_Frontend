@@ -88,6 +88,7 @@
       "networkPdfError": "Network error while opening PDF",
       "tractionOrders": " Quotes"
     },
+    
     "devis": {
       "title": "Technical Specifications Form",
       "subtitle": "Choose a product type to display the corresponding form.",
@@ -389,6 +390,135 @@
         "irreversible": "This action is irreversible",
         "deleting": "Deleting...",
         "delete": "Delete"
+      }
+    },
+    "articles": {
+      "title": "Article management",
+      "searchPlaceholder": "Search (reference, designation, quote no.)",
+      "searchAria": "Search an article",
+      "clearSearch": "Clear search",
+      "addButton": "Add",
+      "noData": "No articles.",
+      "loading": "Loading…",
+      "loadingQuotes": "Loading quote numbers…",
+      "table": {
+        "reference": "Reference",
+        "designation": "Designation",
+        "priceHT": "Price excl. tax",
+        "priceTTC": "Price incl. tax",
+        "quoteNumber": "Quote No.",
+        "actions": "Actions"
+      },
+      "labels": {
+        "reference": "Reference",
+        "designation": "Designation",
+        "priceHT": "Price excl. tax",
+        "quoteNumber": "Quote No."
+      },
+      "placeholders": {
+        "refExample": "Ex: ART-001",
+        "designationExample": "Ex: Compression spring Ø10",
+        "priceExample": "Ex: 100.00",
+        "select": "-- Select --"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "form": {
+        "addTitle": "Add an article",
+        "editTitle": "Edit article",
+        "cancel": "Cancel",
+        "create": "Add",
+        "update": "Update",
+        "creating": "Creating…",
+        "updating": "Updating…"
+      },
+      "delete": {
+        "title": "Delete article",
+        "confirm": "Do you confirm deletion of",
+        "delete": "Delete",
+        "deleting": "Deleting…"
+      },
+      "errors": {
+        "requiredReference": "Reference is required",
+        "requiredDesignation": "Designation is required",
+        "invalidHT": "Invalid price (excl. tax)"
+      },
+      "misc": {
+        "none": "—"
+      }
+    },
+    "products": {
+      "title": "Product management",
+      "searchPlaceholder": "Search by FR / EN",
+      "searchAria": "Search a product",
+      "clearSearch": "Clear search",
+      "addButton": "Add",
+      "noData": "No products.",
+      "table": {
+        "category": "Category",
+        "name": "Name",
+        "description": "Description",
+        "images": "Images",
+        "actions": "Actions"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "form": {
+        "addTitle": "Add a product",
+        "editTitle": "Edit product",
+        "addHint": "Fill in the information below",
+        "editHint": "Update the information below",
+        "labelFR": "Label (FR)",
+        "labelEN": "Translation (EN)",
+        "descFR": "Description (FR)",
+        "descEN": "Description (EN)",
+        "category": "Category",
+        "images": "Images",
+        "replaceAll": "Replace all images",
+        "cancel": "Cancel",
+        "create": "Save",
+        "update": "Save",
+        "creating": "Creating…",
+        "updating": "Saving…",
+        "dropTextAdd": "Drag & drop here, or click to select (add)",
+        "dropTextReplace": "Select the new images (they will replace all previous ones).",
+        "removeThis": "Remove this image",
+        "undoRemove": "Undo removal"
+      },
+      "placeholders": {
+        "nameFr": "e.g., Springs",
+        "nameEn": "e.g., Springs",
+        "descFr": "Short description in French",
+        "descEn": "Short description in English",
+        "selectCategory": "Choose a category"
+      },
+      "delete": {
+        "title": "Delete this product?",
+        "confirm": "This action is ",
+        "irreversible": "irreversible",
+        "delete": "Delete",
+        "deleting": "Deleting…"
+      },
+      "gallery": {
+        "title": "Image gallery",
+        "open": "Open images",
+        "prev": "Previous image",
+        "next": "Next image",
+        "goto": "Go to image",
+        "image": "Image",
+        "imageAlt": "image"
+      },
+      "errors": {
+        "network": "Network error",
+        "createFailed": "Creation failed",
+        "updateFailed": "Update failed"
+      },
+      "misc": {
+        "category": "Category"
       }
     }
   },

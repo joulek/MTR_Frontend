@@ -198,7 +198,8 @@
       "networkError": "Erreur réseau.",
       "sending": "Votre demande est en cours d'envoi, veuillez patienter...",
       "sendRequest": "Envoyer la demande",
-      "loginToSend": "Connectez-vous pour envoyer"
+      "loginToSend": "Connectez-vous pour envoyer",
+      "reservedClients": "Réservé aux clients"
     },
     "torsionForm": {
       "title": " Ressorts de Torsion",
@@ -391,6 +392,135 @@
         "irreversible": "Cette action est irréversible",
         "deleting": "Suppression...",
         "delete": "Supprimer"
+      }
+    },
+    "articles": {
+      "title": "Gestion des articles",
+      "searchPlaceholder": "Rechercher (référence, désignation, n° devis)",
+      "searchAria": "Rechercher un article",
+      "clearSearch": "Effacer la recherche",
+      "addButton": "Ajouter",
+      "noData": "Aucun article.",
+      "loading": "Chargement…",
+      "loadingQuotes": "Chargement des numéros…",
+      "table": {
+        "reference": "Référence",
+        "designation": "Désignation",
+        "priceHT": "Prix HT",
+        "priceTTC": "Prix TTC",
+        "quoteNumber": "N° Devis",
+        "actions": "Actions"
+      },
+      "labels": {
+        "reference": "Référence",
+        "designation": "Désignation",
+        "priceHT": "Prix HT",
+        "quoteNumber": "N° Devis"
+      },
+      "placeholders": {
+        "refExample": "Ex: ART-001",
+        "designationExample": "Ex: Ressort compression Ø10",
+        "priceExample": "Ex: 100.00",
+        "select": "-- Sélectionner --"
+      },
+      "actions": {
+        "edit": "Modifier",
+        "delete": "Supprimer"
+      },
+      "form": {
+        "addTitle": "Ajouter un article",
+        "editTitle": "Modifier l’article",
+        "cancel": "Annuler",
+        "create": "Ajouter",
+        "update": "Mettre à jour",
+        "creating": "Création…",
+        "updating": "Mise à jour…"
+      },
+      "delete": {
+        "title": "Supprimer l’article",
+        "confirm": "Confirmez-vous la suppression de",
+        "delete": "Supprimer",
+        "deleting": "Suppression…"
+      },
+      "errors": {
+        "requiredReference": "Référence obligatoire",
+        "requiredDesignation": "Désignation obligatoire",
+        "invalidHT": "Prix HT invalide"
+      },
+      "misc": {
+        "none": "—"
+      }
+    },
+    "products": {
+      "title": "Gestion des produits",
+      "searchPlaceholder": "Rechercher par FR / EN",
+      "searchAria": "Rechercher un produit",
+      "clearSearch": "Effacer la recherche",
+      "addButton": "Ajouter",
+      "noData": "Aucun produit.",
+      "table": {
+        "category": "Catégorie",
+        "name": "Nom",
+        "description": "Description",
+        "images": "Images",
+        "actions": "Actions"
+      },
+      "actions": {
+        "edit": "Modifier",
+        "delete": "Supprimer"
+      },
+      "form": {
+        "addTitle": "Ajouter un produit",
+        "editTitle": "Modifier le produit",
+        "addHint": "Renseignez les informations ci-dessous",
+        "editHint": "Mettez à jour les informations ci-dessous",
+        "labelFR": "Label (FR)",
+        "labelEN": "Traduction (EN)",
+        "descFR": "Description (FR)",
+        "descEN": "Description (EN)",
+        "category": "Catégorie",
+        "images": "Images",
+        "replaceAll": "Remplacer toutes les images",
+        "cancel": "Annuler",
+        "create": "Enregistrer",
+        "update": "Enregistrer",
+        "creating": "Création…",
+        "updating": "Enregistrement…",
+        "dropTextAdd": "Glissez-déposez ici, ou cliquez pour sélectionner (ajout)",
+        "dropTextReplace": "Sélectionnez les nouvelles images (elles remplaceront toutes les anciennes).",
+        "removeThis": "Supprimer cette image",
+        "undoRemove": "Annuler la suppression"
+      },
+      "placeholders": {
+        "nameFr": "ex: Ressorts",
+        "nameEn": "ex: Springs",
+        "descFr": "Courte description en français",
+        "descEn": "Short description in English",
+        "selectCategory": "Choisir une catégorie"
+      },
+      "delete": {
+        "title": "Supprimer ce produit ?",
+        "confirm": "Cette action est ",
+        "irreversible": "irréversible",
+        "delete": "Supprimer",
+        "deleting": "Suppression…"
+      },
+      "gallery": {
+        "title": "Galerie d’images",
+        "open": "Voir les images",
+        "prev": "Image précédente",
+        "next": "Image suivante",
+        "goto": "Aller à l’image",
+        "image": "Image",
+        "imageAlt": "image"
+      },
+      "errors": {
+        "network": "Erreur réseau",
+        "createFailed": "Création impossible",
+        "updateFailed": "Mise à jour impossible"
+      },
+      "misc": {
+        "category": "Catégorie"
       }
     }
   },

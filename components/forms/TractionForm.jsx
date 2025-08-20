@@ -400,7 +400,7 @@ export default function TractionForm() {
               : !user?.authenticated
                 ? t("loginToSend")
                 : user?.role !== "client"
-                  ? t("reservedClients")
+                  ? t("loginToSend")
                   : t("sendRequest")}
           </button>
 

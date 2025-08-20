@@ -6,8 +6,17 @@ import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import {
-  FaBars, FaTimes, FaTachometerAlt, FaShoppingCart, FaFileAlt,
-  FaUsers, FaSignOutAlt, FaTags, FaBoxOpen // ✅ NEW
+  FaBars,
+  FaTimes,
+  FaTachometerAlt,
+  FaShoppingCart,
+  FaFileAlt,
+  FaUsers,
+  FaSignOutAlt,
+  FaTags,
+  FaBoxOpen,
+  FaNewspaper,
+  FaGlobe,
 } from "react-icons/fa";
 
 export default function AdminLayout({ children }) {
@@ -17,11 +26,27 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  const AVAILABLE_LOCALES = [
+    { code: "fr", label: "FR" },
+    { code: "en", label: "EN" },
+  ];
+
   const handleLogout = useCallback(() => {
     try { localStorage.removeItem("token"); } catch {}
     fetch("/api/logout", { method: "POST", credentials: "include", cache: "no-store" }).catch(() => {});
     router.replace(`/${locale}/login`);
   }, [router, locale]);
+
+  // remplace juste le segment de langue dans l’URL
+  const switchLocale = useCallback((newLocale) => {
+    if (!newLocale || newLocale === locale) return;
+    const parts = (pathname || "/").split("/");
+    parts[1] = newLocale;
+    const nextPath = parts.join("/") || "/";
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    router.replace(nextPath + search);
+    setOpen(false);
+  }, [pathname, router, locale]);
 
   useEffect(() => {
     const onResize = () => { if (window.innerWidth >= 1024) setOpen(false); };
@@ -53,6 +78,32 @@ export default function AdminLayout({ children }) {
       </Link>
     );
   };
+
+  // === Mini switcher FR | EN (pills) ===
+  const LangPills = () => (
+    <div className="mx-2">
+      <div className="text-xs text-white/80 mb-1 flex items-center gap-2">
+        <FaGlobe /> <span>Langue</span>
+      </div>
+      <div className="inline-flex rounded-full bg-white/10 p-1">
+        {AVAILABLE_LOCALES.map((l) => {
+          const active = l.code === locale;
+          return (
+            <button
+              key={l.code}
+              onClick={() => switchLocale(l.code)}
+              aria-pressed={active}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition
+                ${active ? "bg-yellow-400 text-[#002147] shadow"
+                         : "text-white hover:bg-white/20"}`}
+            >
+              {l.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -86,22 +137,24 @@ export default function AdminLayout({ children }) {
             <nav className="mt-3 space-y-1">
               <NavItem href={`${rootAdmin}`} icon={FaTachometerAlt}>{t("dashboard")}</NavItem>
               <NavItem href={`${rootAdmin}/orders`} icon={FaShoppingCart}>{t("orders")}</NavItem>
-
-              {/* ✅ NEW: Catégories & Produits */}
               <NavItem href={`${rootAdmin}/categories`} icon={FaTags}>
                 {t.has("categories") ? t("categories") : "Catégories"}
               </NavItem>
               <NavItem href={`${rootAdmin}/produits`} icon={FaBoxOpen}>
                 {t.has("products") ? t("products") : "Produits"}
               </NavItem>
-
+              <NavItem href={`${rootAdmin}/articles`} icon={FaNewspaper}>
+                {t.has("articles") ? t("articles") : "Articles"}
+              </NavItem>
               <NavItem href={`${rootAdmin}/devis`} icon={FaFileAlt}>
                 {t.has("tractionOrders") ? t("tractionOrders") : `${t("orders")} – Traction`}
               </NavItem>
               <NavItem href={`${rootAdmin}/users`} icon={FaUsers}>{t("users")}</NavItem>
             </nav>
           </div>
-          <div className="p-4 border-t border-yellow-400">
+
+          <div className="p-4 border-t border-yellow-400 space-y-3">
+            <LangPills />
             <button
               onClick={handleLogout}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-yellow-400 hover:bg-yellow-300 text-[#002147] px-4 py-2 font-semibold transition"
@@ -138,21 +191,27 @@ export default function AdminLayout({ children }) {
                 <nav className="mt-3 space-y-1 pb-2">
                   <NavItem href={`${rootAdmin}`} icon={FaTachometerAlt}>{t("dashboard")}</NavItem>
                   <NavItem href={`${rootAdmin}/orders`} icon={FaShoppingCart}>{t("orders")}</NavItem>
-
-                  {/* ✅ NEW: Catégories & Produits (mobile) */}
                   <NavItem href={`${rootAdmin}/categories`} icon={FaTags}>
                     {t.has("categories") ? t("categories") : "Catégories"}
                   </NavItem>
                   <NavItem href={`${rootAdmin}/produits`} icon={FaBoxOpen}>
                     {t.has("products") ? t("products") : "Produits"}
                   </NavItem>
-
-                  <NavItem href={`${rootAdmin}/devis/traction`} icon={FaFileAlt}>
+                  <NavItem href={`${rootAdmin}/articles`} icon={FaNewspaper}>
+                    {t.has("articles") ? t("articles") : "Articles"}
+                  </NavItem>
+                  <NavItem href={`${rootAdmin}/devis`} icon={FaFileAlt}>
                     {t.has("tractionOrders") ? t("tractionOrders") : `${t("orders")} – Traction`}
                   </NavItem>
                   <NavItem href={`${rootAdmin}/users`} icon={FaUsers}>{t("users")}</NavItem>
                 </nav>
+
+                {/* switcher mobile */}
+                <div className="px-4 pb-3">
+                  <LangPills />
+                </div>
               </div>
+
               <div className="p-4 border-t border-yellow-400">
                 <button
                   onClick={handleLogout}

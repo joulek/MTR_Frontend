@@ -191,7 +191,7 @@ export default function TorsionForm() {
       if (res.ok) {
         finishedRef.current = true;
         setErr("");
-        setOk(t.has("sendSuccess") ? t("sendSuccess") : "Demande confirmée. Merci !");
+        setOk(t.has("sendSuccess") ? t("sendSuccess") : "Demande envoyée. Merci !");
         form.reset();
         setFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -338,7 +338,7 @@ export default function TorsionForm() {
               : !user?.authenticated
                 ? t("loginToSend")
                 : user?.role !== "client"
-                  ? t("reservedClients")
+                  ? t("loginToSend")
                   : t("sendRequest")}
           </button>
 

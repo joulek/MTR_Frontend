@@ -1,17 +1,44 @@
 // components/admin/devis/DevisGrilleList.jsx
 "use client";
-import { useEffect, useState, useCallback } from "react";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Pagination from "@/components/Pagination";
+import { FiSearch, FiXCircle } from "react-icons/fi";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+// Conteneur resserré (même que les autres listes)
+const WRAP = "mx-auto w-full max-w-4xl px-3 sm:px-4";
+
+// Helpers
+function shortDate(d) {
+  try {
+    const dt = new Date(d);
+    return `${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  } catch {
+    return "";
+  }
+}
 
 export default function DevisGrilleList() {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Recherche
+  const [q, setQ] = useState("");
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
   const load = useCallback(async () => {
     try {
-      setErr(""); setLoading(true);
+      setErr("");
+      setLoading(true);
       const res = await fetch(`${BACKEND}/api/admin/devis/grille`, {
         credentials: "include",
         cache: "no-store",
@@ -19,6 +46,7 @@ export default function DevisGrilleList() {
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.success) throw new Error(data?.message || `Erreur (${res.status})`);
       setItems(data.items || []);
+      setPage(1); // reset page après reload
     } catch (e) {
       setErr(e.message || "Erreur réseau");
     } finally {
@@ -28,11 +56,40 @@ export default function DevisGrilleList() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Filtre local (N°, Client, Date)
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return items;
+    return items.filter((it) => {
+      const numero = String(it?.numero || "").toLowerCase();
+      const client = `${it?.user?.prenom || ""} ${it?.user?.nom || ""}`.trim().toLowerCase();
+      let dateStr = "";
+      try { dateStr = new Date(it?.createdAt).toLocaleDateString().toLowerCase(); } catch {}
+      return numero.includes(needle) || client.includes(needle) || dateStr.includes(needle);
+    });
+  }, [items, q]);
+
+  // clamp si on dépasse après changement de taille / filtre
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if (page > totalPages) setPage(totalPages);
+  }, [filtered.length, page, pageSize]);
+
+  // reset page à chaque saisie
+  useEffect(() => { setPage(1); }, [q]);
+
+  // sous-ensemble paginé
+  const { pageItems, total } = useMemo(() => {
+    const total = filtered.length;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    return { pageItems: filtered.slice(start, end), total };
+  }, [filtered, page, pageSize]);
+
+  // Ouverture PDF
   async function openPdf(id) {
     try {
-      const res = await fetch(`${BACKEND}/api/admin/devis/grille/${id}/pdf`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${BACKEND}/api/admin/devis/grille/${id}/pdf`, { credentials: "include" });
       if (!res.ok) return alert("PDF indisponible.");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -41,11 +98,10 @@ export default function DevisGrilleList() {
     } catch { alert("Impossible d’ouvrir le PDF."); }
   }
 
+  // Ouverture doc joint (boutons “Ouvrir” uniquement)
   async function openDoc(id, index) {
     try {
-      const res = await fetch(`${BACKEND}/api/admin/devis/grille/${id}/document/${index}`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${BACKEND}/api/admin/devis/grille/${id}/document/${index}`, { credentials: "include" });
       if (!res.ok) return alert("Document indisponible.");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -54,63 +110,242 @@ export default function DevisGrilleList() {
     } catch { alert("Impossible d’ouvrir le document."); }
   }
 
-  if (loading) return <p>Chargement…</p>;
-  if (err) return <p className="text-red-600">{err}</p>;
-
   return (
-    
-    <div className="overflow-x-auto">
-       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-[#002147]">Devis – Grille list </h1>
-        
+    <div className="py-6 space-y-4">
+      {/* Titre + Recherche */}
+      <div className={WRAP}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0B1E3A]">
+            Demande de devis – Grille métallique
+          </h1>
+
+          {/* Barre de recherche (compacte) */}
+          <div className="relative w-full sm:w-[300px]">
+            <FiSearch
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={16}
+            />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Rechercher par N°, client ou date…"
+              aria-label="Rechercher une demande de devis"
+              className="w-full rounded-lg border border-gray-300 bg-white px-8 pr-8 py-1.5 text-sm text-[#0B1E3A]
+                         shadow focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                aria-label="Effacer la recherche"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
+                           h-5 w-5 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition"
+              >
+                <FiXCircle size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {err && (
+          <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-red-700">
+            {err}
+          </p>
+        )}
       </div>
 
-      <table className="min-w-full text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-3 py-2 text-left">N°</th>
-            <th className="px-3 py-2 text-left">Client</th>
-            <th className="px-3 py-2 text-left">Date</th>
-            <th className="px-3 py-2 text-left">PDF</th>
-            <th className="px-3 py-2 text-left">Docs</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it) => (
-            <tr key={it._id} className="border-t">
-              <td className="px-3 py-2">{it.numero}</td>
-              <td className="px-3 py-2">{it.user?.prenom} {it.user?.nom}</td>
-              <td className="px-3 py-2">{new Date(it.createdAt).toLocaleString()}</td>
-              <td className="px-3 py-2">
-                {it.hasDemandePdf ? (
-                  <button onClick={() => openPdf(it._id)} className="underline text-[#002147]">Ouvrir</button>
-                ) : <span className="text-gray-500">Indispo</span>}
-              </td>
-              <td className="px-3 py-2">
-                {(it.documents || []).length === 0 ? (
-                  <span className="text-gray-500">—</span>
-                ) : (
-                  <ul className="space-y-1">
-                    {it.documents.map((d, idx) => (
-                      <li key={idx} className="flex gap-2 items-center">
+      {/* Table (compacte, responsive, pas de carte blanche) */}
+      <div className={WRAP}>
+        {loading ? (
+          <div className="space-y-2 animate-pulse">
+            <div className="h-6 bg-gray-100 rounded" />
+            <div className="h-6 bg-gray-100 rounded" />
+            <div className="h-6 bg-gray-100 rounded" />
+          </div>
+        ) : total === 0 ? (
+          <p className="text-gray-500">Aucune demande de devis</p>
+        ) : (
+          <>
+            {/* Desktop / tablette */}
+            <div className="hidden sm:block">
+              <div className="overflow-x-hidden">
+                <table className="w-full table-fixed text-sm border-separate border-spacing-0">
+                  <colgroup>
+                    <col className="w-[110px]" /> {/* N° */}
+                    <col className="w-[220px]" /> {/* Client */}
+                    <col className="w-[170px]" /> {/* Date */}
+                    <col className="w-[90px]" />  {/* PDF */}
+                    <col className="w-auto" />     {/* Fichiers joints */}
+                  </colgroup>
+
+                  <thead>
+                    <tr>
+                      {["N°", "Client", "Date", "PDF DDV", "Fichiers joints"].map((h) => (
+                        <th key={h} className="p-2 text-left align-bottom">
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                            {h}
+                          </div>
+                          <div className="mt-2 h-px w-full bg-gray-200" />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody className="text-[#0B1E3A]">
+                    {pageItems.map((it) => {
+                      const hasPdf = !!it?.hasDemandePdf;
+                      const docs = (it?.documents || [])
+                        .map((d, idx) => ({ ...d, index: d.index ?? idx }))
+                        .filter((d) => (d.hasData === undefined ? true : !!d.hasData));
+
+                      return (
+                        <tr key={it._id} className="hover:bg-[#0B1E3A]/[0.03] transition-colors">
+                          {/* N° */}
+                          <td className="p-2 align-top border-b border-gray-200">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
+                              <span className="font-medium">{it.numero}</span>
+                            </div>
+                          </td>
+
+                          {/* Client */}
+                          <td className="p-2 align-top border-b border-gray-200">
+                            <span className="block truncate" title={`${it.user?.prenom || ""} ${it.user?.nom || ""}`}>
+                              {it.user?.prenom} {it.user?.nom}
+                            </span>
+                          </td>
+
+                          {/* Date */}
+                          <td className="p-2 align-top border-b border-gray-200">
+                            {shortDate(it.createdAt)}
+                          </td>
+
+                          {/* PDF — même design que fichiers joints */}
+                          <td className="p-2 align-top border-b border-gray-200">
+                            {hasPdf ? (
+                              <button
+                                onClick={() => openPdf(it._id)}
+                                className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 
+                                           px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
+                              >
+                                Ouvrir
+                              </button>
+                            ) : (
+                              <span className="text-gray-500">—</span>
+                            )}
+                          </td>
+
+                          {/* Fichiers joints (boutons “Ouvrir”) */}
+                          <td className="p-2 align-top border-b border-gray-200">
+                            {docs.length === 0 ? (
+                              <span className="text-gray-400">—</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {docs.map((d) => (
+                                  <button
+                                    key={d.index}
+                                    onClick={() => openDoc(it._id, d.index)}
+                                    className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
+                                  >
+                                    Ouvrir
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination desktop/tablette */}
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={[5, 10, 20, 50]}
+              />
+            </div>
+
+            {/* Mobile */}
+            <div className="sm:hidden divide-y divide-gray-200">
+              {pageItems.map((it) => {
+                const hasPdf = !!it?.hasDemandePdf;
+                const docs = (it?.documents || [])
+                  .map((d, idx) => ({ ...d, index: d.index ?? idx }))
+                  .filter((d) => (d.hasData === undefined ? true : !!d.hasData));
+
+                return (
+                  <div key={it._id} className="py-3">
+                    <div className="flex items-center gap-2 text-[#0B1E3A]">
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
+                      <span className="font-medium">{it.numero}</span>
+                    </div>
+
+                    <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500">Client</p>
+                        <p className="truncate">{it.user?.prenom} {it.user?.nom}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500">Date</p>
+                        <p className="truncate">{shortDate(it.createdAt)}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 text-sm">
+                      <span className="text-xs font-semibold text-gray-500">PDF</span>{" "}
+                      {hasPdf ? (
                         <button
-                          onClick={() => openDoc(it._id, d.index ?? idx)}
-                          disabled={!d.hasData}
-                          className={`underline ${d.hasData ? "text-[#002147]" : "text-gray-400 cursor-not-allowed"}`}
+                          onClick={() => openPdf(it._id)}
+                          className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 
+                                     px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
                         >
                           Ouvrir
                         </button>
-                        <span className="truncate max-w-[220px]" title={d.filename}>{d.filename}</span>
-                        <span className="text-xs text-gray-500">{d.mimetype} · {(d.size||0)} B</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </div>
+
+                    <p className="mt-2 text-xs font-semibold text-gray-500">Fichiers joints</p>
+                    {docs.length === 0 ? (
+                      <p className="text-gray-500">—</p>
+                    ) : (
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {docs.map((d) => (
+                          <button
+                            key={d.index}
+                            onClick={() => openDoc(it._id, d.index)}
+                            className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
+                          >
+                            Ouvrir
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Pagination mobile */}
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={[5, 10, 20, 50]}
+              />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

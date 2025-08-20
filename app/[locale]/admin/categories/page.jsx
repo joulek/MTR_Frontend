@@ -1,12 +1,15 @@
+// app/[locale]/admin/categories/page.jsx
 import AdminCategoriesPage from "./AdminCategoriesClient";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export async function generateMetadata({ params }) {
-  const { locale } = params;
+  // ⬅️ ICI : on attend params avant d’en extraire locale
+  const { locale } = await params;
 
   const title = "Gestion des catégories | Panneau d’administration";
-  const description = "Interface d’administration pour gérer les catégories (création, édition, suppression).";
+  const description =
+    "Interface d’administration pour gérer les catégories (création, édition, suppression).";
   const canonical = `${SITE_URL}/${locale}/admin/categories`;
 
   return {

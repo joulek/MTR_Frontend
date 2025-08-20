@@ -175,7 +175,7 @@ export default function AdminCategoriesPage() {
   }, [items, query]);
 
   return (
-    <div>
+    <div className="py-6 space-y-6 sm:space-y-8">
       <div className="mx-auto w-full max-w-6xl space-y-8">
         {/* =================== Header centré =================== */}
         <header className="space-y-4 text-center">
@@ -302,9 +302,7 @@ export default function AdminCategoriesPage() {
                                   aria-label={t("actions.edit")}
                                 >
                                   <FiEdit2 size={16} />
-                                  <span className="hidden lg:inline">
-                                    {t("actions.edit")}
-                                  </span>
+                                 
                                 </button>
                                 <button
                                   onClick={() => openDeleteModal(c)}
@@ -313,9 +311,7 @@ export default function AdminCategoriesPage() {
                                   aria-label={t("actions.delete")}
                                 >
                                   <FiTrash2 size={16} />
-                                  <span className="hidden lg:inline">
-                                    {t("actions.delete")}
-                                  </span>
+                                 
                                 </button>
                               </div>
                             </td>

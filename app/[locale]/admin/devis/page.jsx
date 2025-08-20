@@ -52,7 +52,10 @@ export default function AdminDevisSelector() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Gestion des devis</h1>
+      <h1 className="mb-6 sm:mb-8 text-3xl font-extrabold tracking-tight text-[#0B1E3A] text-center">
+        Gestion des demandes de devis
+      </h1>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {TYPES.map(({ key, label, img }) => {
           const active = type === key;
@@ -60,17 +63,17 @@ export default function AdminDevisSelector() {
             <button
               key={key}
               onClick={() => setType(key)}
-              className={`rounded-xl border p-4 flex items-center gap-3 transition ${
-                active
+              className={`rounded-xl border p-4 flex items-center gap-3 justify-start transition ${active
                   ? "border-yellow-500 bg-yellow-50 shadow"
                   : "border-gray-200 bg-white hover:border-yellow-400"
-              }`}
+                }`}
             >
               <div className="relative w-10 h-10 overflow-hidden rounded-lg ring-1 ring-gray-200">
                 <Image src={img} alt={label} fill className="object-cover" />
               </div>
-              <span className="font-semibold">{label}</span>
+              <span className="font-semibold text-[#0B1E3A] text-left">{label}</span>
             </button>
+
           );
         })}
       </div>
