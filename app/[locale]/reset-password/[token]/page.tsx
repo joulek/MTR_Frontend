@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import Image from "next/image";
+import resetImg from "@/public/reset_password.png"; 
+
+
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -31,14 +35,14 @@ export default function ResetPasswordPage() {
     try {
       const res = await fetch(`${BACKEND}/api/auth/reset-password/${token}`, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pwd }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Error");
       setOk(t("resetSuccess"));
       setTimeout(() => router.push(`/${locale}/login`), 1200);
-    } catch (e:any) {
+    } catch (e: any) {
       setErr(e.message || t("errors.network"));
     } finally {
       setLoading(false);
@@ -47,38 +51,56 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl shadow-2xl border border-[#ffb400]/50 bg-white p-8">
-        <h1 className="text-2xl font-extrabold text-[#002147]" style={{fontFamily:"'Lora', serif"}}>
+      <div className="w-full max-w-md rounded-2xl shadow-2xl border border-[#ffb400]/50 bg-white p-8 relative">
+        {/* Icône au-dessus (badge arrondi) */}
+        <div className="flex justify-center -mt-14 mb-4">
+          <div className="bg-white rounded-full shadow-lg p-3 border border-[#ffb400]/60">
+            <Image
+              src={resetImg}  // <- Mets ton icône ici (/public/auth/reset-icon.png)
+              alt="Reset password icon"
+              width={80}
+              height={80}
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+
+        {/* Titre & hint */}
+        <h1 className="text-2xl font-extrabold text-[#002147] text-center" style={{ fontFamily: "'Lora', serif" }}>
           {t("resetTitle")}
         </h1>
-        <p className="text-sm text-gray-600 mt-2">{t("resetHint")}</p>
+        <p className="text-sm text-gray-600 mt-2 text-center">{t("resetHint")}</p>
 
+        {/* Form */}
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
-            <label className="block font-semibold text-[#002147]" style={{fontFamily:"'Lora', serif"}}>
+            <label className="block font-semibold text-[#002147]" style={{ fontFamily: "'Lora', serif" }}>
               {t("newPassword")}
             </label>
             <input
               type="password"
               required
               value={pwd}
-              onChange={(e)=>setPwd(e.target.value)}
+              onChange={(e) => setPwd(e.target.value)}
               className="w-full rounded-xl border border-[#ddd] bg-white px-4 py-3 text-[#002147] placeholder-[#555555] outline-none focus:border-[#ffb400] focus:ring-2 focus:ring-[#ffb400]/25 transition"
               placeholder="********"
+              autoComplete="new-password"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block font-semibold text-[#002147]" style={{fontFamily:"'Lora', serif"}}>
+            <label className="block font-semibold text-[#002147]" style={{ fontFamily: "'Lora', serif" }}>
               {t("confirmPassword")}
             </label>
             <input
               type="password"
               required
               value={confirm}
-              onChange={(e)=>setConfirm(e.target.value)}
+              onChange={(e) => setConfirm(e.target.value)}
               className="w-full rounded-xl border border-[#ddd] bg-white px-4 py-3 text-[#002147] placeholder-[#555555] outline-none focus:border-[#ffb400] focus:ring-2 focus:ring-[#ffb400]/25 transition"
               placeholder="********"
+              autoComplete="new-password"
             />
           </div>
 
@@ -89,12 +111,15 @@ export default function ResetPasswordPage() {
             type="submit"
             disabled={loading}
             className="w-full rounded-xl bg-[#002147] hover:bg-[#003366] text-white font-bold py-3 disabled:opacity-60"
-            style={{fontFamily:"'Lora', serif"}}
+            style={{ fontFamily: "'Lora', serif" }}
           >
             {loading ? t("loading") : t("resetSubmit")}
           </button>
 
-          <a href={`/${locale}/login`} className="block text-center text-sm text-[#002147] font-semibold hover:underline">
+          <a
+            href={`/${locale}/login`}
+            className="block text-center text-sm text-[#002147] font-semibold hover:underline"
+          >
             {t("backToLogin")}
           </a>
         </form>

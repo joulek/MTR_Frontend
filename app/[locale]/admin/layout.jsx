@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
 
 import {
   FaBars, FaTimes, FaTachometerAlt, FaShoppingCart, FaFileAlt,
-  FaUsers, FaSignOutAlt
+  FaUsers, FaSignOutAlt, FaTags, FaBoxOpen // ✅ NEW
 } from "react-icons/fa";
 
 export default function AdminLayout({ children }) {
@@ -18,36 +17,21 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-const handleLogout = useCallback(() => {
-  // 1) Optimistic: nettoie les traces côté client (si tu utilises un token local)
-  try { localStorage.removeItem("token"); } catch {}
-
-  // 2) Fire-and-forget: n’attend pas la réponse
-  fetch("/api/logout", {
-    method: "POST",
-    credentials: "include",
-    cache: "no-store"
-  }).catch(() => { /* on s’en fiche en UI */ });
-
-  // 3) Redirection immédiate (évite l’historique)
-  router.replace(`/${locale}/login`);
-}, [router, locale]);
-
+  const handleLogout = useCallback(() => {
+    try { localStorage.removeItem("token"); } catch {}
+    fetch("/api/logout", { method: "POST", credentials: "include", cache: "no-store" }).catch(() => {});
+    router.replace(`/${locale}/login`);
+  }, [router, locale]);
 
   useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth >= 1024) setOpen(false);
-    };
+    const onResize = () => { if (window.innerWidth >= 1024) setOpen(false); };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // ----- Helper pour l'état actif -----
   const rootAdmin = `/${locale}/admin`;
   const isActivePath = (href) => {
-    // La racine admin ne doit être active QUE sur /{locale}/admin
     if (href === rootAdmin) return pathname === rootAdmin;
-    // Pour les autres liens, égalité stricte OU enfant direct
     return pathname === href || pathname.startsWith(href + "/");
   };
 
@@ -58,10 +42,7 @@ const handleLogout = useCallback(() => {
         href={href}
         onClick={() => setOpen(false)}
         className={`group flex items-center gap-3 px-3 py-2 rounded-md mx-2 transition
-          ${active
-            ? "bg-yellow-400 text-[#002147]"
-            : "text-white hover:bg-yellow-400 hover:text-[#002147]"}`
-        }
+          ${active ? "bg-yellow-400 text-[#002147]" : "text-white hover:bg-yellow-400 hover:text-[#002147]"}`}
         aria-current={active ? "page" : undefined}
       >
         <span className={`text-base ${active ? "text-[#002147]" : "text-white group-hover:text-[#002147]"}`}>
@@ -105,7 +86,15 @@ const handleLogout = useCallback(() => {
             <nav className="mt-3 space-y-1">
               <NavItem href={`${rootAdmin}`} icon={FaTachometerAlt}>{t("dashboard")}</NavItem>
               <NavItem href={`${rootAdmin}/orders`} icon={FaShoppingCart}>{t("orders")}</NavItem>
-            
+
+              {/* ✅ NEW: Catégories & Produits */}
+              <NavItem href={`${rootAdmin}/categories`} icon={FaTags}>
+                {t.has("categories") ? t("categories") : "Catégories"}
+              </NavItem>
+              <NavItem href={`${rootAdmin}/produits`} icon={FaBoxOpen}>
+                {t.has("products") ? t("products") : "Produits"}
+              </NavItem>
+
               <NavItem href={`${rootAdmin}/devis`} icon={FaFileAlt}>
                 {t.has("tractionOrders") ? t("tractionOrders") : `${t("orders")} – Traction`}
               </NavItem>
@@ -149,6 +138,15 @@ const handleLogout = useCallback(() => {
                 <nav className="mt-3 space-y-1 pb-2">
                   <NavItem href={`${rootAdmin}`} icon={FaTachometerAlt}>{t("dashboard")}</NavItem>
                   <NavItem href={`${rootAdmin}/orders`} icon={FaShoppingCart}>{t("orders")}</NavItem>
+
+                  {/* ✅ NEW: Catégories & Produits (mobile) */}
+                  <NavItem href={`${rootAdmin}/categories`} icon={FaTags}>
+                    {t.has("categories") ? t("categories") : "Catégories"}
+                  </NavItem>
+                  <NavItem href={`${rootAdmin}/produits`} icon={FaBoxOpen}>
+                    {t.has("products") ? t("products") : "Produits"}
+                  </NavItem>
+
                   <NavItem href={`${rootAdmin}/devis/traction`} icon={FaFileAlt}>
                     {t.has("tractionOrders") ? t("tractionOrders") : `${t("orders")} – Traction`}
                   </NavItem>

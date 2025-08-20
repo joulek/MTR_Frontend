@@ -1,17 +1,17 @@
 {
   "auth": {
     "forgot": "Forgot password?",
-  "forgotTitle": "Forgot password",
-  "forgotHint": "Enter your email, we will send you a reset link (valid for 1h).",
-  "sendReset": "Send reset link",
-  "forgotSent": "If an account exists, an email has been sent.",
-  "resetTitle": "Reset password",
-  "resetHint": "Choose a new password.",
-  "newPassword": "New password",
-  "confirmPassword": "Confirm password",
-  "resetSubmit": "Reset",
-  "resetSuccess": "Password successfully reset! Redirecting...",
-  "backToLogin": "← Back to login",
+    "forgotTitle": "Forgot password",
+    "forgotHint": "Enter your email, we will send you a reset link (valid for 1h).",
+    "sendReset": "Send reset link",
+    "forgotSent": "If an account exists, an email has been sent.",
+    "resetTitle": "Reset password",
+    "resetHint": "Choose a new password.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "resetSubmit": "Reset",
+    "resetSuccess": "Password successfully reset! Redirecting...",
+    "backToLogin": "← Back to login",
     "loginTitle": "Sign in",
     "registerTitle": "Create account",
     "lastName": "Last name",
@@ -33,7 +33,6 @@
     "joinClientSpace": "Join our client space",
     "promoText": "Request quotes, track your orders, and manage your industrial interventions.",
     "rememberMe": "Remember me",
-    "forgot": "Forgot password?",
     "noAccount": "No account?",
     "goRegister": "Register",
     "loginBtn": "Sign in",
@@ -342,11 +341,63 @@
       "sending": "Your request is being sent, please wait...",
       "sendRequest": "Send request",
       "description": "Description"
+    },
+    "categories": {
+      "title": "Category management",
+      "searchPlaceholder": "Search by FR / EN",
+      "searchAria": "Search a category",
+      "clearSearch": "Clear search",
+      "addButton": "Add",
+      "noData": "No categories.",
+      "errorLoad": "Load error",
+      "errorServer": "Server error",
+      "errorRequiredFR": "FR label is required.",
+      "errorCreate": "Creation failed",
+      "errorUpdate": "Update failed",
+      "errorDelete": "Deletion failed",
+      "table": {
+        "fr": "FR",
+        "en": "EN",
+        "actions": "Actions"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "common": {
+        "cancel": "Cancel",
+        "save": "Save",
+        "id": "ID"
+      },
+      "placeholders": {
+        "frExample": "e.g., Springs (FR)",
+        "enExample": "e.g., Springs"
+      },
+      "add": {
+        "title": "Add a category",
+        "labelFR": "Label (FR)",
+        "labelEN": "Translation (EN)",
+        "saving": "Adding..."
+      },
+      "edit": {
+        "title": "Edit category",
+        "saving": "Saving..."
+      },
+      "delete": {
+        "title": "Delete category?",
+        "confirm": "Do you really want to delete this category?",
+        "irreversible": "This action is irreversible",
+        "deleting": "Deleting...",
+        "delete": "Delete"
+      }
     }
   },
   "profile": {
     "userFallback": "User",
-    "lang": { "fr": "French", "en": "English" },
+    "lang": {
+      "fr": "French",
+      "en": "English"
+    },
     "account": {
       "title": "Account",
       "unknownEmail": "unknown email",
@@ -391,8 +442,7 @@
       "text": "MTR Industry — Client space. Version 1.0"
     },
     "loading": "Loading…"
-  }
-,
+  },
   "support": {
     "title": "Help & Support",
     "intro": "Need help? Check our FAQ or contact our team.",
@@ -424,5 +474,4 @@
       "privacy": "Privacy policy"
     }
   }
-
 }

@@ -3,7 +3,7 @@
     "forgot": "Mot de passe oublié ?",
     "forgotTitle": "Mot de passe oublié",
     "forgotHint": "Entrez votre email, nous vous enverrons un lien de réinitialisation (valide 1h).",
-     "sendReset": "Envoyer le lien",
+    "sendReset": "Envoyer le lien",
     "forgotSent": "Si un compte existe, un email a été envoyé.",
     "resetTitle": "Réinitialiser le mot de passe",
     "resetHint": "Choisissez un nouveau mot de passe.",
@@ -33,7 +33,6 @@
     "joinClientSpace": "Rejoignez notre espace client",
     "promoText": "Demandez vos devis, suivez vos commandes et gérez vos interventions industrielles.",
     "rememberMe": "Se souvenir de moi",
-    "forgot": "Mot de passe oublié ?",
     "noAccount": "Pas de compte ?",
     "goRegister": "S'inscrire",
     "loginBtn": "Se connecter",
@@ -344,11 +343,63 @@
       "sendRequest": "Envoyer la demande",
       "loginToSend": "Connectez-vous pour envoyer",
       "mainInfo": "Informations principales"
+    },
+    "categories": {
+      "title": "Gestion des catégories",
+      "searchPlaceholder": "Rechercher par FR / EN",
+      "searchAria": "Rechercher une catégorie",
+      "clearSearch": "Effacer la recherche",
+      "addButton": "Ajouter",
+      "noData": "Aucune catégorie.",
+      "errorLoad": "Erreur chargement",
+      "errorServer": "Erreur serveur",
+      "errorRequiredFR": "Le label FR est requis.",
+      "errorCreate": "Création impossible",
+      "errorUpdate": "Mise à jour impossible",
+      "errorDelete": "Suppression impossible",
+      "table": {
+        "fr": "FR",
+        "en": "EN",
+        "actions": "Actions"
+      },
+      "actions": {
+        "edit": "Modifier",
+        "delete": "Supprimer"
+      },
+      "common": {
+        "cancel": "Annuler",
+        "save": "Enregistrer",
+        "id": "ID"
+      },
+      "placeholders": {
+        "frExample": "ex: Ressorts",
+        "enExample": "ex: Springs"
+      },
+      "add": {
+        "title": "Ajouter une catégorie",
+        "labelFR": "Label (FR)",
+        "labelEN": "Traduction (EN)",
+        "saving": "Ajout..."
+      },
+      "edit": {
+        "title": "Modifier la catégorie",
+        "saving": "Enregistrement..."
+      },
+      "delete": {
+        "title": "Supprimer la catégorie ?",
+        "confirm": "Voulez-vous vraiment supprimer cette catégorie ?",
+        "irreversible": "Cette action est irréversible",
+        "deleting": "Suppression...",
+        "delete": "Supprimer"
+      }
     }
   },
   "profile": {
     "userFallback": "Utilisateur",
-    "lang": { "fr": "Français", "en": "English" },
+    "lang": {
+      "fr": "Français",
+      "en": "English"
+    },
     "account": {
       "title": "Compte",
       "unknownEmail": "email inconnu",
@@ -424,46 +475,5 @@
       "faq": "Centre de FAQ complet",
       "privacy": "Politique de confidentialité"
     }
-  },
-  "admin": {
-    "products": {
-      "title": "Produits",
-      "new": "Nouveau produit",
-      "name": "Nom",
-      "description": "Description",
-      "category": "Catégorie",
-      "images": "Images",
-      "chooseCategory": "-- Choisir une catégorie --",
-      "create": "Ajouter",
-      "update": "Mettre à jour",
-      "delete": "Supprimer",
-      "list": "Liste des produits",
-      "noData": "Aucun produit",
-      "actions": "Actions",
-      "created": "Produit créé avec succès",
-      "updated": "Produit mis à jour",
-      "deleted": "Produit supprimé",
-      "loading": "Chargement...",
-      "confirmDelete": "Confirmer la suppression ?"
-    },
-    "categories": {
-      "title": "Catégories",
-      "new": "Nouvelle catégorie",
-      "name": "Nom",
-      "description": "Description",
-      "create": "Ajouter",
-      "update": "Mettre à jour",
-      "delete": "Supprimer",
-      "list": "Liste des catégories",
-      "noData": "Aucune catégorie",
-      "actions": "Actions",
-      "created": "Catégorie créée avec succès",
-      "updated": "Catégorie mise à jour",
-      "deleted": "Catégorie supprimée",
-      "loading": "Chargement...",
-      "confirmDelete": "Confirmer la suppression ?"
-    }
   }
 }
-
-
