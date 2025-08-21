@@ -1,8 +1,15 @@
 {
   "auth": {
     "forgot": "Forgot password?",
-    "forgotTitle": "Forgot password",
-    "forgotHint": "Enter your email, we will send you a reset link (valid for 1h).",
+    "forgotTitle": "Mot de passe oublié",
+    "code":"Code",
+  "confirmReset": "Confirm reset",
+  "forgotHintCode": "Enter your email: we will send you a reset code.",
+  "sendResetCode": "Send code",
+  "forgotSentCode": "If an account exists, a code has been sent to your email.",
+  "resetByCodeTitle": "Reset with a code",
+  "resetByCodeHint": "Enter the code received by email along with your new password.",
+    "forgotHint": "Enter your email, we will send you a reset code.",
     "sendReset": "Send reset link",
     "forgotSent": "If an account exists, an email has been sent.",
     "resetTitle": "Reset password",

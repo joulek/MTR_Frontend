@@ -1,17 +1,17 @@
 {
   "auth": {
-    "forgot": "Mot de passe oublié ?",
-    "forgotTitle": "Mot de passe oublié",
-    "forgotHint": "Entrez votre email, nous vous enverrons un lien de réinitialisation (valide 1h).",
-    "sendReset": "Envoyer le lien",
-    "forgotSent": "Si un compte existe, un email a été envoyé.",
-    "resetTitle": "Réinitialiser le mot de passe",
-    "resetHint": "Choisissez un nouveau mot de passe.",
+   "confirmReset": "Confirmer la réinitialisation",
+    "forgot": "Mot de passe oublié?",
+        "forgotTitle": "Mot de passe oublié",
     "newPassword": "Nouveau mot de passe",
-    "confirmPassword": "Confirmer le mot de passe",
-    "resetSubmit": "Réinitialiser",
-    "resetSuccess": "Mot de passe réinitialisé avec succès ! Redirection...",
-    "backToLogin": "← Retour à la connexion",
+
+"code":"Code",
+    "forgotHint": "Entrez votre email : nous vous enverrons un code de réinitialisation.",
+    "sendReset": "Envoyer le code",
+    "resetByCodeTitle": "Réinitialiser avec un code",
+    "resetByCodeHint": "Saisissez le code reçu par email avec votre nouveau mot de passe.",
+    "resetSuccess": "Mot de passe réinitialisé avec succès.",
+    "backToLogin": "Retour à la connexion",
     "loginTitle": "Se connecter",
     "registerTitle": "Créer un compte",
     "lastName": "Nom",
@@ -87,7 +87,7 @@
       "notAuthenticated": "Non authentifié",
       "pdfError": "Erreur PDF",
       "networkPdfError": "Erreur réseau pendant l’ouverture du PDF",
-      "tractionOrders": "Devis "
+      "tractionOrders": " Demande Devis "
     },
     "devis": {
       "title": "Formulaire de Spécifications Techniques",

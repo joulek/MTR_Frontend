@@ -61,14 +61,14 @@ export default function LoginPage() {
         {/* Left visual panel */}
         <div className="hidden lg:flex relative items-center justify-center p-10">
           <Image
-            src="/about.jpg"
+            src="/about1.png"
             alt="Ressorts"
             fill
             sizes="(min-width:1024px) 50vw, 100vw"
-            className="object-cover opacity-30"
+            className="object-cover "
             priority
           />
-          <div className="absolute inset-0 bg-[#002147]/40" />
+          <div className="absolute inset-0 bg-[#002147]/30" />
           <div className="relative text-center text-white space-y-6 max-w-sm">
             <div className="mx-auto rounded-3xl inline-flex">
               <Image
@@ -76,18 +76,20 @@ export default function LoginPage() {
                 alt="MTR"
                 width={290}
                 height={70}
+                style={{ marginTop: "-80px" }}
+
                 priority
               />
             </div>
             <h2
-              className="text-4xl font-extrabold leading-tight text-[#ffb400]"
-              style={{ fontFamily: "'Lora', serif", marginTop: "-50px" }}
+              className="text-4xl font-extrabold leading-tight text-[#002147]"
+              style={{ fontFamily: "'Lora', serif", marginTop: "-80px" }}
             >
               {t("joinClientSpace")}
             </h2>
             <p
               className="text-[#002147]/80 font-bold text-lg"
-              style={{ fontFamily: "'Lora', serif" }}
+              style={{ fontFamily: "'Lora', serif" , marginTop: "80px"}}
             >
               {t("promoText")}
             </p>
@@ -140,18 +142,16 @@ export default function LoginPage() {
                     name="password"
                     type={showPwd ? "text" : "password"}
                     autoComplete="current-password"
-                    className={`w-full rounded-xl border border-[#ddd] bg-white py-3 text-[#002147] placeholder-[#555555] outline-none focus:border-[#ffb400] focus:ring-2 focus:ring-[#ffb400]/25 transition ${
-                      locale === "ar" ? "pl-10 pr-4" : "pr-10 pl-4"
-                    }`}
+                    className={`w-full rounded-xl border border-[#ddd] bg-white py-3 text-[#002147] placeholder-[#555555] outline-none focus:border-[#ffb400] focus:ring-2 focus:ring-[#ffb400]/25 transition ${locale === "ar" ? "pl-10 pr-4" : "pr-10 pl-4"
+                      }`}
                     placeholder="********"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPwd((v) => !v)}
-                    className={`absolute inset-y-0 my-auto text-sm font-medium px-3 py-1 rounded-md ${
-                      locale === "ar" ? "left-3" : "right-3"
-                    }`}
+                    className={`absolute inset-y-0 my-auto text-sm font-medium px-3 py-1 rounded-md ${locale === "ar" ? "left-3" : "right-3"
+                      }`}
                     style={{ color: "#555555" }}
                     aria-label="Afficher / masquer le mot de passe"
                   >
@@ -179,7 +179,7 @@ export default function LoginPage() {
                   {t("rememberMe")}
                 </label>
                 <a
-                 href={`/${locale}/forgot-password`}
+                  href={`/${locale}/forgot-password`}
                   className="font-semibold hover:underline text-[#002147]"
                   style={{ fontFamily: "'Lora', serif" }}
                 >

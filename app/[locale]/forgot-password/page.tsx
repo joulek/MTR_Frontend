@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import Image from "next/image"; // ✅ ajout pour afficher l’image
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import forgetImg from "@/public/forget_icon.png";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -10,6 +11,8 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
   const locale = useLocale();
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState("");
@@ -17,7 +20,9 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setOk(""); setErr(""); setLoading(true);
+    setOk("");
+    setErr("");
+    setLoading(true);
     try {
       const res = await fetch(`${BACKEND}/api/auth/forgot-password`, {
         method: "POST",
@@ -26,7 +31,9 @@ export default function ForgotPasswordPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Error");
-      setOk(t("forgotSent")); // ex: “Si un compte existe, un email a été envoyé.”
+
+      // ✅ Redirection vers la page reset-password avec l’email en query
+      router.replace(`/${locale}/reset-password?email=${encodeURIComponent(email)}`);
     } catch (e: any) {
       setErr(e.message || t("errors.network"));
     } finally {
@@ -37,12 +44,11 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl shadow-2xl border border-[#ffb400]/50 bg-white p-8 relative">
-        
-        {/* ✅ Icône ajoutée ici */}
+        {/* Icône */}
         <div className="flex justify-center -mt-14 mb-4">
           <div className="bg-white rounded-full shadow-lg p-3 border border-[#ffb400]/60">
             <Image
-              src={forgetImg}  // place ton image ici: /public/auth/forgot-icon.png
+              src={forgetImg}
               alt="Forgot password"
               width={80}
               height={80}
@@ -52,14 +58,24 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-extrabold text-[#002147] text-center" style={{ fontFamily: "'Lora', serif" }}>
+        <h1
+          className="text-2xl font-extrabold text-[#002147] text-center"
+          style={{ fontFamily: "'Lora', serif" }}
+        >
           {t("forgotTitle")}
         </h1>
-        <p className="text-sm text-gray-600 mt-2 text-center">{t("forgotHint")}</p>
+        <p className="text-sm text-gray-600 mt-2 text-center">
+          {t(
+            "forgotHint"          )}
+        </p>
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
-            <label htmlFor="email" className="block font-semibold text-[#002147]" style={{ fontFamily: "'Lora', serif" }}>
+            <label
+              htmlFor="email"
+              className="block font-semibold text-[#002147]"
+              style={{ fontFamily: "'Lora', serif" }}
+            >
               {t("email")} <span className="text-red-500">*</span>
             </label>
             <input
