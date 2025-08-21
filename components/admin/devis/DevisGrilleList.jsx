@@ -1,13 +1,13 @@
-// components/admin/devis/DevisGrilleList.jsx
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import Pagination from "@/components/Pagination";
 import { FiSearch, FiXCircle } from "react-icons/fi";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
-// Conteneur resserré (même que les autres listes)
+// Conteneur identique aux autres listes
 const WRAP = "mx-auto w-full max-w-4xl px-3 sm:px-4";
 
 // Helpers
@@ -24,6 +24,8 @@ function shortDate(d) {
 }
 
 export default function DevisGrilleList() {
+  const t = useTranslations("devisGrille");
+
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function DevisGrilleList() {
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.success) throw new Error(data?.message || `Erreur (${res.status})`);
       setItems(data.items || []);
-      setPage(1); // reset page après reload
+      setPage(1);
     } catch (e) {
       setErr(e.message || "Erreur réseau");
     } finally {
@@ -90,25 +92,27 @@ export default function DevisGrilleList() {
   async function openPdf(id) {
     try {
       const res = await fetch(`${BACKEND}/api/admin/devis/grille/${id}/pdf`, { credentials: "include" });
-      if (!res.ok) return alert("PDF indisponible.");
+      if (!res.ok) return alert(t("errors.pdfUnavailable"));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch { alert("Impossible d’ouvrir le PDF."); }
+    } catch { alert(t("errors.pdfOpenError")); }
   }
 
-  // Ouverture doc joint (boutons “Ouvrir” uniquement)
+  // Ouverture doc joint
   async function openDoc(id, index) {
     try {
       const res = await fetch(`${BACKEND}/api/admin/devis/grille/${id}/document/${index}`, { credentials: "include" });
-      if (!res.ok) return alert("Document indisponible.");
+      if (!res.ok) return alert(t("errors.docUnavailable"));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch { alert("Impossible d’ouvrir le document."); }
+    } catch { alert(t("errors.docOpenError")); }
   }
+
+  const colWidths = ["w-[150px]", "w-[200px]", "w-[170px]", "w-[90px]", "w-auto"];
 
   return (
     <div className="py-6 space-y-4">
@@ -116,21 +120,17 @@ export default function DevisGrilleList() {
       <div className={WRAP}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0B1E3A]">
-            Demande de devis – Grille métallique
+            {t("title")}
           </h1>
 
-          {/* Barre de recherche (compacte) */}
+          {/* Barre de recherche */}
           <div className="relative w-full sm:w-[300px]">
-            <FiSearch
-              aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={16}
-            />
+            <FiSearch aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher par N°, client ou date…"
-              aria-label="Rechercher une demande de devis"
+              placeholder={t("searchPlaceholder")}
+              aria-label={t("searchAria")}
               className="w-full rounded-lg border border-gray-300 bg-white px-8 pr-8 py-1.5 text-sm text-[#0B1E3A]
                          shadow focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
             />
@@ -138,7 +138,7 @@ export default function DevisGrilleList() {
               <button
                 type="button"
                 onClick={() => setQ("")}
-                aria-label="Effacer la recherche"
+                aria-label={t("clearSearch")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center
                            h-5 w-5 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition"
               >
@@ -155,7 +155,7 @@ export default function DevisGrilleList() {
         )}
       </div>
 
-      {/* Table (compacte, responsive, pas de carte blanche) */}
+      {/* Table */}
       <div className={WRAP}>
         {loading ? (
           <div className="space-y-2 animate-pulse">
@@ -164,26 +164,20 @@ export default function DevisGrilleList() {
             <div className="h-6 bg-gray-100 rounded" />
           </div>
         ) : total === 0 ? (
-          <p className="text-gray-500">Aucune demande de devis</p>
+          <p className="text-gray-500">{t("noData")}</p>
         ) : (
           <>
-            {/* Desktop / tablette */}
+            {/* Desktop */}
             <div className="hidden sm:block">
               <div className="overflow-x-hidden">
                 <table className="w-full table-fixed text-sm border-separate border-spacing-0">
-                  <colgroup>
-                    <col className="w-[110px]" /> {/* N° */}
-                    <col className="w-[220px]" /> {/* Client */}
-                    <col className="w-[170px]" /> {/* Date */}
-                    <col className="w-[90px]" />  {/* PDF */}
-                    <col className="w-auto" />     {/* Fichiers joints */}
-                  </colgroup>
+                  <colgroup>{colWidths.map((w, i) => <col key={i} className={w} />)}</colgroup>
 
                   <thead>
                     <tr>
-                      {["N°", "Client", "Date", "PDF DDV", "Fichiers joints"].map((h) => (
+                      {[t("columns.number"), t("columns.client"), t("columns.date"), t("columns.pdf"), t("columns.attachments")].map((h) => (
                         <th key={h} className="p-2 text-left align-bottom">
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                          <div className="text-sm font-semibold uppercase tracking-wide text-slate-600">
                             {h}
                           </div>
                           <div className="mt-2 h-px w-full bg-gray-200" />
@@ -205,7 +199,7 @@ export default function DevisGrilleList() {
                           <td className="p-2 align-top border-b border-gray-200">
                             <div className="flex items-center gap-2">
                               <span className="inline-block h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
-                              <span className="font-medium">{it.numero}</span>
+                              <span className="font-mono whitespace-nowrap">{it.numero}</span>
                             </div>
                           </td>
 
@@ -221,22 +215,21 @@ export default function DevisGrilleList() {
                             {shortDate(it.createdAt)}
                           </td>
 
-                          {/* PDF — même design que fichiers joints */}
+                          {/* PDF */}
                           <td className="p-2 align-top border-b border-gray-200">
                             {hasPdf ? (
                               <button
                                 onClick={() => openPdf(it._id)}
-                                className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 
-                                           px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
+                                className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
                               >
-                                Ouvrir
+                                {t("open")}
                               </button>
                             ) : (
                               <span className="text-gray-500">—</span>
                             )}
                           </td>
 
-                          {/* Fichiers joints (boutons “Ouvrir”) */}
+                          {/* Fichiers joints */}
                           <td className="p-2 align-top border-b border-gray-200">
                             {docs.length === 0 ? (
                               <span className="text-gray-400">—</span>
@@ -248,7 +241,7 @@ export default function DevisGrilleList() {
                                     onClick={() => openDoc(it._id, d.index)}
                                     className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
                                   >
-                                    Ouvrir
+                                    {t("open")}
                                   </button>
                                 ))}
                               </div>
@@ -261,7 +254,6 @@ export default function DevisGrilleList() {
                 </table>
               </div>
 
-              {/* Pagination desktop/tablette */}
               <Pagination
                 page={page}
                 pageSize={pageSize}
@@ -284,36 +276,36 @@ export default function DevisGrilleList() {
                   <div key={it._id} className="py-3">
                     <div className="flex items-center gap-2 text-[#0B1E3A]">
                       <span className="inline-block h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
-                      <span className="font-medium">{it.numero}</span>
+                      <span className="font-mono">{it.numero}</span>
                     </div>
 
                     <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <p className="text-xs font-semibold text-gray-500">Client</p>
+                        <p className="text-xs font-semibold text-gray-500">{t("columns.client")}</p>
                         <p className="truncate">{it.user?.prenom} {it.user?.nom}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-gray-500">Date</p>
+                        <p className="text-xs font-semibold text-gray-500">{t("columns.date")}</p>
                         <p className="truncate">{shortDate(it.createdAt)}</p>
                       </div>
                     </div>
 
                     <div className="mt-2 text-sm">
-                      <span className="text-xs font-semibold text-gray-500">PDF</span>{" "}
+                      <span className="text-xs font-semibold text-gray-500">{t("columns.pdf")}</span>{" "}
                       {hasPdf ? (
                         <button
                           onClick={() => openPdf(it._id)}
                           className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 
                                      px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
                         >
-                          Ouvrir
+                          {t("open")}
                         </button>
                       ) : (
                         <span className="text-gray-500">—</span>
                       )}
                     </div>
 
-                    <p className="mt-2 text-xs font-semibold text-gray-500">Fichiers joints</p>
+                    <p className="mt-2 text-xs font-semibold text-gray-500">{t("columns.attachments")}</p>
                     {docs.length === 0 ? (
                       <p className="text-gray-500">—</p>
                     ) : (
@@ -324,7 +316,7 @@ export default function DevisGrilleList() {
                             onClick={() => openDoc(it._id, d.index)}
                             className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
                           >
-                            Ouvrir
+                            {t("open")}
                           </button>
                         ))}
                       </div>
@@ -333,7 +325,6 @@ export default function DevisGrilleList() {
                 );
               })}
 
-              {/* Pagination mobile */}
               <Pagination
                 page={page}
                 pageSize={pageSize}

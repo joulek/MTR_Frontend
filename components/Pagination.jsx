@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 export default function Pagination({
   page,
@@ -9,6 +10,8 @@ export default function Pagination({
   onPageSizeChange,
   pageSizeOptions = [5, 10, 20, 50],
 }) {
+  const t = useTranslations("pagination");
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(total, page * pageSize);
@@ -19,7 +22,7 @@ export default function Pagination({
   }
 
   const nums = [];
-  const pad = 1; // nb de pages à montrer autour de la page courante
+  const pad = 1;
   const from = Math.max(1, page - pad);
   const to = Math.min(totalPages, page + pad);
   if (from > 1) nums.push(1);
@@ -32,7 +35,10 @@ export default function Pagination({
     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {/* info */}
       <div className="text-sm text-slate-600">
-        Affichage <span className="font-medium text-[#0B1E3A]">{start}</span>–<span className="font-medium text-[#0B1E3A]">{end}</span> sur{" "}
+        {t("showing")}{" "}
+        <span className="font-medium text-[#0B1E3A]">{start}</span>–
+        <span className="font-medium text-[#0B1E3A]">{end}</span>{" "}
+        {t("of")}{" "}
         <span className="font-medium text-[#0B1E3A]">{total}</span>
       </div>
 
@@ -40,7 +46,7 @@ export default function Pagination({
       <div className="flex items-center gap-3">
         {/* page size */}
         <label className="hidden sm:flex items-center gap-2 text-sm text-slate-600">
-          <span>Par page</span>
+          <span>{t("perPage")}</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
@@ -57,6 +63,7 @@ export default function Pagination({
           <button
             onClick={() => goto(page - 1)}
             disabled={page <= 1}
+            aria-label={t("prev")}
             className="px-2 py-1 rounded-lg border border-gray-300 text-sm text-[#0B1E3A] disabled:opacity-40 hover:bg-gray-50"
           >
             ←
@@ -83,6 +90,7 @@ export default function Pagination({
           <button
             onClick={() => goto(page + 1)}
             disabled={page >= totalPages}
+            aria-label={t("next")}
             className="px-2 py-1 rounded-lg border border-gray-300 text-sm text-[#0B1E3A] disabled:opacity-40 hover:bg-gray-50"
           >
             →

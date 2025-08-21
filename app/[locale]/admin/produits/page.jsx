@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
 import { FiEdit2, FiSearch, FiXCircle, FiPlus, FiTrash2, FiX, FiCheck } from "react-icons/fi";
+import Pagination from "@/components/Pagination"; // ✅ ajout
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -20,6 +21,10 @@ export default function AdminProductsPage() {
 
   // Recherche
   const [query, setQuery] = useState("");
+
+  // ✅ Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Modales
   const [isOpen, setIsOpen] = useState(false);
@@ -88,6 +93,22 @@ export default function AdminProductsPage() {
       return fr.includes(q) || en.includes(q) || dfr.includes(q) || den.includes(q) || cat.includes(q);
     });
   }, [products, query]);
+
+  // ✅ Pagination locale
+  const total = filteredProducts.length;
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, page, pageSize]);
+
+  // ✅ clamp & reset page quand le filtre change
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) setPage(totalPages);
+  }, [total, page, pageSize]);
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
 
   // Previews (nouvelles images)
   const onImagesChange = (fileList) => {
@@ -398,90 +419,116 @@ export default function AdminProductsPage() {
       {/* LISTE MOBILE (cartes) */}
       <div className={`${CARD_WRAPPER} md:hidden`}>
         <div className="grid gap-3 sm:gap-4">
-          {filteredProducts.length === 0 ? (
+          {pageItems.length === 0 ? (
             <p className="text-gray-500">{t("noData")}</p>
           ) : (
-            filteredProducts.map((p) => <MobileCard key={p._id} p={p} />)
+            pageItems.map((p) => <MobileCard key={p._id} p={p} />)
           )}
+        </div>
+
+        {/* ✅ Pagination mobile */}
+        <div className="mt-4">
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
         </div>
       </div>
 
       {/* TABLE DESKTOP */}
       <div className={`${CARD_WRAPPER} hidden md:block`}>
         <div className="rounded-2xl border border-[#F7C60022] bg-white shadow-[0_6px_22px_rgba(0,0,0,.06)]">
-          {filteredProducts.length === 0 ? (
+          {pageItems.length === 0 ? (
             <p className="px-6 py-6 text-gray-500">{t("noData")}</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-[840px] w-full table-auto">
-                <colgroup>
-                  <col className="w-[22%]" />
-                  <col className="w-[22%]" />
-                  <col className="w-[28%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[10%]" />
-                </colgroup>
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-[840px] w-full table-auto">
+                  <colgroup>
+                    <col className="w-[22%]" />
+                    <col className="w-[22%]" />
+                    <col className="w-[28%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[10%]" />
+                  </colgroup>
 
-                <thead>
-                  <tr className="bg-white">
-                    <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.category")}</div></th>
-                    <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.name")}</div></th>
-                    <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.description")}</div></th>
-                    <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.images")}</div></th>
-                    <th className="p-3 text-right"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.actions")}</div></th>
-                  </tr>
-                  <tr>
-                    <td colSpan={5}><div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" /></td>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-gray-100">
-                  {filteredProducts.map((p) => (
-                    <tr key={p._id} className="bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors">
-                      <td className="p-3 align-top">
-                        <span className="inline-flex items-center gap-2 text-[#0B1E3A]">
-                          <span className="h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
-                          <span className="leading-tight">{p.category ? catLabel(p.category) : "-"}</span>
-                        </span>
-                      </td>
-
-                      <td className="p-3 align-top">
-                        <div className="text-[#0B1E3A] font-medium truncate max-w-[220px]">{p.name_fr || p.name_en || "-"}</div>
-                      </td>
-                      <td className="p-3 align-top">
-                        <p className="text-sm text-slate-700 line-clamp-2 max-w-[360px]">
-                          {p.description_fr || p.description_en || "-"}
-                        </p>
-                      </td>
-                      <td className="p-3 align-top">
-                        <div className="max-w-[140px]">{renderThumbs(p.images || [])}</div>
-                      </td>
-                      <td className="p-3 align-top">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEdit(p)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100 hover:shadow-sm transition"
-                            title={t("actions.edit")}
-                            aria-label={t("actions.edit")}
-                          >
-                            <FiEdit2 size={14} />
-                          </button>
-
-                          <button
-                            onClick={() => openDeleteModal(p)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-sm transition"
-                            title={t("actions.delete")}
-                            aria-label={t("actions.delete")}
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
+                  <thead>
+                    <tr className="bg-white">
+                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.category")}</div></th>
+                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.name")}</div></th>
+                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.description")}</div></th>
+                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.images")}</div></th>
+                      <th className="p-3 text-right"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.actions")}</div></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    <tr>
+                      <td colSpan={5}><div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" /></td>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-100">
+                    {pageItems.map((p) => (
+                      <tr key={p._id} className="bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors">
+                        <td className="p-3 align-top">
+                          <span className="inline-flex items-center gap-2 text-[#0B1E3A]">
+                            <span className="h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
+                            <span className="leading-tight">{p.category ? catLabel(p.category) : "-"}</span>
+                          </span>
+                        </td>
+
+                        <td className="p-3 align-top">
+                          <div className="text-[#0B1E3A] font-medium truncate max-w-[220px]">{p.name_fr || p.name_en || "-"}</div>
+                        </td>
+                        <td className="p-3 align-top">
+                          <p className="text-sm text-slate-700 line-clamp-2 max-w-[360px]">
+                            {p.description_fr || p.description_en || "-"}
+                          </p>
+                        </td>
+                        <td className="p-3 align-top">
+                          <div className="max-w-[140px]">{renderThumbs(p.images || [])}</div>
+                        </td>
+                        <td className="p-3 align-top">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEdit(p)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100 hover:shadow-sm transition"
+                              title={t("actions.edit")}
+                              aria-label={t("actions.edit")}
+                            >
+                              <FiEdit2 size={14} />
+                            </button>
+
+                            <button
+                              onClick={() => openDeleteModal(p)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-sm transition"
+                              title={t("actions.delete")}
+                              aria-label={t("actions.delete")}
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ✅ Pagination desktop */}
+              <div className="px-4 pb-5">
+                <Pagination
+                  page={page}
+                  pageSize={pageSize}
+                  total={total}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[5, 10, 20, 50]}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -1,11 +1,10 @@
 {
   "auth": {
-   "confirmReset": "Confirmer la réinitialisation",
+    "confirmReset": "Confirmer la réinitialisation",
     "forgot": "Mot de passe oublié?",
-        "forgotTitle": "Mot de passe oublié",
+    "forgotTitle": "Mot de passe oublié",
     "newPassword": "Nouveau mot de passe",
-
-"code":"Code",
+    "code": "Code",
     "forgotHint": "Entrez votre email : nous vous enverrons un code de réinitialisation.",
     "sendReset": "Envoyer le code",
     "resetByCodeTitle": "Réinitialiser avec un code",
@@ -52,7 +51,8 @@
     "errors": {
       "network": "Erreur réseau, veuillez réessayer.",
       "loginFailed": "Identifiants incorrects.",
-      "accountTypeRequired": "Veuillez choisir le type de compte."
+      "accountTypeRequired": "Veuillez choisir le type de compte.",
+      "noAccountForEmail": "Aucun compte n'est associé à cet email."
     },
     "messages": {
       "registerSuccess": "Compte créé avec succès !",
@@ -605,5 +605,141 @@
       "faq": "Centre de FAQ complet",
       "privacy": "Politique de confidentialité"
     }
+  },
+  "devisAutre": {
+    "title": "Demande de devis – Autres Types",
+    "searchPlaceholder": "Rechercher par N°, client ou date…",
+    "searchAria": "Rechercher une demande de devis",
+    "clearSearch": "Effacer la recherche",
+    "noData": "Aucune demande de devis",
+    "columns": {
+      "number": "N°",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "PDF DDV",
+      "attachments": "Fichiers joints"
+    },
+    "open": "Ouvrir",
+    "errors": {
+      "pdfUnavailable": "PDF non disponible.",
+      "pdfOpenError": "Impossible d’ouvrir le PDF.",
+      "docUnavailable": "Document non disponible.",
+      "docOpenError": "Impossible d’ouvrir le document."
+    }
+  },
+  "devisCompression": {
+    "title": "Demande de devis – Ressort de Compression",
+    "searchPlaceholder": "Rechercher par N°, client ou date…",
+    "searchAria": "Rechercher une demande de devis",
+    "clearSearch": "Effacer la recherche",
+    "noData": "Aucune demande de devis",
+    "columns": {
+      "number": "N°",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "PDF DDV",
+      "attachments": "Fichiers joints"
+    },
+    "open": "Ouvrir",
+    "errors": {
+      "pdfUnavailable": "PDF non disponible.",
+      "pdfOpenError": "Impossible d’ouvrir le PDF.",
+      "docUnavailable": "Document non disponible.",
+      "docOpenError": "Impossible d’ouvrir le document."
+    }
+  },
+  "devisFil": {
+    "title": "Demande de devis – Fil Dressé / coupé",
+    "searchPlaceholder": "Rechercher par N°, client ou date…",
+    "searchAria": "Rechercher une demande de devis",
+    "clearSearch": "Effacer la recherche",
+    "noData": "Aucune demande de devis",
+    "columns": {
+      "number": "N°",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "PDF DDV",
+      "attachments": "Fichiers joints"
+    },
+    "open": "Ouvrir",
+    "errors": {
+      "pdfUnavailable": "PDF non disponible.",
+      "pdfOpenError": "Impossible d’ouvrir le PDF.",
+      "docUnavailable": "Document non disponible.",
+      "docOpenError": "Impossible d’ouvrir le document."
+    }
+  },
+  "devisGrille": {
+    "title": "Demande de devis – Grille métallique",
+    "searchPlaceholder": "Rechercher par N°, client ou date…",
+    "searchAria": "Rechercher une demande de devis",
+    "clearSearch": "Effacer la recherche",
+    "noData": "Aucune demande de devis",
+    "columns": {
+      "number": "N°",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "PDF DDV",
+      "attachments": "Fichiers joints"
+    },
+    "open": "Ouvrir",
+    "errors": {
+      "pdfUnavailable": "PDF indisponible.",
+      "pdfOpenError": "Impossible d’ouvrir le PDF.",
+      "docUnavailable": "Document indisponible.",
+      "docOpenError": "Impossible d’ouvrir le document."
+    }
+  },
+  "devisTorsion": {
+    "title": "Demande de devis – Ressort de Torsion",
+    "searchPlaceholder": "Rechercher par N°, client ou date…",
+    "searchAria": "Rechercher une demande de devis",
+    "clearSearch": "Effacer la recherche",
+    "noData": "Aucune demande de devis",
+    "columns": {
+      "number": "N°",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "PDF DDV",
+      "attachments": "Fichiers joints"
+    },
+    "open": "Ouvrir",
+    "attachmentsOpenAria": "Ouvrir le fichier {index}",
+    "errors": {
+      "pdfUnavailable": "PDF non disponible.",
+      "pdfOpenError": "Impossible d’ouvrir le PDF.",
+      "docUnavailable": "Document non disponible.",
+      "docOpenError": "Impossible d’ouvrir le document."
+    }
+  },
+  "devisTraction": {
+    "title": "Demande de devis – Ressort de Traction",
+    "searchPlaceholder": "Rechercher par N°, client ou date…",
+    "searchAria": "Rechercher une demande de devis",
+    "clearSearch": "Effacer la recherche",
+    "noData": "Aucune demande de devis",
+    "columns": {
+      "number": "N°",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "PDF DDV",
+      "attachments": "Fichiers joints"
+    },
+    "open": "Ouvrir",
+    "attachmentsOpenAria": "Ouvrir le fichier {index}",
+    "errors": {
+      "pdfUnavailable": "PDF non disponible.",
+      "pdfOpenError": "Impossible d’ouvrir le PDF.",
+      "docUnavailable": "Document non disponible.",
+      "docOpenError": "Impossible d’ouvrir le document.",
+      "network": "Erreur réseau"
+    }
+  },
+  "pagination": {
+    "showing": "Affichage",
+    "of": "sur",
+    "perPage": "Par page",
+    "prev": "Page précédente",
+    "next": "Page suivante"
   }
 }

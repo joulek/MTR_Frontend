@@ -2,13 +2,13 @@
   "auth": {
     "forgot": "Forgot password?",
     "forgotTitle": "Mot de passe oublié",
-    "code":"Code",
-  "confirmReset": "Confirm reset",
-  "forgotHintCode": "Enter your email: we will send you a reset code.",
-  "sendResetCode": "Send code",
-  "forgotSentCode": "If an account exists, a code has been sent to your email.",
-  "resetByCodeTitle": "Reset with a code",
-  "resetByCodeHint": "Enter the code received by email along with your new password.",
+    "code": "Code",
+    "confirmReset": "Confirm reset",
+    "forgotHintCode": "Enter your email: we will send you a reset code.",
+    "sendResetCode": "Send code",
+    "forgotSentCode": "If an account exists, a code has been sent to your email.",
+    "resetByCodeTitle": "Reset with a code",
+    "resetByCodeHint": "Enter the code received by email along with your new password.",
     "forgotHint": "Enter your email, we will send you a reset code.",
     "sendReset": "Send reset link",
     "forgotSent": "If an account exists, an email has been sent.",
@@ -59,7 +59,8 @@
     "errors": {
       "network": "Network error, please try again.",
       "loginFailed": "Incorrect credentials.",
-      "accountTypeRequired": "Please choose an account type."
+      "accountTypeRequired": "Please choose an account type.",
+      "noAccountForEmail": "No account is associated with this email."
     },
     "messages": {
       "registerSuccess": "Account created successfully!",
@@ -95,7 +96,6 @@
       "networkPdfError": "Network error while opening PDF",
       "tractionOrders": " Quotes"
     },
-    
     "devis": {
       "title": "Technical Specifications Form",
       "subtitle": "Choose a product type to display the corresponding form.",
@@ -610,5 +610,141 @@
       "faq": "Full FAQ center",
       "privacy": "Privacy policy"
     }
+  },
+  "devisAutre": {
+    "title": "Quote Request – Other Types",
+    "searchPlaceholder": "Search by No., client or date…",
+    "searchAria": "Search a quote request",
+    "clearSearch": "Clear search",
+    "noData": "No quote request",
+    "columns": {
+      "number": "No.",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "Quote PDF",
+      "attachments": "Attachments"
+    },
+    "open": "Open",
+    "errors": {
+      "pdfUnavailable": "PDF not available.",
+      "pdfOpenError": "Unable to open PDF.",
+      "docUnavailable": "Document not available.",
+      "docOpenError": "Unable to open document."
+    }
+  },
+  "devisCompression": {
+    "title": "Quote Request – Compression Spring",
+    "searchPlaceholder": "Search by No., client or date…",
+    "searchAria": "Search a quote request",
+    "clearSearch": "Clear search",
+    "noData": "No quote request",
+    "columns": {
+      "number": "No.",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "Quote PDF",
+      "attachments": "Attachments"
+    },
+    "open": "Open",
+    "errors": {
+      "pdfUnavailable": "PDF not available.",
+      "pdfOpenError": "Unable to open PDF.",
+      "docUnavailable": "Document not available.",
+      "docOpenError": "Unable to open document."
+    }
+  },
+  "devisFil": {
+    "title": "Quote Request – Straight/Cut Wire",
+    "searchPlaceholder": "Search by No., client or date…",
+    "searchAria": "Search a quote request",
+    "clearSearch": "Clear search",
+    "noData": "No quote request",
+    "columns": {
+      "number": "No.",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "Quote PDF",
+      "attachments": "Attachments"
+    },
+    "open": "Open",
+    "errors": {
+      "pdfUnavailable": "PDF not available.",
+      "pdfOpenError": "Unable to open PDF.",
+      "docUnavailable": "Document not available.",
+      "docOpenError": "Unable to open document."
+    }
+  },
+  "devisGrille": {
+    "title": "Quote Request – Wire Mesh",
+    "searchPlaceholder": "Search by No., client or date…",
+    "searchAria": "Search a quote request",
+    "clearSearch": "Clear search",
+    "noData": "No quote request",
+    "columns": {
+      "number": "No.",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "Quote PDF",
+      "attachments": "Attachments"
+    },
+    "open": "Open",
+    "errors": {
+      "pdfUnavailable": "PDF not available.",
+      "pdfOpenError": "Unable to open PDF.",
+      "docUnavailable": "Document not available.",
+      "docOpenError": "Unable to open document."
+    }
+  },
+  "devisTorsion": {
+    "title": "Quote Request – Torsion Spring",
+    "searchPlaceholder": "Search by No., client or date…",
+    "searchAria": "Search a quote request",
+    "clearSearch": "Clear search",
+    "noData": "No quote request",
+    "columns": {
+      "number": "No.",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "Quote PDF",
+      "attachments": "Attachments"
+    },
+    "open": "Open",
+    "attachmentsOpenAria": "Open file {index}",
+    "errors": {
+      "pdfUnavailable": "PDF not available.",
+      "pdfOpenError": "Unable to open PDF.",
+      "docUnavailable": "Document not available.",
+      "docOpenError": "Unable to open document."
+    }
+  },
+  "devisTraction": {
+    "title": "Quote Request – Extension Spring",
+    "searchPlaceholder": "Search by No., client or date…",
+    "searchAria": "Search a quote request",
+    "clearSearch": "Clear search",
+    "noData": "No quote request",
+    "columns": {
+      "number": "No.",
+      "client": "Client",
+      "date": "Date",
+      "pdf": "Quote PDF",
+      "attachments": "Attachments"
+    },
+    "open": "Open",
+    "attachmentsOpenAria": "Open file {index}",
+    "errors": {
+      "pdfUnavailable": "PDF not available.",
+      "pdfOpenError": "Unable to open PDF.",
+      "docUnavailable": "Document not available.",
+      "docOpenError": "Unable to open document.",
+      "network": "Network error"
+    }
+  },
+  "pagination": {
+    "showing": "Showing",
+    "of": "of",
+    "perPage": "Per page",
+    "prev": "Previous page",
+    "next": "Next page"
   }
 }

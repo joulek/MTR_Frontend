@@ -11,6 +11,7 @@ import {
   FiX,
   FiPlus,
 } from "react-icons/fi";
+import Pagination from "@/components/Pagination"; // ✅ appel du composant
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -23,6 +24,10 @@ export default function AdminCategoriesPage() {
 
   // Recherche
   const [query, setQuery] = useState("");
+
+  // ✅ Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Modales
   const [addOpen, setAddOpen] = useState(false);
@@ -55,6 +60,7 @@ export default function AdminCategoriesPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || t("errorLoad"));
       setItems(data.categories || []);
+      setPage(1); // ✅ reset pagination quand on recharge
     } catch (e) {
       setError(e?.message || t("errorServer"));
     } finally {
@@ -64,6 +70,7 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => {
     fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ----- Add -----
@@ -94,6 +101,7 @@ export default function AdminCategoriesPage() {
       if (!res.ok) throw new Error(data?.message || t("errorCreate"));
       setItems((prev) => [data.category, ...prev]);
       closeAddModal();
+      setPage(1); // ✅ on repart à la page 1 après ajout
     } catch (e) {
       setError(e?.message || t("errorServer"));
     } finally {
@@ -156,6 +164,7 @@ export default function AdminCategoriesPage() {
       if (!res.ok) throw new Error(data?.message || t("errorDelete"));
       setItems((prev) => prev.filter((c) => c._id !== currentId));
       closeDeleteModal();
+      // pas de reset page ici pour laisser l’utilisateur sur sa page courante
     } catch (e) {
       setError(e?.message || t("errorServer"));
     } finally {
@@ -173,6 +182,22 @@ export default function AdminCategoriesPage() {
       return fr.includes(q) || en.includes(q) || c._id.toLowerCase().includes(q);
     });
   }, [items, query]);
+
+  // ✅ pagination locale
+  const total = filtered.length;
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  // ✅ clamp et reset page sur recherche
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) setPage(totalPages);
+  }, [total, page, pageSize]);
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
 
   return (
     <div className="py-6 space-y-6 sm:space-y-8">
@@ -230,7 +255,7 @@ export default function AdminCategoriesPage() {
               <div className="h-10 bg-gray-100 rounded-lg" />
               <div className="h-10 bg-gray-100 rounded-lg" />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : total === 0 ? (
             <p className="px-6 py-6 text-gray-500">{t("noData")}</p>
           ) : (
             <>
@@ -270,7 +295,7 @@ export default function AdminCategoriesPage() {
                     </thead>
 
                     <tbody className="divide-y divide-gray-100">
-                      {filtered.map((c) => {
+                      {pageItems.map((c) => {
                         const fr = c?.translations?.fr || c?.label || "";
                         const en = c?.translations?.en || "";
                         return (
@@ -302,7 +327,6 @@ export default function AdminCategoriesPage() {
                                   aria-label={t("actions.edit")}
                                 >
                                   <FiEdit2 size={16} />
-                                 
                                 </button>
                                 <button
                                   onClick={() => openDeleteModal(c)}
@@ -311,7 +335,6 @@ export default function AdminCategoriesPage() {
                                   aria-label={t("actions.delete")}
                                 >
                                   <FiTrash2 size={16} />
-                                 
                                 </button>
                               </div>
                             </td>
@@ -325,7 +348,7 @@ export default function AdminCategoriesPage() {
 
               {/* < md */}
               <div className="md:hidden grid grid-cols-1 gap-3 px-4 py-4">
-                {filtered.map((c) => {
+                {pageItems.map((c) => {
                   const fr = c?.translations?.fr || c?.label || "";
                   const en = c?.translations?.en || "";
                   return (
@@ -368,6 +391,18 @@ export default function AdminCategoriesPage() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* ✅ Pagination commune (desktop + mobile) */}
+              <div className="px-4 pb-5">
+                <Pagination
+                  page={page}
+                  pageSize={pageSize}
+                  total={total}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[5, 10, 20, 50]}
+                />
               </div>
             </>
           )}

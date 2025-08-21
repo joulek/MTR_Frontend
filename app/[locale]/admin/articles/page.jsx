@@ -12,6 +12,7 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { useTranslations } from "next-intl";
+import Pagination from "@/components/Pagination";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -28,8 +29,12 @@ export default function AdminArticlesPage() {
   const [devisList, setDevisList] = useState([]);
   const [loadingDevis, setLoadingDevis] = useState(false);
 
-  // Recherche (même UX que catégories)
+  // Recherche
   const [query, setQuery] = useState("");
+
+  // Pagination (client)
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Modales
   const [isOpen, setIsOpen] = useState(false); // Add/Edit
@@ -57,6 +62,7 @@ export default function AdminArticlesPage() {
       const res = await fetch(`${BACKEND}/api/articles`, { cache: "no-store" });
       const json = await res.json();
       setItems(json?.data ?? []);
+      setPage(1); // reset pagination au chargement
     } catch (e) {
       console.error(e);
     } finally {
@@ -119,11 +125,7 @@ export default function AdminArticlesPage() {
   const validForm = () => {
     if (!form.reference?.trim()) return t("errors.requiredReference");
     if (!form.designation?.trim()) return t("errors.requiredDesignation");
-    if (
-      form.prixHT === "" ||
-      isNaN(Number(form.prixHT)) ||
-      Number(form.prixHT) < 0
-    )
+    if (form.prixHT === "" || isNaN(Number(form.prixHT)) || Number(form.prixHT) < 0)
       return t("errors.invalidHT");
     return null;
   };
@@ -203,6 +205,28 @@ export default function AdminArticlesPage() {
     });
   }, [items, query]);
 
+  // ===== Pagination client =====
+  const total = filtered.length;
+
+  // clamp page si la taille/filtre change
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) setPage(totalPages);
+  }, [total, page, pageSize]);
+
+  // reset page quand on tape
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
+
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  // largeurs de colonnes sans whitespace dans <colgroup>
+  const colWidths = ["w-[18%]", "w-[32%]", "w-[12%]", "w-[12%]", "w-[16%]", "w-[10%]"];
+
   return (
     <div className="py-6 space-y-6 sm:space-y-8">
       {/* ======= Header + Search (style Catégories) ======= */}
@@ -259,7 +283,7 @@ export default function AdminArticlesPage() {
               <div className="h-10 bg-gray-100 rounded-lg" />
               <div className="h-10 bg-gray-100 rounded-lg" />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : total === 0 ? (
             <p className="px-6 py-6 text-gray-500">{t("noData")}</p>
           ) : (
             <>
@@ -268,12 +292,9 @@ export default function AdminArticlesPage() {
                 <div className="overflow-x-auto">
                   <table className="min-w-[840px] w-full table-auto">
                     <colgroup>
-                      <col className="w-[18%]" />
-                      <col className="w-[32%]" />
-                      <col className="w-[12%]" />
-                      <col className="w-[12%]" />
-                      <col className="w-[16%]" />
-                      <col className="w-[10%]" />
+                      {colWidths.map((w, i) => (
+                        <col key={i} className={w} />
+                      ))}
                     </colgroup>
 
                     <thead>
@@ -317,7 +338,7 @@ export default function AdminArticlesPage() {
                     </thead>
 
                     <tbody className="divide-y divide-gray-100">
-                      {filtered.map((it) => (
+                      {pageItems.map((it) => (
                         <tr
                           key={it._id}
                           className="bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors"
@@ -331,15 +352,13 @@ export default function AdminArticlesPage() {
                             </div>
                           </td>
                           <td className="p-3 align-middle">
-                            <span className="text-slate-700">
-                              {it.designation}
-                            </span>
+                            <span className="text-slate-700">{it.designation}</span>
                           </td>
                           <td className="p-3 align-middle text-right text-[#0B1E3A]">
-                            {Number(it.prixHT).toFixed(2)}
+                            {Number(it.prixHT).toFixed(4)}
                           </td>
                           <td className="p-3 align-middle text-right text-[#0B1E3A]">
-                            {Number(it.prixTTC ?? it.prixHT * 1.2).toFixed(2)}
+                            {Number(it.prixTTC ?? it.prixHT * 1.2).toFixed(4)}
                           </td>
                           <td className="p-3 align-middle text-[#0B1E3A]">
                             {it.numeroDevis || t("misc.none")}
@@ -369,11 +388,23 @@ export default function AdminArticlesPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination (desktop) */}
+                <div className="px-4 py-4">
+                  <Pagination
+                    page={page}
+                    pageSize={pageSize}
+                    total={total}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                  />
+                </div>
               </div>
 
               {/* Mobile cards */}
               <div className="md:hidden grid grid-cols-1 gap-3 px-4 py-4">
-                {filtered.map((it) => (
+                {pageItems.map((it) => (
                   <div
                     key={it._id}
                     className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
@@ -399,7 +430,7 @@ export default function AdminArticlesPage() {
                               {t("table.priceHT")}
                             </p>
                             <p className="text-[#0B1E3A]">
-                              {Number(it.prixHT).toFixed(2)}
+                              {Number(it.prixHT).toFixed(4)}
                             </p>
                           </div>
                           <div>
@@ -407,7 +438,7 @@ export default function AdminArticlesPage() {
                               {t("table.priceTTC")}
                             </p>
                             <p className="text-[#0B1E3A]">
-                              {Number(it.prixTTC ?? it.prixHT * 1.2).toFixed(2)}
+                              {Number(it.prixTTC ?? it.prixHT * 1.2).toFixed(4)}
                             </p>
                           </div>
                         </div>
@@ -443,6 +474,18 @@ export default function AdminArticlesPage() {
                     </div>
                   </div>
                 ))}
+
+                {/* Pagination (mobile) */}
+                <div className="pt-2">
+                  <Pagination
+                    page={page}
+                    pageSize={pageSize}
+                    total={total}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    pageSizeOptions={[5, 10, 20, 50]}
+                  />
+                </div>
               </div>
             </>
           )}
@@ -505,7 +548,7 @@ export default function AdminArticlesPage() {
                     value={form.prixHT}
                     onChange={onChange}
                     type="number"
-                    step="0.01"
+                    step="0.001"
                     min="0"
                     className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
                     placeholder={t("placeholders.priceExample")}
