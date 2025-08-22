@@ -486,11 +486,11 @@ export default function AdminProductsPage() {
 
                   <thead>
                     <tr className="bg-white">
-                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.category")}</div></th>
-                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.name")}</div></th>
-                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.description")}</div></th>
-                      <th className="p-3 text-left"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.images")}</div></th>
-                      <th className="p-3 text-right"><div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("table.actions")}</div></th>
+                      <th className="p-3 text-left"><div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">{t("table.category")}</div></th>
+                      <th className="p-3 text-left"><div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">{t("table.name")}</div></th>
+                      <th className="p-3 text-left"><div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">{t("table.description")}</div></th>
+                      <th className="p-3 text-left"><div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">{t("table.images")}</div></th>
+                      <th className="p-3 text-right"><div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">{t("table.actions")}</div></th>
                     </tr>
                     <tr>
                       <td colSpan={5}><div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" /></td>

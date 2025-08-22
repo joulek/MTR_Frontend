@@ -215,7 +215,7 @@ export default function DevisAutrePage() {
                   <tr>
                     {[t("columns.number"), t("columns.client"), t("columns.date"), t("columns.pdf"), t("columns.attachments")].map((h) => (
                       <th key={h} className="p-2 text-left align-bottom">
-                        <div className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+                        <div className="text-[13px] font-semibold uppercase tracking-wide text-slate-600">
                           {h}
                         </div>
                         <div className="mt-2 h-px w-full bg-gray-200" />

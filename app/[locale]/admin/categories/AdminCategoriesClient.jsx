@@ -272,17 +272,17 @@ export default function AdminCategoriesPage() {
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-white">
                         <th className="p-4 text-left">
-                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                             {t("table.fr")}
                           </div>
                         </th>
                         <th className="p-4 text-left">
-                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                             {t("table.en")}
                           </div>
                         </th>
                         <th className="p-4 text-right">
-                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                             {t("table.actions")}
                           </div>
                         </th>
