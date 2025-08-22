@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
@@ -8,12 +8,35 @@ import { usePathname } from "next/navigation";
 import { FaFacebook } from "react-icons/fa";
 
 export default function ClientLayout({ children }) {
-  const [open, setOpen] = useState(false);
-  const [ordersOpen, setOrdersOpen] = useState(false);
+  const [open, setOpen] = useState(false);          // menu mobile
+  const [ordersOpen, setOrdersOpen] = useState(false); // dropdown "Mes services"
   const locale = useLocale();
   const t = useTranslations("auth.client");
   const pathname = usePathname();
 
+  // refs et timers pour un dropdown solide (hover + clic)
+  const servicesRef = useRef(null);
+  const closeTimerRef = useRef(null);
+
+  const openServices = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setOrdersOpen(true);
+  };
+  const scheduleCloseServices = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => setOrdersOpen(false), 180);
+  };
+
+  // Fermer au clic en dehors
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!servicesRef.current?.contains(e.target)) setOrdersOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  // ping /api/me pour hydrater la session (optionnel)
   useEffect(() => {
     (async () => {
       try {
@@ -51,7 +74,7 @@ export default function ClientLayout({ children }) {
     );
   };
 
-  // actif si on est dans une page du groupe
+  // actif si on est dans une page du groupe "Mes services"
   const isServicesActive = (p) =>
     p.startsWith(`/${locale}/client/mes-devis`) ||
     p.startsWith(`/${locale}/client/reclamations`) ||
@@ -112,19 +135,20 @@ export default function ClientLayout({ children }) {
                 <NavLink href={`/${locale}/client`}>{t("home")}</NavLink>
                 <NavLink href={`/${locale}/client/profile`}>{t("profile")}</NavLink>
 
-                {/* Mes services : trigger + menu (hover ET clic) */}
+                {/* Mes services : hover + clic, avec délai de fermeture */}
                 <div
+                  ref={servicesRef}
                   className="relative"
-                  onMouseEnter={() => setOrdersOpen(true)}
-                  onMouseLeave={() => setOrdersOpen(false)}
+                  onMouseEnter={openServices}
+                  onMouseLeave={scheduleCloseServices}
                 >
-                  {/* Trigger (button stylé comme un onglet) */}
+                  {/* Trigger */}
                   {(() => {
                     const active = isServicesActive(pathname);
                     return (
                       <button
                         type="button"
-                        onClick={() => setOrdersOpen((s) => !s)}
+                        onClick={() => (ordersOpen ? setOrdersOpen(false) : setOrdersOpen(true))}
                         aria-haspopup="menu"
                         aria-expanded={ordersOpen}
                         className={`group relative px-3 py-2 text-sm font-semibold transition-colors ${
@@ -141,11 +165,13 @@ export default function ClientLayout({ children }) {
                     );
                   })()}
 
-                  {/* Menu en ORDRE demandé: Devis, Réclamations, Commandes */}
+                  {/* Menu (reste ouvert quand on le survole) */}
                   {ordersOpen && (
                     <div
                       role="menu"
-                      className="absolute left-0 mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg z-50"
+                      onMouseEnter={openServices}
+                      onMouseLeave={scheduleCloseServices}
+                      className="absolute left-0 top-full mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg z-50"
                     >
                       <Link
                         href={`/${locale}/client/mes-devis`}
@@ -193,8 +219,14 @@ export default function ClientLayout({ children }) {
               >
                 <svg
                   className={`transition ${open ? "rotate-90" : ""}`}
-                  width="22" height="22" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
                   {open ? (
                     <path d="M18 6L6 18M6 6l12 12" />

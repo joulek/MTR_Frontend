@@ -86,7 +86,25 @@
         "quotes": "My Quote Requests",
         "claims": "My Claims"
       },
-      "quoteRequest": "Request a Quote"
+      "quoteRequest": "Request a Quote",
+      "quotesPage": {
+        "title": "My Quote Requests",
+        "subtitle": "All requests you have submitted, newest first.",
+        "searchPlaceholder": "Search by quote no., type…",
+        "clear": "Clear",
+        "loading": "Loading…",
+        "noData": "No requests found.",
+        "table": {
+          "number": "Quote request N°",
+          "type": "Quote request type",
+          "files": "Attachments",
+          "createdAt": "Sent at",
+          "order": "Order"
+        },
+        "actions": {
+          "order": "Order"
+        }
+      }
     },
     "admin": {
       "title": "Admin Panel",
@@ -485,11 +503,11 @@
         "images": "Images",
         "actions": "Actions"
       },
-       "actions": {
-              "expand": "Show more",
-              "collapse": "Show less",
-              "edit": "Edit",
-              "delete": "Delete"
+      "actions": {
+        "expand": "Show more",
+        "collapse": "Show less",
+        "edit": "Edit",
+        "delete": "Delete"
       },
       "form": {
         "addTitle": "Add a product",
