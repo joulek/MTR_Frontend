@@ -74,12 +74,27 @@
       "logout": "Log out",
       "dashboardTitle": "Welcome to your client area",
       "dashboardSubtitle": "Track your orders and update your information.",
-      "quotes": "Request a Quote"
+      "quotes": "Request a Quote",
+      "top": {
+        "about": "About Us",
+        "refund": "Refund Policy",
+        "help": "Help Desk"
+      },
+      "services": {
+        "menu": "My Services",
+        "orders": "My Orders",
+        "quotes": "My Quote Requests",
+        "claims": "My Claims"
+      },
+      "quoteRequest": "Request a Quote"
     },
     "admin": {
       "title": "Admin Panel",
       "dashboard": "Dashboard",
       "orders": "Orders",
+      "articles": "Articles",
+      "categories": "Categories",
+      "products": "Products",
       "users": "Users",
       "logout": "Log out",
       "welcomeDashboard": "Welcome to the Admin Dashboard",
@@ -470,9 +485,11 @@
         "images": "Images",
         "actions": "Actions"
       },
-      "actions": {
-        "edit": "Edit",
-        "delete": "Delete"
+       "actions": {
+              "expand": "Show more",
+              "collapse": "Show less",
+              "edit": "Edit",
+              "delete": "Delete"
       },
       "form": {
         "addTitle": "Add a product",

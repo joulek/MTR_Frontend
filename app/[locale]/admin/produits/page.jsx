@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
 import { FiEdit2, FiSearch, FiXCircle, FiPlus, FiTrash2, FiX, FiCheck } from "react-icons/fi";
-import Pagination from "@/components/Pagination"; // ✅ ajout
+import Pagination from "@/components/Pagination";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -58,6 +58,18 @@ export default function AdminProductsPage() {
   const [galleryImages, setGalleryImages] = useState([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
 
+  // ✅ Description expand/collapse
+  const [expandedDescIds, setExpandedDescIds] = useState(new Set());
+  const isDescExpanded = (id) => expandedDescIds.has(id);
+  const toggleDesc = (id) => {
+    setExpandedDescIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   // Load data
   useEffect(() => {
     (async () => {
@@ -84,12 +96,7 @@ export default function AdminProductsPage() {
       const en = (p?.name_en || "").toLowerCase();
       const dfr = (p?.description_fr || "").toLowerCase();
       const den = (p?.description_en || "").toLowerCase();
-      const cat =
-        (
-          p?.category?.translations?.fr ||
-          p?.category?.label ||
-          ""
-        ).toLowerCase();
+      const cat = (p?.category?.translations?.fr || p?.category?.label || "").toLowerCase();
       return fr.includes(q) || en.includes(q) || dfr.includes(q) || den.includes(q) || cat.includes(q);
     });
   }, [products, query]);
@@ -364,11 +371,32 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {p.description_fr || p.description_en ? (
-        <p className="mt-2 text-[13px] text-slate-700">
-          {p.description_fr || p.description_en}
-        </p>
-      ) : null}
+      {(p.description_fr || p.description_en) && (
+        <div className="relative mt-2">
+          <p
+            onClick={() => toggleDesc(p._id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleDesc(p._id)}
+            aria-expanded={isDescExpanded(p._id)}
+            title={isDescExpanded(p._id) ? t("actions.collapse") : t("actions.expand")}
+            className={`text-[13px] text-slate-700 cursor-pointer ${isDescExpanded(p._id) ? "line-clamp-none" : "line-clamp-2"}`}
+          >
+            {p.description_fr || p.description_en}
+          </p>
+
+          {!isDescExpanded(p._id) && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); toggleDesc(p._id); }}
+              aria-label={t("actions.expand")}
+              title={t("actions.expand")}
+            >
+              …
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mt-3">{renderThumbs(p.images || [])}</div>
     </div>
@@ -482,11 +510,35 @@ export default function AdminProductsPage() {
                         <td className="p-3 align-top">
                           <div className="text-[#0B1E3A] font-medium truncate max-w-[220px]">{p.name_fr || p.name_en || "-"}</div>
                         </td>
+
+                        {/* ====== DESCRIPTION : cliquable + bouton "…" ====== */}
                         <td className="p-3 align-top">
-                          <p className="text-sm text-slate-700 line-clamp-2 max-w-[360px]">
-                            {p.description_fr || p.description_en || "-"}
-                          </p>
+                          <div className="relative max-w-[360px] group">
+                            <p
+                              onClick={() => toggleDesc(p._id)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleDesc(p._id)}
+                              aria-expanded={isDescExpanded(p._id)}
+                              title={isDescExpanded(p._id) ? t("actions.collapse") : t("actions.expand")}
+                              className={`text-sm text-slate-700 cursor-pointer select-text ${isDescExpanded(p._id) ? "line-clamp-none" : "line-clamp-2"}`}
+                            >
+                              {p.description_fr || p.description_en || "-"}
+                            </p>
+
+                            {!isDescExpanded(p._id) && (p.description_fr || p.description_en) && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); toggleDesc(p._id); }}
+                                aria-label={t("actions.expand")}
+                                title={t("actions.expand")}
+                              >
+                                …
+                              </button>
+                            )}
+                          </div>
                         </td>
+
                         <td className="p-3 align-top">
                           <div className="max-w-[140px]">{renderThumbs(p.images || [])}</div>
                         </td>
