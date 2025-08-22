@@ -1,5 +1,6 @@
 {
   "auth": {
+    
     "forgot": "Forgot password?",
     "forgotTitle": "Mot de passe oublié",
     "code": "Code",
@@ -75,6 +76,7 @@
       "dashboardTitle": "Welcome to your client area",
       "dashboardSubtitle": "Track your orders and update your information.",
       "quotes": "Request a Quote",
+      "submitClaim": "Submit a claim",
       "top": {
         "about": "About Us",
         "refund": "Refund Policy",
@@ -127,7 +129,7 @@
       "notAuthenticated": "Not authenticated",
       "pdfError": "PDF Error",
       "networkPdfError": "Network error while opening PDF",
-      "tractionOrders": " Quotes"
+      "tractionOrders": " Quotes requests"
     },
     "devis": {
       "title": "Technical Specifications Form",

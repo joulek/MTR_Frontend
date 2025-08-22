@@ -8,13 +8,13 @@ import { usePathname } from "next/navigation";
 import { FaFacebook } from "react-icons/fa";
 
 export default function ClientLayout({ children }) {
-  const [open, setOpen] = useState(false);          // menu mobile
+  const [open, setOpen] = useState(false);            // menu mobile
   const [ordersOpen, setOrdersOpen] = useState(false); // dropdown "Mes services"
   const locale = useLocale();
   const t = useTranslations("auth.client");
   const pathname = usePathname();
 
-  // refs et timers pour un dropdown solide (hover + clic)
+  // refs sans types TS (JSX only)
   const servicesRef = useRef(null);
   const closeTimerRef = useRef(null);
 
@@ -77,7 +77,6 @@ export default function ClientLayout({ children }) {
   // actif si on est dans une page du groupe "Mes services"
   const isServicesActive = (p) =>
     p.startsWith(`/${locale}/client/mes-devis`) ||
-    p.startsWith(`/${locale}/client/reclamations`) ||
     p.startsWith(`/${locale}/client/orders`);
 
   return (
@@ -134,6 +133,9 @@ export default function ClientLayout({ children }) {
               <nav className="hidden lg:flex items-center gap-1">
                 <NavLink href={`/${locale}/client`}>{t("home")}</NavLink>
                 <NavLink href={`/${locale}/client/profile`}>{t("profile")}</NavLink>
+
+                {/* Lien direct Réclamations */}
+                <NavLink href={`/${locale}/client/reclamations`}>{t("submitClaim")}</NavLink>
 
                 {/* Mes services : hover + clic, avec délai de fermeture */}
                 <div
