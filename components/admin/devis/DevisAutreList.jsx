@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Pagination from "@/components/Pagination";
 import { FiSearch, FiXCircle } from "react-icons/fi";
+import DevisModal from "@/components/admin/devis/DevisModal";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
-
-// Conteneur identique aux autres listes
 const WRAP = "mx-auto w-full max-w-4xl px-3 sm:px-4";
 
-// Helpers
+// Helper
 function shortDate(d) {
   try {
     const dt = new Date(d);
@@ -27,24 +26,28 @@ function shortDate(d) {
 export default function DevisAutrePage() {
   const t = useTranslations("devisAutre");
 
+  const router = useRouter();
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Recherche
   const [q, setQ] = useState("");
-
-  // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
-  const router = useRouter();
+  // Modale devis
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDemande, setSelectedDemande] = useState(null);
 
-  // Charger la liste
+  // Map { demandeId: { numero, pdf } } pour savoir si un devis existe déjà
+  const [devisMap, setDevisMap] = useState({});
+
+  // --------- Load de la liste ----------
   const load = useCallback(async () => {
     try {
       setErr("");
       setLoading(true);
+
       const res = await fetch(`${BACKEND}/api/admin/devis/autre`, {
         method: "GET",
         cache: "no-store",
@@ -52,7 +55,9 @@ export default function DevisAutrePage() {
       });
 
       if (res.status === 401) {
-        router.push(`/fr/login?next=${encodeURIComponent("/fr/admin/devis/autre")}`);
+        router.push(
+          `/fr/login?next=${encodeURIComponent("/fr/admin/devis/autre")}`
+        );
         return;
       }
       if (res.status === 403) {
@@ -61,7 +66,9 @@ export default function DevisAutrePage() {
       }
 
       const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.success) throw new Error(data?.message || `Erreur (${res.status})`);
+      if (!res.ok || !data?.success)
+        throw new Error(data?.message || `Erreur (${res.status})`);
+
       setItems(data.items || []);
       setPage(1);
     } catch (e) {
@@ -75,34 +82,76 @@ export default function DevisAutrePage() {
     load();
   }, [load]);
 
-  // Filtre local (N°, client, date)
+  // Après chargement des items, vérifier s’il existe un devis pour chacune des demandes
+  useEffect(() => {
+    if (!items.length) {
+      setDevisMap({});
+      return;
+    }
+    let cancelled = false;
+
+    (async () => {
+      const pairs = await Promise.all(
+        items.map(async (d) => {
+          try {
+            const r = await fetch(
+              `${BACKEND}/api/admin/devis/by-demande/${d._id}?numero=${encodeURIComponent(
+                d?.numero || ""
+              )}`,
+              { credentials: "include" }
+            );
+            if (!r.ok) return null; // 404 => pas de devis pour cette demande
+            const j = await r.json().catch(() => null);
+            if (!j?.success) return null;
+            return [d._id, { numero: j.devis?.numero, pdf: j.pdf }];
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      if (cancelled) return;
+      const map = {};
+      for (const p of pairs) if (p) map[p[0]] = p[1];
+      setDevisMap(map);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
+
+  // --------- Filtrage / pagination ----------
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return items;
 
     return items.filter((d) => {
       const numero = String(d?.numero || "").toLowerCase();
-      const client = `${d?.user?.prenom || ""} ${d?.user?.nom || ""}`.trim().toLowerCase();
+      const client = `${d?.user?.prenom || ""} ${d?.user?.nom || ""}`
+        .trim()
+        .toLowerCase();
       let dateStr = "";
       try {
         dateStr = new Date(d?.createdAt).toLocaleDateString().toLowerCase();
       } catch {}
-      return numero.includes(needle) || client.includes(needle) || dateStr.includes(needle);
+      return (
+        numero.includes(needle) ||
+        client.includes(needle) ||
+        dateStr.includes(needle)
+      );
     });
   }, [items, q]);
 
-  // Ajuster la page si dépasse
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     if (page > totalPages) setPage(totalPages);
   }, [filtered.length, page, pageSize]);
 
-  // Reset page quand on tape
   useEffect(() => {
     setPage(1);
   }, [q]);
 
-  // Slice paginé
   const { pageItems, total } = useMemo(() => {
     const total = filtered.length;
     const start = (page - 1) * pageSize;
@@ -110,7 +159,7 @@ export default function DevisAutrePage() {
     return { pageItems: filtered.slice(start, end), total };
   }, [filtered, page, pageSize]);
 
-  // Ouvrir PDF
+  // --------- Actions fichiers / PDF demande ----------
   async function viewPdfById(id) {
     try {
       const res = await fetch(`${BACKEND}/api/admin/devis/autre/${id}/pdf`, {
@@ -127,13 +176,12 @@ export default function DevisAutrePage() {
     }
   }
 
-  // Ouvrir un document joint
   async function viewDocByIndex(id, index) {
     try {
-      const res = await fetch(`${BACKEND}/api/admin/devis/autre/${id}/document/${index}`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${BACKEND}/api/admin/devis/autre/${id}/document/${index}`,
+        { method: "GET", credentials: "include" }
+      );
       if (!res.ok) return alert(t("errors.docUnavailable"));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -144,8 +192,24 @@ export default function DevisAutrePage() {
     }
   }
 
-  // ✅ mêmes largeurs que les autres pages et zéro whitespace dans <colgroup>
-  const colWidths = ["w-[150px]", "w-[200px]", "w-[170px]", "w-[90px]", "w-auto"];
+  // --------- Ouvrir la modale création de devis ----------
+  function openDevis(d) {
+    setSelectedDemande({
+      ...d,
+      demandeNumero: d?.numero || "",
+    });
+    setModalOpen(true);
+  }
+
+  // Colonnes (inclut “Actions” pour le bouton/ lien devis)
+  const colWidths = [
+    "w-[150px]", // N°
+    "w-[200px]", // Client
+    "w-[170px]", // Date
+    "w-[90px]", // PDF
+    "w-[130px]", // Actions
+    "w-auto", // Fichiers joints
+  ];
 
   return (
     <div className="py-6 space-y-4">
@@ -156,7 +220,6 @@ export default function DevisAutrePage() {
             {t("title")}
           </h1>
 
-          {/* Barre de recherche */}
           <div className="relative w-full sm:w-[300px]">
             <FiSearch
               aria-hidden
@@ -208,12 +271,21 @@ export default function DevisAutrePage() {
             <div className="hidden sm:block">
               <table className="w-full table-fixed text-sm border-separate border-spacing-0">
                 <colgroup>
-                  {colWidths.map((w, i) => <col key={i} className={w} />)}
+                  {colWidths.map((w, i) => (
+                    <col key={i} className={w} />
+                  ))}
                 </colgroup>
 
                 <thead>
                   <tr>
-                    {[t("columns.number"), t("columns.client"), t("columns.date"), t("columns.pdf"), t("columns.attachments")].map((h) => (
+                    {[
+                      t("columns.number"),
+                      t("columns.client"),
+                      t("columns.date"),
+                      t("columns.pdf"),
+                      "Actions",
+                      t("columns.attachments"),
+                    ].map((h) => (
                       <th key={h} className="p-2 text-left align-bottom">
                         <div className="text-[13px] font-semibold uppercase tracking-wide text-slate-600">
                           {h}
@@ -229,21 +301,35 @@ export default function DevisAutrePage() {
                     const hasPdf = !!d?.hasDemandePdf;
                     const docs = (d?.documents || [])
                       .map((doc, idx) => ({ ...doc, index: doc.index ?? idx }))
-                      .filter((doc) => (doc.hasData === undefined ? true : !!doc.hasData));
+                      .filter((doc) =>
+                        doc.hasData === undefined ? true : !!doc.hasData
+                      );
+
+                    const devisInfo = devisMap[d._id]; // { numero, pdf } | undefined
 
                     return (
-                      <tr key={d._id} className="hover:bg-[#0B1E3A]/[0.03] transition-colors">
+                      <tr
+                        key={d._id}
+                        className="hover:bg-[#0B1E3A]/[0.03] transition-colors"
+                      >
                         {/* N° */}
                         <td className="p-2 align-top border-b border-gray-200">
                           <div className="flex items-center gap-2">
                             <span className="h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
-                            <span className="font-mono whitespace-nowrap">{d.numero}</span>
+                            <span className="font-mono whitespace-nowrap">
+                              {d.numero}
+                            </span>
                           </div>
                         </td>
 
                         {/* Client */}
                         <td className="p-2 align-top border-b border-gray-200">
-                          <span className="block truncate" title={`${d?.user?.prenom || ""} ${d?.user?.nom || ""}`}>
+                          <span
+                            className="block truncate"
+                            title={`${d?.user?.prenom || ""} ${
+                              d?.user?.nom || ""
+                            }`}
+                          >
                             {d?.user?.prenom} {d?.user?.nom}
                           </span>
                         </td>
@@ -253,7 +339,7 @@ export default function DevisAutrePage() {
                           {shortDate(d.createdAt)}
                         </td>
 
-                        {/* PDF */}
+                        {/* PDF DDV (la demande elle-même) */}
                         <td className="p-2 align-top border-b border-gray-200">
                           {hasPdf ? (
                             <button
@@ -268,6 +354,29 @@ export default function DevisAutrePage() {
                           )}
                         </td>
 
+                        {/* Actions (Créer devis / Ouvrir devis) */}
+                        <td className="p-2 align-top border-b border-gray-200">
+                          {devisInfo?.pdf ? (
+                            <a
+                              href={devisInfo.pdf}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={`Devis ${devisInfo.numero || ""}`}
+                              className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
+                            >
+                              Ouvrir devis
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => openDevis(d)}
+                              className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 
+                                         px-2 py-0.5 text-[11px] hover:bg-yellow-500 hover:text-white"
+                            >
+                              ➕ Créer devis
+                            </button>
+                          )}
+                        </td>
+
                         {/* Fichiers joints */}
                         <td className="p-2 align-top border-b border-gray-200">
                           {docs.length === 0 ? (
@@ -277,7 +386,9 @@ export default function DevisAutrePage() {
                               {docs.map((doc) => (
                                 <button
                                   key={doc.index}
-                                  onClick={() => viewDocByIndex(d._id, doc.index)}
+                                  onClick={() =>
+                                    viewDocByIndex(d._id, doc.index)
+                                  }
                                   className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
                                 >
                                   {t("open")}
@@ -308,7 +419,10 @@ export default function DevisAutrePage() {
                 const hasPdf = !!d?.hasDemandePdf;
                 const docs = (d?.documents || [])
                   .map((doc, idx) => ({ ...doc, index: doc.index ?? idx }))
-                  .filter((doc) => (doc.hasData === undefined ? true : !!doc.hasData));
+                  .filter((doc) =>
+                    doc.hasData === undefined ? true : !!doc.hasData
+                  );
+                const devisInfo = devisMap[d._id];
 
                 return (
                   <div key={d._id} className="py-3">
@@ -319,31 +433,66 @@ export default function DevisAutrePage() {
 
                     <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <p className="text-xs font-semibold text-gray-500">{t("columns.client")}</p>
-                        <p className="truncate">{d?.user?.prenom} {d?.user?.nom}</p>
+                        <p className="text-xs font-semibold text-gray-500">
+                          {t("columns.client")}
+                        </p>
+                        <p className="truncate">
+                          {d?.user?.prenom} {d?.user?.nom}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-gray-500">{t("columns.date")}</p>
+                        <p className="text-xs font-semibold text-gray-500">
+                          {t("columns.date")}
+                        </p>
                         <p className="truncate">{shortDate(d.createdAt)}</p>
                       </div>
                     </div>
 
-                    <div className="mt-2 text-sm">
-                      <span className="text-xs font-semibold text-gray-500">PDF</span>{" "}
-                      {hasPdf ? (
-                        <button
-                          onClick={() => viewPdfById(d._id)}
-                          className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 
-                                     px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
-                        >
-                          {t("open")}
-                        </button>
-                      ) : (
-                        <span className="text-gray-500">—</span>
-                      )}
+                    <div className="mt-2 flex gap-2 text-sm">
+                      <div>
+                        <span className="text-xs font-semibold text-gray-500">
+                          PDF DDV
+                        </span>{" "}
+                        {hasPdf ? (
+                          <button
+                            onClick={() => viewPdfById(d._id)}
+                            className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 
+                                       px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
+                          >
+                            {t("open")}
+                          </button>
+                        ) : (
+                          <span className="text-gray-500">—</span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span className="text-xs font-semibold text-gray-500">
+                          Devis
+                        </span>{" "}
+                        {devisInfo?.pdf ? (
+                          <a
+                            href={devisInfo.pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
+                          >
+                            Ouvrir
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => openDevis(d)}
+                            className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-yellow-500 hover:text-white"
+                          >
+                            Créer
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    <p className="mt-2 text-xs font-semibold text-gray-500">{t("columns.attachments")}</p>
+                    <p className="mt-2 text-xs font-semibold text-gray-500">
+                      {t("columns.attachments")}
+                    </p>
                     {docs.length === 0 ? (
                       <p className="text-gray-500">—</p>
                     ) : (
@@ -375,6 +524,17 @@ export default function DevisAutrePage() {
           </>
         )}
       </div>
+
+      {/* Modale création de devis */}
+      <DevisModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        demande={selectedDemande}
+        onCreated={() => {
+          setModalOpen(false);
+          load(); // recharge items -> re-calcule devisMap -> remplace le bouton
+        }}
+      />
     </div>
   );
 }
