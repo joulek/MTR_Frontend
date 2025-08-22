@@ -1,4 +1,5 @@
 // app/[locale]/reclamations/page.jsx
+"use client";
 import dynamic from "next/dynamic";
 
 // On charge le formulaire côté client uniquement

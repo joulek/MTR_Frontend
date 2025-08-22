@@ -1,8 +1,8 @@
-// app/[locale]/client/reclamations/ReclamationClient.tsx
+// app/[locale]/client/reclamations/ReclamationClient.jsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -13,7 +13,6 @@ const TYPE_DOCS = [
   { value: "bon_livraison", label: "Bon de livraison" },
   { value: "facture", label: "Facture" },
 ];
-
 const NATURES = [
   { value: "produit_non_conforme", label: "Produit non conforme" },
   { value: "deterioration_transport", label: "Détérioration transport" },
@@ -22,7 +21,6 @@ const NATURES = [
   { value: "defaut_fonctionnel", label: "Défaut fonctionnel" },
   { value: "autre", label: "Autre" },
 ];
-
 const ATTENTES = [
   { value: "remplacement", label: "Remplacement" },
   { value: "reparation", label: "Réparation" },
@@ -30,33 +28,45 @@ const ATTENTES = [
   { value: "autre", label: "Autre" },
 ];
 
-const fileToBase64 = (file: File) =>
-  new Promise<string>((resolve, reject) => {
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result).split(",")[1]);
     r.onerror = reject;
     r.readAsDataURL(file);
   });
 
-export default function ReclamationClient({
-  userIdFromProps,
-}: {
-  userIdFromProps: string | null;
-}) {
-  const t = useTranslations("reclamations"); // optionnel si tu as des traductions
+export default function ReclamationClient() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
 
-  // session
-  const [userId, setUserId] = useState<string | null>(userIdFromProps || null);
-  const isAuthenticated = useMemo(() => Boolean(userId), [userId]);
+  // -------------------- SESSION (نفس منطق AutreArticleForm) --------------------
+  const [session, setSession] = useState(null);         // ex: { authenticated: true, role: "client", ... }
+  const [loadingSession, setLoadingSession] = useState(true);
 
-  // ui
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/session", { cache: "no-store", credentials: "include" });
+        const data = res.ok ? await res.json() : null;
+        setSession(data || null);
+      } catch {
+        setSession(null);
+      } finally {
+        setLoadingSession(false);
+      }
+    })();
+  }, []);
+
+  const isAuthenticated = !!session?.authenticated;
+  const isClient       = session?.role === "client";
+
+  // ---------------------------------------------------------------------------
+
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
-  // form
   const [form, setForm] = useState({
     typeDoc: "devis",
     numero: "",
@@ -67,28 +77,11 @@ export default function ReclamationClient({
     natureAutre: "",
     attente: "remplacement",
     attenteAutre: "",
-    files: [] as File[],
+    files: [],
   });
 
-  // récupérer la session côté client (sans 404 si anonyme)
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch(`${BACKEND}/api/session`, {
-          credentials: "include",
-          cache: "no-store",
-        });
-        const j = await r.json();
-        setUserId(j?.authenticated ? j?.user?.id : null);
-      } catch {
-        setUserId(null);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, files } = e.target as HTMLInputElement;
+  const onChange = (e) => {
+    const { name, value, files } = e.target;
     if (name === "files") {
       setForm((f) => ({ ...f, files: Array.from(files || []) }));
     } else {
@@ -96,14 +89,18 @@ export default function ReclamationClient({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
 
-    // si pas connecté -> on redirige vers login
+    // نفس الشيك متاع الفورم الأخرى
     if (!isAuthenticated) {
       const next = encodeURIComponent(pathname || `/${locale}/reclamations`);
       router.push(`/${locale}/login?next=${next}`);
+      return;
+    }
+    if (!isClient) {
+      setMessage("❌ هذه الخدمة مخصّصة للحرفاء فقط.");
       return;
     }
 
@@ -130,13 +127,16 @@ export default function ReclamationClient({
         }))
       );
 
-      const parts: string[] = [];
+      const parts = [];
       if (form.nature === "autre") parts.push(`Nature: ${form.natureAutre.trim()}`);
       if (form.attente === "autre") parts.push(`Attente: ${form.attenteAutre.trim()}`);
       const description = parts.length ? parts.join(" | ") : undefined;
 
+      // خذ ال-id كيف AutreArticleForm (موجود في localStorage) بما أنّ /api/session ما يرجّعش user
+      const localId = typeof window !== "undefined" ? localStorage.getItem("id") : null;
+
       const payload = {
-        user: userId, // ← PASSE L’ID USER SI CONNECTÉ
+        user: localId || null,  // ✅ نفس الطريقة
         commande: {
           typeDoc: form.typeDoc,
           numero: form.numero.trim(),
@@ -172,22 +172,29 @@ export default function ReclamationClient({
         attenteAutre: "",
         files: [],
       });
-      const fi = document.getElementById("filesInput") as HTMLInputElement | null;
+      const fi = document.getElementById("filesInput");
       if (fi) fi.value = "";
-    } catch (err: any) {
-      setMessage(`❌ ${err.message || "Erreur inconnue"}`);
+    } catch (err) {
+      setMessage(`❌ ${err?.message || "Erreur inconnue"}`);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const disabled = loadingSession || submitting || !isAuthenticated || !isClient;
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-semibold mb-6">Formulaire de réclamation</h1>
 
-      {!isAuthenticated && (
+      {!isAuthenticated && !loadingSession && (
         <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
           Vous devez être connecté pour soumettre une réclamation.
+        </div>
+      )}
+      {isAuthenticated && !isClient && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-sm">
+          Cette action est réservée aux clients.
         </div>
       )}
 
@@ -207,7 +214,6 @@ export default function ReclamationClient({
               ))}
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-1">N° document</label>
             <input
@@ -257,7 +263,7 @@ export default function ReclamationClient({
           </div>
         </div>
 
-        {/* Nature & Attente (+ Autre) */}
+        {/* Nature & Attente */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Nature de la réclamation</label>
@@ -282,7 +288,6 @@ export default function ReclamationClient({
               />
             )}
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-1">Votre attente</label>
             <select
@@ -320,37 +325,33 @@ export default function ReclamationClient({
             className="block w-full text-sm"
             accept="image/*,application/pdf"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Formats : images ou PDF. Taille max conseillée : 5 Mo par fichier.
-          </p>
+          <p className="text-xs text-gray-500 mt-1">Formats : images ou PDF. Taille max conseillée : 5 Mo par fichier.</p>
         </div>
 
         {/* Feedback */}
         {message && (
-          <div
-            className={`text-sm mt-2 ${
-              message.startsWith("✅") ? "text-green-700" : "text-red-600"
-            }`}
-          >
+          <div className={`text-sm mt-2 ${message.startsWith("✅") ? "text-green-700" : "text-red-600"}`}>
             {message}
           </div>
         )}
 
-        {/* Bouton adaptatif */}
+        {/* Bouton */}
         <div className="pt-2">
           <button
             type="submit"
-            disabled={submitting}
+            disabled={disabled}
             className={`rounded-xl px-4 py-2 text-white hover:opacity-90 ${
-              isAuthenticated ? "bg-black" : "bg-gray-500"
+              disabled ? "bg-gray-500 cursor-not-allowed" : "bg-black"
             }`}
-            title={isAuthenticated ? "" : "Connectez-vous pour envoyer"}
+            title={!isAuthenticated ? "Connectez-vous pour envoyer" : !isClient ? "Réservé aux clients" : ""}
           >
             {submitting
               ? "Envoi en cours…"
-              : isAuthenticated
-              ? "Envoyer la réclamation"
-              : "Se connecter pour envoyer"}
+              : !isAuthenticated
+              ? "Se connecter pour envoyer"
+              : !isClient
+              ? "Accès réservé client"
+              : "Envoyer la réclamation"}
           </button>
         </div>
       </form>
