@@ -40,25 +40,21 @@ export async function POST(request) {
     );
   }
 }
-
-/**
- * GET /api/reclamations?page=1&pageSize=10&q=...
- * Récupère la liste (du user courant si le backend filtre par token).
- */
 export async function GET(request) {
   try {
     const token = request.cookies.get("token")?.value;
     const url = new URL(request.url);
-    const qs = url.search; // conserve ?page=...&q=...
+    const qs = url.search; // ex: ?page=1&limit=20
 
     const res = await fetch(`${BACKEND}/api/reclamations${qs}`, {
       method: "GET",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       cache: "no-store",
+      credentials: "include",
     });
 
     const text = await res.text();
-    let data; try { data = JSON.parse(text); } catch { data = { message: text }; }
+    const data = (() => { try { return JSON.parse(text); } catch { return { message: text }; }})();
     return NextResponse.json(data, { status: res.status });
   } catch (err) {
     console.error("proxy /api/reclamations GET:", err);
