@@ -1,43 +1,62 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 export default function DevisModal({ open, onClose, demande }) {
+  const router = useRouter();
+
   const [article, setArticle] = useState(null);
+  const [articleLoaded, setArticleLoaded] = useState(false); // ✅ nouvel état
   const [loading, setLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
-  // N° devis (optionnel : preview + personnalisation)
+  // N° devis
   const [numero, setNumero] = useState("");
   const [customNum, setCustomNum] = useState(false);
 
-  // Quantité/Remise/TVA (préremplis depuis la demande)
+  // Qté / Remise / TVA
   const [quantite, setQuantite] = useState(1);
   const [remise, setRemise] = useState(0);
   const [tva, setTva] = useState(19);
 
+  // Aller vers la création d’article (avec pré-remplissage via query params)
+  function goCreateArticle() {
+    const q = new URLSearchParams({
+      demandeId: demande?._id || "",
+      demandeNumero: demande?.numero || "",
+    });
+    // adapte le chemin si ta page "nouvel article" est différente
+    router.push(`/fr/admin/articles/new?${q.toString()}`);
+  }
+
+  // Récupérer l’article lié à la demande
+  async function fetchArticle() {
+    setArticleLoaded(false);
+    try {
+      const num = demande?.numero || "";
+      const url = `${BACKEND}/api/articles/by-demande?numero=${encodeURIComponent(num)}`;
+      const r = await fetch(url, { credentials: "include" });
+      const j = await r.json().catch(() => null);
+      setArticle(j?.success ? j.item : null);
+    } catch {
+      setArticle(null);
+    } finally {
+      setArticleLoaded(true);
+    }
+  }
+
   useEffect(() => {
     if (!open || !demande?._id) return;
 
-    // 1) récupérer l’article relié en utilisant soit demandeId, soit le numéro de la demande (venant du tableau)
-  (async () => {
-  try {
-    const num = demande?.numero || "";
-    const url = `${BACKEND}/api/articles/by-demande?numero=${encodeURIComponent(num)}`;
-    const r = await fetch(url, { credentials: "include" });
-    const j = await r.json().catch(() => null);
-    setArticle(j?.success ? j.item : null);
-  } catch {
-    setArticle(null);
-  }
-})();
+    // 1) article lié
+    fetchArticle();
 
-
-    // 2) preview du prochain numéro de devis
+    // 2) preview prochain numéro de devis
     (async () => {
       try {
-        const r = await fetch(`${BACKEND}/api/admin/devis/next-number`, { credentials: "include" });
+        const r = await fetch(`${BACKEND}/api/devis/admin/next-number`, { credentials: "include" });
         const j = await r.json().catch(() => null);
         if (j?.success && j?.numero) setNumero(j.numero);
       } catch {}
@@ -48,7 +67,7 @@ export default function DevisModal({ open, onClose, demande }) {
 
   const puht = useMemo(() => {
     const n = Number(article?.prixHT ?? article?.priceHT ?? article?.puht ?? 0);
-    return isNaN(n) ? 0 : n;
+    return Number.isFinite(n) ? n : 0;
   }, [article]);
 
   const totalHT = useMemo(() => {
@@ -65,7 +84,7 @@ export default function DevisModal({ open, onClose, demande }) {
     setLoading(true);
     try {
       const body = {
-        articleId: article._id,           // si tu as modifié le backend pour auto-déduire, tu peux supprimer cette ligne
+        articleId: article._id,
         quantite: Number(quantite) || 1,
         remisePct: Number(remise) || 0,
         tvaPct: Number(tva) || 0,
@@ -73,17 +92,14 @@ export default function DevisModal({ open, onClose, demande }) {
       };
       if (customNum && numero?.trim()) body.numero = numero.trim();
 
-      const res = await fetch(`${BACKEND}/api/admin/devis/from-demande/${demande._id}`, {
+      const res = await fetch(`${BACKEND}/api/devis/admin/from-demande/${demande._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(body),
       });
-      const json = await res.json();
-      if (json?.success) {
-        setPdfUrl(json.pdf || "");
-        // onClose?.(); // tu peux fermer et rafraîchir la liste si tu veux
-      }
+      const json = await res.json().catch(() => null);
+      if (json?.success) setPdfUrl(json.pdf || "");
     } finally {
       setLoading(false);
     }
@@ -96,7 +112,7 @@ export default function DevisModal({ open, onClose, demande }) {
       <div className="bg-white p-6 rounded-xl w-full max-w-lg shadow-lg">
         <h2 className="text-xl font-bold mb-4">Créer un devis</h2>
 
-        {/* N° demande (lecture seule depuis le tableau) */}
+        {/* N° demande */}
         <div className="mb-3">
           <label className="block">N° demande</label>
           <input
@@ -129,29 +145,55 @@ export default function DevisModal({ open, onClose, demande }) {
           {!customNum && <p className="text-xs text-gray-500 mt-1">Généré automatiquement.</p>}
         </div>
 
-        {/* Article lié (pas de select) */}
+        {/* Article lié */}
         <div className="mb-3">
           <label className="block text-sm mb-1">Article lié à la demande</label>
-          {article ? (
+
+          {/* 1) Chargement */}
+          {!articleLoaded && (
+            <div className="rounded-lg border p-3 bg-gray-50 animate-pulse h-16" />
+          )}
+
+          {/* 2) Trouvé */}
+          {articleLoaded && article && (
             <div className="rounded-lg border p-3 bg-gray-50">
               <div className="font-medium">
                 {(article.reference || article.ref || "").toString()} — {(article.designation || article.name_fr || article.name_en || "").toString()}
               </div>
               <div className="text-sm text-gray-600 mt-1">
-                PU HT : <b>{(article.prixHT ?? article.priceHT ?? 0).toFixed ? (article.prixHT ?? article.priceHT ?? 0).toFixed(3) : (article.prixHT ?? article.priceHT ?? 0)}</b>
+                PU HT : <b>{puht.toFixed(3)}</b>
               </div>
               {article.demandeNumero && (
-                <div className="text-xs text-gray-500 mt-1">N° Demande lié : {article.demandeNumero}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  N° Demande lié : {article.demandeNumero}
+                </div>
               )}
             </div>
-          ) : (
-            <div className="rounded-lg border p-3 bg-red-50 border-red-200 text-red-700">
-              Aucun article trouvé pour cette demande. Crée d’abord l’article lié (ou renseigne <code>demandeId</code> / <code>demandeNumero</code>).
+          )}
+
+          {/* 3) Non trouvé */}
+          {articleLoaded && !article && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={goCreateArticle}
+                className="px-3 py-1.5 rounded-lg bg-yellow-500 text-white hover:brightness-95"
+              >
+                Créer l’article
+              </button>
+              <button
+                type="button"
+                onClick={fetchArticle}
+                className="px-3 py-1.5 rounded-lg border"
+                title="Rechercher à nouveau après création"
+              >
+                Rafraîchir
+              </button>
             </div>
           )}
         </div>
 
-        {/* Paramètres de calcul */}
+        {/* Paramètres */}
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block mb-1">Qté</label>
@@ -172,10 +214,14 @@ export default function DevisModal({ open, onClose, demande }) {
           <div>
             <label className="block mb-1">TVA %</label>
             <select
-              value={tva} onChange={(e) => setTva(e.target.value)}
+              value={tva}
+              onChange={(e) => setTva(Number(e.target.value))}
               className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-yellow-500"
             >
-              <option>0</option><option>7</option><option>13</option><option>19</option>
+              <option value={0}>0</option>
+              <option value={7}>7</option>
+              <option value={13}>13</option>
+              <option value={19}>19</option>
             </select>
           </div>
         </div>
