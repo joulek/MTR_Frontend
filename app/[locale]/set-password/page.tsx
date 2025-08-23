@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 export default function SetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -38,9 +38,8 @@ export default function SetPasswordPage() {
 
     try {
       setLoading(true);
-
       // 👉 on passe par le proxy Next.js, pas par l'URL backend
-      const res = await fetch("/api/auth/set-password", {
+      const res = await fetch(`${BACKEND}/api/users/set-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, token, password }),
