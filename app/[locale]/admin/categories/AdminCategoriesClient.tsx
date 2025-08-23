@@ -10,22 +10,31 @@ import {
   FiCheck,
   FiX,
   FiPlus,
+  FiImage,
 } from "react-icons/fi";
-import Pagination from "@/components/Pagination"; // ✅ appel du composant
+import Pagination from "@/components/Pagination";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+function imgSrc(u?: string) {
+  if (!u) return "";
+  if (/^https?:\/\//i.test(u)) return u;
+  const backend = (BACKEND || "").replace(/\/$/, "");
+  const path = u.startsWith("/") ? u : `/${u}`;
+  return `${backend}${path}`;
+}
 
 export default function AdminCategoriesPage() {
   const locale = useLocale();
   const t = useTranslations("auth.categories");
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Recherche
   const [query, setQuery] = useState("");
 
-  // ✅ Pagination
+  // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -37,16 +46,25 @@ export default function AdminCategoriesPage() {
   // Ajout
   const [newFR, setNewFR] = useState("");
   const [newEN, setNewEN] = useState("");
+  const [newAltFR, setNewAltFR] = useState("");
+  const [newAltEN, setNewAltEN] = useState("");
+  const [newFile, setNewFile] = useState<File | null>(null);
+  const [newPreview, setNewPreview] = useState<string>("");
 
   // Edit/Delete
-  const [currentId, setCurrentId] = useState(null);
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const [draftFR, setDraftFR] = useState("");
   const [draftEN, setDraftEN] = useState("");
+  const [draftAltFR, setDraftAltFR] = useState("");
+  const [draftAltEN, setDraftAltEN] = useState("");
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editPreview, setEditPreview] = useState<string>(""); // montre image existante ou nouvelle
+  const [removeImage, setRemoveImage] = useState(false);
 
   // Busy
   const [submitting, setSubmitting] = useState(false);
 
-  const headers = useMemo(() => ({ "Content-Type": "application/json" }), []);
+  const headersJson = useMemo(() => ({ "Content-Type": "application/json" }), []);
 
   async function fetchAll() {
     try {
@@ -60,8 +78,8 @@ export default function AdminCategoriesPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || t("errorLoad"));
       setItems(data.categories || []);
-      setPage(1); // ✅ reset pagination quand on recharge
-    } catch (e) {
+      setPage(1);
+    } catch (e: any) {
       setError(e?.message || t("errorServer"));
     } finally {
       setLoading(false);
@@ -77,12 +95,29 @@ export default function AdminCategoriesPage() {
   function openAddModal() {
     setNewFR("");
     setNewEN("");
+    setNewAltFR("");
+    setNewAltEN("");
+    setNewFile(null);
+    setNewPreview("");
     setAddOpen(true);
   }
   function closeAddModal() {
     setAddOpen(false);
     setNewFR("");
     setNewEN("");
+    setNewAltFR("");
+    setNewAltEN("");
+    setNewFile(null);
+    setNewPreview("");
+  }
+  function onPickNewFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] || null;
+    setNewFile(f);
+    setNewPreview(f ? URL.createObjectURL(f) : "");
+  }
+  function clearNewFile() {
+    setNewFile(null);
+    setNewPreview("");
   }
   async function submitAdd() {
     if (!newFR.trim()) {
@@ -91,18 +126,24 @@ export default function AdminCategoriesPage() {
     }
     try {
       setSubmitting(true);
+      const fd = new FormData();
+      fd.append("label", newFR.trim());
+      if (newEN.trim()) fd.append("en", newEN.trim());
+      if (newAltFR.trim()) fd.append("alt_fr", newAltFR.trim());
+      if (newAltEN.trim()) fd.append("alt_en", newAltEN.trim());
+      if (newFile) fd.append("image", newFile);
+
       const res = await fetch(`${BACKEND}/api/categories`, {
         method: "POST",
-        headers,
         credentials: "include",
-        body: JSON.stringify({ label: newFR.trim(), en: newEN.trim() }),
+        body: fd, // pas d'en-tête Content-Type ici
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || t("errorCreate"));
       setItems((prev) => [data.category, ...prev]);
       closeAddModal();
-      setPage(1); // ✅ on repart à la page 1 après ajout
-    } catch (e) {
+      setPage(1);
+    } catch (e: any) {
       setError(e?.message || t("errorServer"));
     } finally {
       setSubmitting(false);
@@ -110,10 +151,18 @@ export default function AdminCategoriesPage() {
   }
 
   // ----- Edit -----
-  function openEditModal(cat) {
+  function openEditModal(cat: any) {
     setCurrentId(cat._id);
-    setDraftFR((cat?.translations?.fr || cat?.label || "").trim());
-    setDraftEN((cat?.translations?.en || "").trim());
+    const fr = (cat?.translations?.fr || cat?.label || "").trim();
+    const en = (cat?.translations?.en || "").trim();
+    setDraftFR(fr);
+    setDraftEN(en);
+    setDraftAltFR((cat?.image?.alt_fr || "").trim());
+    setDraftAltEN((cat?.image?.alt_en || "").trim());
+    setEditFile(null);
+    // preview = image existante s'il y en a
+    setEditPreview(cat?.image?.url ? imgSrc(cat.image.url) : "");
+    setRemoveImage(false);
     setEditOpen(true);
   }
   function closeEditModal() {
@@ -121,22 +170,49 @@ export default function AdminCategoriesPage() {
     setCurrentId(null);
     setDraftFR("");
     setDraftEN("");
+    setDraftAltFR("");
+    setDraftAltEN("");
+    setEditFile(null);
+    setEditPreview("");
+    setRemoveImage(false);
+  }
+  function onPickEditFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] || null;
+    setEditFile(f);
+    setEditPreview(f ? URL.createObjectURL(f) : ""); // remplace l’aperçu
+    if (f) setRemoveImage(false);
+  }
+  function clearEditFile() {
+    setEditFile(null);
+    // si la catégorie avait déjà une image, on remet son preview
+    const cat = items.find((c) => c._id === currentId);
+    setEditPreview(cat?.image?.url ? imgSrc(cat.image.url) : "");
   }
   async function submitEdit() {
     if (!currentId || !draftFR.trim()) return;
     try {
       setSubmitting(true);
+      const fd = new FormData();
+      fd.append("label", draftFR.trim());
+      fd.append("en", (draftEN || "").trim());
+      if (draftAltFR.trim()) fd.append("alt_fr", draftAltFR.trim());
+      if (draftAltEN.trim()) fd.append("alt_en", draftAltEN.trim());
+      if (editFile) {
+        fd.append("image", editFile);
+      } else if (removeImage) {
+        fd.append("removeImage", "true");
+      }
+
       const res = await fetch(`${BACKEND}/api/categories/${currentId}`, {
         method: "PUT",
-        headers,
         credentials: "include",
-        body: JSON.stringify({ label: draftFR.trim(), en: draftEN.trim() }),
+        body: fd,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || t("errorUpdate"));
       setItems((prev) => prev.map((c) => (c._id === currentId ? data.category : c)));
       closeEditModal();
-    } catch (e) {
+    } catch (e: any) {
       setError(e?.message || t("errorServer"));
     } finally {
       setSubmitting(false);
@@ -144,7 +220,7 @@ export default function AdminCategoriesPage() {
   }
 
   // ----- Delete -----
-  function openDeleteModal(cat) {
+  function openDeleteModal(cat: any) {
     setCurrentId(cat._id);
     setDeleteOpen(true);
   }
@@ -164,8 +240,7 @@ export default function AdminCategoriesPage() {
       if (!res.ok) throw new Error(data?.message || t("errorDelete"));
       setItems((prev) => prev.filter((c) => c._id !== currentId));
       closeDeleteModal();
-      // pas de reset page ici pour laisser l’utilisateur sur sa page courante
-    } catch (e) {
+    } catch (e: any) {
       setError(e?.message || t("errorServer"));
     } finally {
       setSubmitting(false);
@@ -179,18 +254,25 @@ export default function AdminCategoriesPage() {
     return items.filter((c) => {
       const fr = (c?.translations?.fr || c?.label || "").toLowerCase();
       const en = (c?.translations?.en || "").toLowerCase();
-      return fr.includes(q) || en.includes(q) || c._id.toLowerCase().includes(q);
+      const altfr = (c?.image?.alt_fr || "").toLowerCase();
+      const alten = (c?.image?.alt_en || "").toLowerCase();
+      return (
+        fr.includes(q) ||
+        en.includes(q) ||
+        altfr.includes(q) ||
+        alten.includes(q) ||
+        c._id.toLowerCase().includes(q)
+      );
     });
   }, [items, query]);
 
-  // ✅ pagination locale
+  // Pagination locale
   const total = filtered.length;
   const pageItems = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
-  // ✅ clamp et reset page sur recherche
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     if (page > totalPages) setPage(totalPages);
@@ -202,14 +284,14 @@ export default function AdminCategoriesPage() {
   return (
     <div className="py-6 space-y-6 sm:space-y-8">
       <div className="mx-auto w-full max-w-6xl space-y-8">
-        {/* =================== Header centré =================== */}
+        {/* Header */}
         <header className="space-y-4 text-center">
           <h1 className="text-3xl font-extrabold tracking-tight text-[#0B1E3A]">
             {t("title")}
           </h1>
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          {/* Barre de recherche + bouton alignés, sous le titre, centrés */}
+          {/* Search + Add */}
           <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-3 sm:flex-row">
             <div className="relative w-full sm:w-[520px]">
               <FiSearch
@@ -247,7 +329,7 @@ export default function AdminCategoriesPage() {
           </div>
         </header>
 
-        {/* =================== Table =================== */}
+        {/* Table */}
         <section className="rounded-2xl border border-[#F7C60022] bg-white p-0 shadow-[0_6px_22px_rgba(0,0,0,.06)]">
           {loading ? (
             <div className="px-6 py-6 space-y-3 animate-pulse">
@@ -263,14 +345,17 @@ export default function AdminCategoriesPage() {
               <div className="hidden md:block">
                 <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <table className="min-w-full table-auto">
-                    <colgroup>
-                      <col className="w-[46%]" />
-                      <col className="w-[40%]" />
-                      <col className="w-[14%]" />
-                    </colgroup>
+                    {/* prettier-ignore */}
+                    <colgroup><col className="w-[14%]" /><col className="w-[40%]" /><col className="w-[32%]" /><col className="w-[14%]" /></colgroup>
+
 
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-white">
+                        <th className="p-4 text-left">
+                          <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
+                            Image
+                          </div>
+                        </th>
                         <th className="p-4 text-left">
                           <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                             {t("table.fr")}
@@ -288,7 +373,7 @@ export default function AdminCategoriesPage() {
                         </th>
                       </tr>
                       <tr>
-                        <td colSpan={3}>
+                        <td colSpan={4}>
                           <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                         </td>
                       </tr>
@@ -298,11 +383,27 @@ export default function AdminCategoriesPage() {
                       {pageItems.map((c) => {
                         const fr = c?.translations?.fr || c?.label || "";
                         const en = c?.translations?.en || "";
+                        const url = c?.image?.url ? imgSrc(c.image.url) : "";
                         return (
                           <tr
                             key={c._id}
                             className="group bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors"
                           >
+                            <td className="p-4 align-middle">
+                              <div className="flex items-center">
+                                {url ? (
+                                  <img
+                                    src={url}
+                                    alt={c?.image?.alt_fr || c?.image?.alt_en || fr || "Category"}
+                                    className="h-12 w-12 rounded-xl object-cover ring-1 ring-gray-200"
+                                  />
+                                ) : (
+                                  <div className="h-12 w-12 rounded-xl border-2 border-dashed border-yellow-400/70 flex items-center justify-center text-yellow-500">
+                                    <FiImage />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
                             <td className="p-4 align-middle">
                               <div className="flex items-center gap-3">
                                 <span className="h-2 w-2 rounded-full bg-[#F7C600] opacity-70 group-hover:opacity-100 transition" />
@@ -351,6 +452,9 @@ export default function AdminCategoriesPage() {
                 {pageItems.map((c) => {
                   const fr = c?.translations?.fr || c?.label || "";
                   const en = c?.translations?.en || "";
+                  const urlRaw =
+                    typeof c.image === "string" ? c.image : (c?.image?.url || "");
+                  const url = imgSrc(urlRaw);
                   return (
                     <div
                       key={c._id}
@@ -358,6 +462,19 @@ export default function AdminCategoriesPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
+                          <div className="mb-2">
+                            {url ? (
+                              <img
+                                src={url}
+                                alt={c?.image?.alt_fr || c?.image?.alt_en || fr || "Category"}
+                                className="h-16 w-16 rounded-xl object-cover ring-1 ring-gray-200"
+                              />
+                            ) : (
+                              <div className="h-16 w-16 rounded-xl border-2 border-dashed border-yellow-400/70 flex items-center justify-center text-yellow-500">
+                                <FiImage />
+                              </div>
+                            )}
+                          </div>
                           <p className="text-xs font-semibold text-gray-500">
                             {t("table.fr")}
                           </p>
@@ -393,7 +510,7 @@ export default function AdminCategoriesPage() {
                 })}
               </div>
 
-              {/* ✅ Pagination commune (desktop + mobile) */}
+              {/* Pagination */}
               <div className="px-4 pb-5">
                 <Pagination
                   page={page}
@@ -431,6 +548,7 @@ export default function AdminCategoriesPage() {
             </div>
 
             <div className="px-6 py-6 space-y-5">
+              {/* FR */}
               <label className="block">
                 <span className="block text-sm font-medium text-gray-700 mb-1">
                   {t("add.labelFR")}
@@ -440,7 +558,7 @@ export default function AdminCategoriesPage() {
                     className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 pr-9 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
                     value={newFR}
                     onChange={(e) => setNewFR(e.target.value)}
-                    placeholder={t("placeholders.frExample")}
+                    placeholder="Ex: Ressorts"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-300">
                     FR
@@ -448,6 +566,7 @@ export default function AdminCategoriesPage() {
                 </div>
               </label>
 
+              {/* EN */}
               <label className="block">
                 <span className="block text-sm font-medium text-gray-700 mb-1">
                   {t("add.labelEN")}
@@ -457,13 +576,91 @@ export default function AdminCategoriesPage() {
                     className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 pr-9 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
                     value={newEN}
                     onChange={(e) => setNewEN(e.target.value)}
-                    placeholder={t("placeholders.enExample")}
+                    placeholder="Ex: Springs"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-300">
                     EN
                   </span>
                 </div>
               </label>
+
+              {/* Image + ALT */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block sm:col-span-2">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    Image
+                  </span>
+                  <div
+                    className="relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-yellow-400/80 hover:border-yellow-500 transition bg-yellow-50/40"
+                  >
+                    {newPreview ? (
+                      <>
+                        <img
+                          src={newPreview}
+                          alt="Preview"
+                          className="max-h-32 rounded-lg object-contain ring-1 ring-gray-200 mb-3"
+                        />
+                        <div className="flex gap-2">
+                          <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
+                            <FiImage />
+                            Remplacer
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={onPickNewFile}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={clearNewFile}
+                            className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-red-200 text-red-600 shadow-sm hover:bg-red-50"
+                          >
+                            <FiX /> Retirer
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <FiImage className="mb-2 text-yellow-500" size={22} />
+                        <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
+                          Choisir une image
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={onPickNewFile}
+                          />
+                        </label>
+                      </>
+                    )}
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    Alt (FR)
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                    value={newAltFR}
+                    onChange={(e) => setNewAltFR(e.target.value)}
+                    placeholder="Texte alternatif FR"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    Alt (EN)
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                    value={newAltEN}
+                    onChange={(e) => setNewAltEN(e.target.value)}
+                    placeholder="Alternative text EN"
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="px-6 pb-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
@@ -511,6 +708,7 @@ export default function AdminCategoriesPage() {
             </div>
 
             <div className="px-6 py-6 space-y-5">
+              {/* FR */}
               <label className="block">
                 <span className="block text-sm font-medium text-gray-700 mb-1">
                   {t("add.labelFR")}
@@ -520,7 +718,7 @@ export default function AdminCategoriesPage() {
                     className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 pr-9 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
                     value={draftFR}
                     onChange={(e) => setDraftFR(e.target.value)}
-                    placeholder={t("placeholders.frExample")}
+                    placeholder="Ex: Ressorts"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-300">
                     FR
@@ -528,6 +726,7 @@ export default function AdminCategoriesPage() {
                 </div>
               </label>
 
+              {/* EN */}
               <label className="block">
                 <span className="block text-sm font-medium text-gray-700 mb-1">
                   {t("add.labelEN")}
@@ -537,13 +736,133 @@ export default function AdminCategoriesPage() {
                     className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 pr-9 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
                     value={draftEN}
                     onChange={(e) => setDraftEN(e.target.value)}
-                    placeholder={t("placeholders.enExample")}
+                    placeholder="Ex: Springs"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-300">
                     EN
                   </span>
                 </div>
               </label>
+
+              {/* Image + ALT + supprimer */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block sm:col-span-2">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    Image
+                  </span>
+                  <div
+                    className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed transition bg-yellow-50/40 ${editPreview ? "border-yellow-400/80" : "border-yellow-400/80 hover:border-yellow-500"
+                      }`}
+                  >
+                    {editPreview ? (
+                      <>
+                        <img
+                          src={editPreview}
+                          alt="Preview"
+                          className="max-h-32 rounded-lg object-contain ring-1 ring-gray-200 mb-3"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
+                            <FiImage />
+                            Remplacer
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={onPickEditFile}
+                            />
+                          </label>
+                          {editFile ? (
+                            <button
+                              type="button"
+                              onClick={clearEditFile}
+                              className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-red-200 text-red-600 shadow-sm hover:bg-red-50"
+                            >
+                              <FiX /> Annuler le remplacement
+                            </button>
+                          ) : (
+                            <>
+                              <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
+                                Changer
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={onPickEditFile}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRemoveImage(true);
+                                  setEditFile(null);
+                                  setEditPreview("");
+                                }}
+                                className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-red-200 text-red-600 shadow-sm hover:bg-red-50"
+                              >
+                                <FiTrash2 /> Retirer l’image
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <FiImage className="mb-2 text-yellow-500" size={22} />
+                        <div className="flex flex-wrap gap-2">
+                          <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
+                            Choisir une image
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={onPickEditFile}
+                            />
+                          </label>
+                          {/* Si aucune preview (soit rien d'origine, soit retirée), marquer removeImage */}
+                          {!editFile && (
+                            <button
+                              type="button"
+                              onClick={() => setRemoveImage(true)}
+                              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm border shadow-sm ${removeImage
+                                ? "bg-red-600 text-white border-red-600"
+                                : "bg-white text-red-600 border-red-200 hover:bg-red-50"
+                                }`}
+                            >
+                              <FiTrash2 />
+                              {removeImage ? "Image retirée" : "Retirer l’image"}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    Alt (FR)
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                    value={draftAltFR}
+                    onChange={(e) => setDraftAltFR(e.target.value)}
+                    placeholder="Texte alternatif FR"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1">
+                    Alt (EN)
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+                    value={draftAltEN}
+                    onChange={(e) => setDraftAltEN(e.target.value)}
+                    placeholder="Alternative text EN"
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="px-6 pb-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
