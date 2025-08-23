@@ -29,6 +29,8 @@ function useActiveSection() {
   return active;
 }
 
+
+
 /* --------------------------------- View ---------------------------------- */
 export default function HomeMTR() {
   const active = useActiveSection();
@@ -85,6 +87,9 @@ export default function HomeMTR() {
       controller.abort();
     };
   }, []); // charge au montage
+
+
+  
 
   const NavLink = ({ href, id, children }) => {
     const isActive = active === id;
@@ -468,7 +473,7 @@ export default function HomeMTR() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
+              className="group relative rounded-3xl border border-[#F5B301] bg-white p-6 shadow-sm transition hover:shadow-xl"
             >
               <div className="mb-4 inline-flex items-center gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0B2239]/5">
@@ -496,7 +501,7 @@ export default function HomeMTR() {
             {/* Savoir-faire & qualité — résumé */}
             <motion.article
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
+              className="group relative rounded-3xl border border-[#F5B301] bg-white p-6 shadow-sm transition hover:shadow-xl"
             >
               <div className="mb-4 inline-flex items-center gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0B2239]/5">
@@ -528,7 +533,7 @@ export default function HomeMTR() {
             {/* Travail du fil & secteurs servis — résumé */}
             <motion.article
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
+              className="group relative rounded-3xl border border-[#F5B301] bg-white p-6 shadow-sm transition hover:shadow-xl"
             >
               <div className="mb-4 inline-flex items-center gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0B2239]/5">
