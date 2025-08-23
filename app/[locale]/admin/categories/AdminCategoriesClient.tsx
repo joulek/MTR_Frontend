@@ -58,7 +58,7 @@ export default function AdminCategoriesPage() {
   const [draftAltFR, setDraftAltFR] = useState("");
   const [draftAltEN, setDraftAltEN] = useState("");
   const [editFile, setEditFile] = useState<File | null>(null);
-  const [editPreview, setEditPreview] = useState<string>(""); // montre image existante ou nouvelle
+  const [editPreview, setEditPreview] = useState<string>("");
   const [removeImage, setRemoveImage] = useState(false);
 
   // Busy
@@ -160,7 +160,6 @@ export default function AdminCategoriesPage() {
     setDraftAltFR((cat?.image?.alt_fr || "").trim());
     setDraftAltEN((cat?.image?.alt_en || "").trim());
     setEditFile(null);
-    // preview = image existante s'il y en a
     setEditPreview(cat?.image?.url ? imgSrc(cat.image.url) : "");
     setRemoveImage(false);
     setEditOpen(true);
@@ -179,14 +178,13 @@ export default function AdminCategoriesPage() {
   function onPickEditFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] || null;
     setEditFile(f);
-    setEditPreview(f ? URL.createObjectURL(f) : ""); // remplace l’aperçu
+    setEditPreview(f ? URL.createObjectURL(f) : "");
     if (f) setRemoveImage(false);
   }
   function clearEditFile() {
     setEditFile(null);
-    // si la catégorie avait déjà une image, on remet son preview
-    const cat = items.find((c) => c._id === currentId);
-    setEditPreview(cat?.image?.url ? imgSrc(cat.image.url) : "");
+    setEditPreview("");
+    setRemoveImage(true);
   }
   async function submitEdit() {
     if (!currentId || !draftFR.trim()) return;
@@ -345,9 +343,12 @@ export default function AdminCategoriesPage() {
               <div className="hidden md:block">
                 <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <table className="min-w-full table-auto">
-                    {/* prettier-ignore */}
-                    <colgroup><col className="w-[14%]" /><col className="w-[40%]" /><col className="w-[32%]" /><col className="w-[14%]" /></colgroup>
-
+                    <colgroup>
+                      <col className="w-[14%]" />
+                      <col className="w-[40%]" />
+                      <col className="w-[32%]" />
+                      <col className="w-[14%]" />
+                    </colgroup>
 
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-white">
@@ -390,7 +391,9 @@ export default function AdminCategoriesPage() {
                             className="group bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors"
                           >
                             <td className="p-4 align-middle">
-                              <div className="flex items-center">
+                              <div className="flex items-center gap-3">
+                                {/* ● le point jaune ici */}
+                                <span className="h-2 w-2 rounded-full bg-[#F7C600]" />
                                 {url ? (
                                   <img
                                     src={url}
@@ -398,15 +401,16 @@ export default function AdminCategoriesPage() {
                                     className="h-12 w-12 rounded-xl object-cover ring-1 ring-gray-200"
                                   />
                                 ) : (
-                                  <div className="h-12 w-12 rounded-xl border-2 border-dashed border-yellow-400/70 flex items-center justify-center text-yellow-500">
+                                  <div className="h-12 w-12 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 bg-gray-50">
                                     <FiImage />
                                   </div>
                                 )}
                               </div>
                             </td>
+
                             <td className="p-4 align-middle">
                               <div className="flex items-center gap-3">
-                                <span className="h-2 w-2 rounded-full bg-[#F7C600] opacity-70 group-hover:opacity-100 transition" />
+                                {/* on enlève le petit point jaune bruyant */}
                                 <span className="text-[#0B1E3A] font-medium">
                                   {fr}
                                 </span>
@@ -470,7 +474,7 @@ export default function AdminCategoriesPage() {
                                 className="h-16 w-16 rounded-xl object-cover ring-1 ring-gray-200"
                               />
                             ) : (
-                              <div className="h-16 w-16 rounded-xl border-2 border-dashed border-yellow-400/70 flex items-center justify-center text-yellow-500">
+                              <div className="h-16 w-16 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 bg-gray-50">
                                 <FiImage />
                               </div>
                             )}
@@ -531,7 +535,7 @@ export default function AdminCategoriesPage() {
       {/* Add */}
       {addOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 bg-black/50 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="add-title"
@@ -584,57 +588,47 @@ export default function AdminCategoriesPage() {
                 </div>
               </label>
 
-              {/* Image + ALT */}
+              {/* Image + ALT (texte cliquable, preview sous le cadre) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block sm:col-span-2">
                   <span className="block text-sm font-medium text-gray-700 mb-1">
                     Image
                   </span>
-                  <div
-                    className="relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-yellow-400/80 hover:border-yellow-500 transition bg-yellow-50/40"
-                  >
-                    {newPreview ? (
-                      <>
-                        <img
-                          src={newPreview}
-                          alt="Preview"
-                          className="max-h-32 rounded-lg object-contain ring-1 ring-gray-200 mb-3"
-                        />
-                        <div className="flex gap-2">
-                          <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
-                            <FiImage />
-                            Remplacer
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={onPickNewFile}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={clearNewFile}
-                            className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-red-200 text-red-600 shadow-sm hover:bg-red-50"
-                          >
-                            <FiX /> Retirer
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <FiImage className="mb-2 text-yellow-500" size={22} />
-                        <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
-                          Choisir une image
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={onPickNewFile}
-                          />
-                        </label>
-                      </>
-                    )}
+
+                  {/* Cadre jaune cliquable */}
+                  <div className="relative flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-yellow-400/80 bg-yellow-50/40 text-center">
+                    <FiImage className="mb-2 text-yellow-500" size={22} />
+                    <p className="text-sm text-gray-700 underline underline-offset-4">
+                      {newPreview ? "Cliquer ici pour changer l’image" : "Cliquer ici pour ajouter une image"}
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={onPickNewFile}
+                      aria-label="Choisir une image"
+                      className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                    />
                   </div>
+
+                  {/* Aperçu SOUS le cadre */}
+                  {newPreview && (
+                    <div className="mt-3 relative inline-block">
+                      <img
+                        src={newPreview}
+                        alt="Preview"
+                        className="max-h-32 rounded-lg object-contain ring-1 ring-gray-200 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={clearNewFile}
+                        className="absolute -top-2 -right-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white border border-gray-200 text-red-600 shadow hover:bg-red-50"
+                        title="Enlever l’image"
+                        aria-label="Enlever l’image"
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
+                  )}
                 </label>
 
                 <label className="block">
@@ -686,7 +680,7 @@ export default function AdminCategoriesPage() {
       {/* Edit */}
       {editOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 bg-black/50 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-title"
@@ -744,99 +738,47 @@ export default function AdminCategoriesPage() {
                 </div>
               </label>
 
-              {/* Image + ALT + supprimer */}
+              {/* Image + ALT (texte cliquable, preview SOUS le cadre) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block sm:col-span-2">
                   <span className="block text-sm font-medium text-gray-700 mb-1">
                     Image
                   </span>
-                  <div
-                    className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed transition bg-yellow-50/40 ${editPreview ? "border-yellow-400/80" : "border-yellow-400/80 hover:border-yellow-500"
-                      }`}
-                  >
-                    {editPreview ? (
-                      <>
-                        <img
-                          src={editPreview}
-                          alt="Preview"
-                          className="max-h-32 rounded-lg object-contain ring-1 ring-gray-200 mb-3"
-                        />
-                        <div className="flex flex-wrap gap-2">
-                          <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
-                            <FiImage />
-                            Remplacer
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={onPickEditFile}
-                            />
-                          </label>
-                          {editFile ? (
-                            <button
-                              type="button"
-                              onClick={clearEditFile}
-                              className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-red-200 text-red-600 shadow-sm hover:bg-red-50"
-                            >
-                              <FiX /> Annuler le remplacement
-                            </button>
-                          ) : (
-                            <>
-                              <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
-                                Changer
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={onPickEditFile}
-                                />
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRemoveImage(true);
-                                  setEditFile(null);
-                                  setEditPreview("");
-                                }}
-                                className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-red-200 text-red-600 shadow-sm hover:bg-red-50"
-                              >
-                                <FiTrash2 /> Retirer l’image
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <FiImage className="mb-2 text-yellow-500" size={22} />
-                        <div className="flex flex-wrap gap-2">
-                          <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
-                            Choisir une image
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={onPickEditFile}
-                            />
-                          </label>
-                          {/* Si aucune preview (soit rien d'origine, soit retirée), marquer removeImage */}
-                          {!editFile && (
-                            <button
-                              type="button"
-                              onClick={() => setRemoveImage(true)}
-                              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm border shadow-sm ${removeImage
-                                ? "bg-red-600 text-white border-red-600"
-                                : "bg-white text-red-600 border-red-200 hover:bg-red-50"
-                                }`}
-                            >
-                              <FiTrash2 />
-                              {removeImage ? "Image retirée" : "Retirer l’image"}
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    )}
+
+                  {/* Cadre jaune cliquable */}
+                  <div className="relative flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-yellow-400/80 bg-yellow-50/40 text-center">
+                    <FiImage className="mb-2 text-yellow-500" size={22} />
+                    <p className="text-sm text-gray-700 underline underline-offset-4">
+                      {editPreview ? "Cliquer ici pour changer l’image" : "Cliquer ici pour ajouter une image"}
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={onPickEditFile}
+                      aria-label="Choisir une image"
+                      className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                    />
                   </div>
+
+                  {/* Aperçu SOUS le cadre */}
+                  {editPreview && (
+                    <div className="mt-3 relative inline-block">
+                      <img
+                        src={editPreview}
+                        alt="Preview"
+                        className="max-h-32 rounded-lg object-contain ring-1 ring-gray-200 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={clearEditFile}
+                        className="absolute -top-2 -right-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white border border-gray-200 text-red-600 shadow hover:bg-red-50"
+                        title="Enlever l’image"
+                        aria-label="Enlever l’image"
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
+                  )}
                 </label>
 
                 <label className="block">
@@ -888,7 +830,7 @@ export default function AdminCategoriesPage() {
       {/* Delete */}
       {deleteOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 bg-black/50 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-title"

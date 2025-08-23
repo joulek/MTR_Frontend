@@ -9,16 +9,14 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 const NOT_YET = "Pas encore";
 
 /* -------------------- helpers -------------------- */
-// lire un cookie côté client
-function getCookie(name: string) {
+function getCookie(name) {
   if (typeof document === "undefined") return "";
   const v = document.cookie.split("; ").find((c) => c.startsWith(name + "="));
   return v ? decodeURIComponent(v.split("=")[1]) : "";
 }
 
-// persistance "commande confirmée" (par demandeId) dans localStorage
 const ORDERED_KEY = "mtr:client:ordered";
-function readOrdered(): Record<string, boolean> {
+function readOrdered() {
   if (typeof window === "undefined") return {};
   try {
     return JSON.parse(localStorage.getItem(ORDERED_KEY) || "{}");
@@ -26,7 +24,7 @@ function readOrdered(): Record<string, boolean> {
     return {};
   }
 }
-function writeOrdered(map: Record<string, boolean>) {
+function writeOrdered(map) {
   try {
     localStorage.setItem(ORDERED_KEY, JSON.stringify(map || {}));
   } catch {}
@@ -37,7 +35,7 @@ export default function MesDevisPage() {
   const t = useTranslations("auth.client.quotesPage");
   const locale = useLocale();
 
-  const [allItems, setAllItems] = useState<any[]>([]);
+  const [allItems, setAllItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -46,22 +44,19 @@ export default function MesDevisPage() {
   const [pageSize, setPageSize] = useState(10);
 
   // { [demandeId]: { numero, pdf } }
-  const [devisMap, setDevisMap] = useState<Record<string, { numero?: string; pdf?: string }>>(
-    {}
-  );
+  const [devisMap, setDevisMap] = useState({});
 
   // état commande
-  const [ordered, setOrdered] = useState<Record<string, boolean>>({});
-  const [placing, setPlacing] = useState<Record<string, boolean>>({});
+  const [ordered, setOrdered] = useState({});
+  const [placing, setPlacing] = useState({});
 
-  // hydrate "ordered" depuis localStorage au 1er rendu
   useEffect(() => {
     setOrdered(readOrdered());
   }, []);
 
-  const hasDevis = useCallback((id: string) => Boolean(devisMap?.[id]?.pdf), [devisMap]);
+  const hasDevis = useCallback((id) => Boolean(devisMap?.[id]?.pdf), [devisMap]);
 
-  /* --------- fetch toutes les lignes --------- */
+  /* --------- fetch --------- */
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
@@ -75,7 +70,7 @@ export default function MesDevisPage() {
       if (!res.ok) throw new Error(data?.message || "Fetch error");
 
       setAllItems(data.items || []);
-    } catch (e: any) {
+    } catch (e) {
       setError(e.message || "Network error");
     } finally {
       setLoading(false);
@@ -86,7 +81,7 @@ export default function MesDevisPage() {
     fetchAll();
   }, [fetchAll]);
 
-  /* --------- récupérer DV (devis) pour chaque demande --------- */
+  /* --------- DV par demande --------- */
   useEffect(() => {
     if (!allItems.length) {
       setDevisMap({});
@@ -107,7 +102,7 @@ export default function MesDevisPage() {
             if (r.status === 403 || r.status === 404) return null;
             const j = await r.json().catch(() => null);
             if (j?.success && j?.exists && j?.pdf) {
-              return [demandeId, { numero: j.devis?.numero, pdf: j.pdf }] as const;
+              return [demandeId, { numero: j.devis?.numero, pdf: j.pdf }];
             }
             return null;
           } catch {
@@ -116,7 +111,7 @@ export default function MesDevisPage() {
         })
       );
       if (cancelled) return;
-      const map: Record<string, { numero?: string; pdf?: string }> = {};
+      const map = {};
       for (const p of pairs) if (p) map[p[0]] = p[1];
       setDevisMap(map);
     })();
@@ -126,7 +121,7 @@ export default function MesDevisPage() {
     };
   }, [allItems]);
 
-  /* --------- récupérer l'état "commande confirmée" depuis le backend (robuste) --------- */
+  /* --------- état commande confirmé --------- */
   useEffect(() => {
     if (!allItems.length) {
       setOrdered({});
@@ -142,18 +137,18 @@ export default function MesDevisPage() {
         (localStorage.getItem("token") || localStorage.getItem("authToken"))) ||
       "";
 
-    const headers: Record<string, string> = {};
+    const headers = {};
     if (token) headers.Authorization = `Bearer ${token}`;
 
     const ids = Array.from(new Set(allItems.map((it) => it?._id).filter(Boolean)));
 
     const CHUNK = 80;
-    const chunks: string[][] = [];
+    const chunks = [];
     for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
 
     (async () => {
       try {
-        const merged: Record<string, boolean> = {};
+        const merged = {};
         for (const group of chunks) {
           const qs = group.map(encodeURIComponent).join(",");
           const res = await fetch(`${BACKEND}/api/order/client/status?ids=${qs}`, {
@@ -167,9 +162,8 @@ export default function MesDevisPage() {
         }
 
         if (!controller.signal.aborted) {
-          // merge avec localStorage + prune des ids qui ne sont plus présents
           const fromStorage = readOrdered();
-          const next: Record<string, boolean> = {};
+          const next = {};
           const idSet = new Set(ids);
           for (const id of idSet) next[id] = merged[id] ?? fromStorage[id] ?? false;
 
@@ -185,7 +179,7 @@ export default function MesDevisPage() {
   }, [allItems]);
 
   /* --------- helpers UI --------- */
-  const prettyDate = (iso: string) => {
+  const prettyDate = (iso) => {
     try {
       const d = new Date(iso);
       return d.toLocaleString(locale, {
@@ -194,45 +188,48 @@ export default function MesDevisPage() {
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
-      } as Intl.DateTimeFormatOptions);
+      });
     } catch {
       return iso || "-";
     }
   };
 
-  const openUrlInNewTab = async (url: string) => {
+  const openUrlInNewTab = async (url) => {
     try {
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) return alert("Fichier introuvable");
+      if (!res.ok) {
+        setError("Fichier introuvable");
+        return;
+      }
       const blob = await res.blob();
       const obj = URL.createObjectURL(blob);
       window.open(obj, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(obj), 60000);
     } catch {
-      alert("Impossible d’ouvrir ce fichier.");
+      setError("Impossible d’ouvrir ce fichier.");
     }
   };
 
-  const openDdvPdf = (it: any) => {
+  const openDdvPdf = (it) => {
     const slug = String(it.type || "").toLowerCase();
     const url = it.pdfUrl || `${BACKEND}/api/mes-devis/${slug}/${it._id}/pdf`;
     openUrlInNewTab(url);
   };
 
-  const openDevisPdf = (demandeId: string) => {
+  const openDevisPdf = (demandeId) => {
     const info = devisMap[demandeId];
     if (info?.pdf) openUrlInNewTab(info.pdf);
   };
 
-  const openDoc = (it: any, file: any, index: number) => {
+  const openDoc = (it, file, index) => {
     if (file?.url) return openUrlInNewTab(file.url);
     const slug = String(it.type || "").toLowerCase();
     const url = `${BACKEND}/api/mes-devis/${slug}/${it._id}/document/${index}`;
     openUrlInNewTab(url);
   };
 
-  /* --------- ENVOI COMMANDE (avec Authorization: Bearer) --------- */
-  const placeOrder = async (it: any) => {
+  /* --------- ENVOI COMMANDE --------- */
+  const placeOrder = async (it) => {
     const info = devisMap[it._id];
     if (!info?.pdf) return;
 
@@ -245,7 +242,7 @@ export default function MesDevisPage() {
           (localStorage.getItem("token") || localStorage.getItem("authToken"))) ||
         "";
 
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers = { "Content-Type": "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
       const res = await fetch(`${BACKEND}/api/order/client/commander`, {
@@ -261,11 +258,11 @@ export default function MesDevisPage() {
       });
 
       if (res.status === 401) {
-        alert("Non authentifié. Veuillez vous reconnecter.");
+        setError("Non authentifié. Veuillez vous reconnecter.");
         return;
       }
       if (res.status === 403) {
-        alert("Accès interdit: cette demande ne vous appartient pas.");
+        setError("Accès interdit : cette demande ne vous appartient pas.");
         return;
       }
 
@@ -274,22 +271,21 @@ export default function MesDevisPage() {
         throw new Error(j?.message || "Erreur envoi");
       }
 
-      // ✅ persiste l’état "commande confirmée"
+      // succès : on met à jour l’état, pas de popup
       setOrdered((prev) => {
         const next = { ...prev, [it._id]: true };
         writeOrdered(next);
         return next;
       });
-
-      alert("Commande confirmée ✅");
-    } catch (e: any) {
-      alert(e.message || "Impossible d’envoyer la commande");
+      setError(""); // efface un éventuel ancien message
+    } catch (e) {
+      setError(e.message || "Impossible d’envoyer la commande");
     } finally {
       setPlacing((s) => ({ ...s, [it._id]: false }));
     }
   };
 
-  const norm = (s: string) =>
+  const norm = (s) =>
     (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   /* --------- filtre --------- */
@@ -317,33 +313,8 @@ export default function MesDevisPage() {
   const pageStart = (page - 1) * pageSize;
   const pageItems = filtered.slice(pageStart, pageStart + pageSize);
 
-  /* --------- UI subs --------- */
-  const StatusPill = ({ id }: { id: string }) => {
-    const isPlacing = placing[id];
-    const isOrdered = ordered[id];
-    const base =
-      "inline-block rounded-full px-2 py-0.5 text-xs font-semibold border";
-
-    if (isPlacing)
-      return (
-        <span className={`${base} bg-amber-50 text-amber-700 border-amber-200`}>
-          Envoi…
-        </span>
-      );
-    if (isOrdered)
-      return (
-        <span className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}>
-          Confirmée
-        </span>
-      );
-    return (
-      <span className={`${base} bg-slate-100 text-slate-600 border-slate-200`}>
-        Non confirmée
-      </span>
-    );
-  };
-
-  const FilesCell = ({ it }: { it: any }) => {
+  /* --------- UI cellules --------- */
+  const FilesCell = ({ it }) => {
     const files = Array.isArray(it.files) ? it.files : [];
     if (files.length === 0) return <span className="text-slate-400">—</span>;
     const shown = files.slice(0, 2);
@@ -366,8 +337,9 @@ export default function MesDevisPage() {
     );
   };
 
-  const Card = ({ it }: { it: any }) => {
+  const Card = ({ it }) => {
     const existeDevis = hasDevis(it._id);
+    const dejaCommande = !!ordered[it._id];
     return (
       <div className="rounded-2xl border border-[#F7C60022] bg-white p-4 shadow-[0_4px_16px_rgba(0,0,0,.06)] space-y-2">
         <div className="text-xs text-slate-500">{t("table.number")}</div>
@@ -413,38 +385,27 @@ export default function MesDevisPage() {
         <div className="text-xs text-slate-500">{t("table.createdAt")}</div>
         <div className="text-slate-700">{prettyDate(it.createdAt)}</div>
 
-        {/* Statut */}
-        <div className="text-xs text-slate-500">Statut</div>
-        <StatusPill id={it._id} />
-
-        {/* Action */}
-        {existeDevis && !ordered[it._id] && (
-          <button
-            onClick={() => placeOrder(it)}
-            disabled={placing[it._id]}
-            className="mt-2 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {placing[it._id] ? "Envoi..." : t("actions.order")}
-          </button>
-        )}
+        {/* Action (remplace le statut) */}
+        <div className="pt-1">
+          {dejaCommande ? (
+            <span className="inline-block rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs">
+              Commande confirmée
+            </span>
+          ) : existeDevis ? (
+            <button
+              onClick={() => placeOrder(it)}
+              disabled={placing[it._id]}
+              className="mt-1 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {placing[it._id] ? "Envoi..." : t("actions.order")}
+            </button>
+          ) : (
+            <span className="text-xs text-slate-600">Commande non confirmée</span>
+          )}
+        </div>
       </div>
     );
   };
-
-  // +1 colonne pour "Statut"
-  const colWidths = useMemo(
-    () => [
-      "w-[16%]", // numéro
-      "w-[18%]", // type
-      "w-[12%]", // PDF DDV
-      "w-[12%]", // DV
-      "w-[22%]", // fichiers
-      "w-[12%]", // date
-      "w-[8%]", // statut
-      "w-[6%]", // action
-    ],
-    []
-  );
 
   /* --------- render --------- */
   return (
@@ -454,6 +415,9 @@ export default function MesDevisPage() {
           {t("title")}
         </h1>
         <p className="text-sm text-slate-500">{t("subtitle")}</p>
+        {error && (
+          <p className="mt-1 text-sm text-rose-600">{error}</p>
+        )}
       </header>
 
       {/* recherche */}
@@ -506,138 +470,125 @@ export default function MesDevisPage() {
           <p className="px-6 py-6 text-slate-500">{t("noData")}</p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-[1120px] w-full table-auto">
-                <colgroup>
-                  {colWidths.map((w, i) => (
-                    <col key={i} className={w} />
-                  ))}
-                </colgroup>
-                <thead>
-                  <tr className="bg-white">
-                    <th className="p-3 text-left">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        {t("table.number")}
-                      </div>
-                    </th>
-                    <th className="p-3 text-left">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        {t("table.type")}
-                      </div>
-                    </th>
-                    <th className="p-3 text-left">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        PDF DDV
-                      </div>
-                    </th>
-                    <th className="p-3 text-left">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        DV
-                      </div>
-                    </th>
-                    <th className="p-3 text-left">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        {t("table.files")}
-                      </div>
-                    </th>
-                    <th className="p-3 text-left">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        {t("table.createdAt")}
-                      </div>
-                    </th>
-                    <th className="p-3 text-left">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        Statut
-                      </div>
-                    </th>
-                    <th className="p-3 text-right">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        {t("table.order")}
-                      </div>
-                    </th>
-                  </tr>
-                  <tr>
-                    <td colSpan={8}>
-                      <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                    </td>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {pageItems.map((it) => {
-                    const existeDevis = hasDevis(it._id);
-                    const devisInfo = devisMap[it._id];
-                    return (
-                      <tr
-                        key={`${it.type}-${it._id}`}
-                        className="bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors"
-                      >
-                        <td className="p-3 align-top">
-                          <span className="inline-flex items-center gap-2 text-[#0B1E3A] font-medium">
-                            <span className="h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
-                            <span>{it.ref || it.numero || "—"}</span>
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-white">
+                  <th className="p-3 text-left">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      {t("table.number")}
+                    </div>
+                  </th>
+                  <th className="p-3 text-left">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      {t("table.type")}
+                    </div>
+                  </th>
+                  <th className="p-3 text-left">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      PDF DDV
+                    </div>
+                  </th>
+                  <th className="p-3 text-left">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      DV
+                    </div>
+                  </th>
+                  <th className="p-3 text-left">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      {t("table.files")}
+                    </div>
+                  </th>
+                  <th className="p-3 text-left">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      {t("table.createdAt")}
+                    </div>
+                  </th>
+                  <th className="p-3 text-right whitespace-nowrap">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      {t("table.order")}
+                    </div>
+                  </th>
+                </tr>
+                <tr>
+                  <td colSpan={7}>
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                  </td>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {pageItems.map((it) => {
+                  const existeDevis = hasDevis(it._id);
+                  const devisInfo = devisMap[it._id];
+                  const dejaCommande = !!ordered[it._id];
+                  return (
+                    <tr
+                      key={`${it.type}-${it._id}`}
+                      className="bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors"
+                    >
+                      <td className="p-3 align-top">
+                        <span className="inline-flex items-center gap-2 text-[#0B1E3A] font-medium">
+                          <span className="h-2 w-2 rounded-full bg-[#F7C600] shrink-0" />
+                          <span>{it.ref || it.numero || "—"}</span>
+                        </span>
+                      </td>
+                      <td className="p-3 align-top text-[#0B1E3A]">
+                        {it.typeLabel || it.type || "-"}
+                      </td>
+                      <td className="p-3 align-top">
+                        {(it.hasPdf || it.pdfUrl) ? (
+                          <button
+                            type="button"
+                            onClick={() => openDdvPdf(it)}
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
+                          >
+                            Ouvrir
+                          </button>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td className="p-3 align-top">
+                        {existeDevis ? (
+                          <button
+                            type="button"
+                            onClick={() => openDevisPdf(it._id)}
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
+                            title={devisInfo?.numero ? `Devis ${devisInfo.numero}` : "Devis"}
+                          >
+                            Ouvrir
+                          </button>
+                        ) : (
+                          <span className="text-slate-500">{NOT_YET}</span>
+                        )}
+                      </td>
+                      <td className="p-3 align-top">
+                        <FilesCell it={it} />
+                      </td>
+                      <td className="p-3 align-top text-[#0B1E3A]">
+                        {prettyDate(it.createdAt)}
+                      </td>
+                      <td className="p-3 align-top text-right whitespace-nowrap">
+                        {dejaCommande ? (
+                          <span className="inline-block rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-sm">
+                            Commande confirmée
                           </span>
-                        </td>
-                        <td className="p-3 align-top text-[#0B1E3A]">
-                          {it.typeLabel || it.type || "-"}
-                        </td>
-                        <td className="p-3 align-top">
-                          {it.hasPdf || it.pdfUrl ? (
-                            <button
-                              type="button"
-                              onClick={() => openDdvPdf(it)}
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-                            >
-                              Ouvrir
-                            </button>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="p-3 align-top">
-                          {existeDevis ? (
-                            <button
-                              type="button"
-                              onClick={() => openDevisPdf(it._id)}
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-                              title={devisInfo?.numero ? `Devis ${devisInfo.numero}` : "Devis"}
-                            >
-                              Ouvrir
-                            </button>
-                          ) : (
-                            <span className="text-slate-500">{NOT_YET}</span>
-                          )}
-                        </td>
-                        <td className="p-3 align-top">
-                          <FilesCell it={it} />
-                        </td>
-                        <td className="p-3 align-top text-[#0B1E3A]">
-                          {prettyDate(it.createdAt)}
-                        </td>
-                        <td className="p-3 align-top">
-                          <StatusPill id={it._id} />
-                        </td>
-                        <td className="p-3 align-top text-right">
-                          {existeDevis && !ordered[it._id] && (
-                            <button
-                              onClick={() => placeOrder(it)}
-                              disabled={placing[it._id]}
-                              className="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                            >
-                              {placing[it._id] ? "Envoi..." : t("actions.order")}
-                            </button>
-                          )}
-                          {ordered[it._id] && (
-                            <span className="inline-block rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-sm">
-                              Commande confirmée
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        ) : existeDevis ? (
+                          <button
+                            onClick={() => placeOrder(it)}
+                            disabled={placing[it._id]}
+                            className="inline-flex items-center rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                          >
+                            {placing[it._id] ? "Envoi..." : t("actions.order")}
+                          </button>
+                        ) : (
+                          <span className="text-sm text-slate-600">Commande non confirmée</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
             <div className="px-4 pb-5">
               <Pagination

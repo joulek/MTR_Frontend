@@ -306,7 +306,7 @@ export default function AdminDevisTractionPage() {
                               onClick={() => openDevis(d)}
                               className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-yellow-500 hover:text-white"
                             >
-                              ➕ Créer devis
+                               Créer devis
                             </button>
                           )}
                         </td>

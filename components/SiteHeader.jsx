@@ -1,12 +1,12 @@
+// components/SiteHeader.jsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Facebook, Linkedin } from "lucide-react";
-import { CircleFlag } from 'react-circle-flags';
-
+import { CircleFlag } from "react-circle-flags";
 
 /* ---------------------------- API backend ---------------------------- */
 const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000").replace(/\/$/, "");
@@ -30,7 +30,6 @@ function slugify(s = "") {
 const makeCatHref = (cat, locale) =>
   `/${locale}/produits/${cat?.slug || slugify(pickName(cat, locale))}`;
 
-/* remplace /fr ou /en en tête de path, en conservant le reste et la query */
 function swapLocaleInPath(path, nextLocale) {
   const [p, q] = (path || "/").split("?");
   let base = p || "/";
@@ -44,16 +43,33 @@ function swapLocaleInPath(path, nextLocale) {
   return q ? `${base}?${q}` : base;
 }
 
-export default function SiteHeader() {
+export default function SiteHeader({ mode = "public", onLogout }) {
   const [open, setOpen] = useState(false);
   const [locale, setLocale] = useState("fr");
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
+  const [me, setMe] = useState(null);
+  const [hintRole, setHintRole] = useState(() => {
+    try { return localStorage.getItem("mtr_role") || null; } catch { return null; }
+  });
+  const [urlClient, setUrlClient] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname() || "/";
+  const homePaths = ["/", "/fr", "/en", "/fr/", "/en/"];
+  const isHome = homePaths.includes(pathname);
 
-  /* Détecter la langue depuis <html lang> / navigateur */
+  /* lire ?client=1 à chaque navigation */
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      setUrlClient(sp.get("client") === "1");
+    } catch {
+      setUrlClient(false);
+    }
+  }, [pathname]);
+
+  /* langue */
   useEffect(() => {
     const pick = () => {
       const htmlLang = document?.documentElement?.lang || "";
@@ -67,7 +83,37 @@ export default function SiteHeader() {
     return () => mo.disconnect();
   }, []);
 
-  /* Charger catégories (menu Produits) */
+  /* session */
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch("/api/me", { credentials: "include", cache: "no-store" });
+        if (!alive) return;
+        if (r.ok) {
+          const json = await r.json();
+          setMe(json);
+          if (json?.role) {
+            try { localStorage.setItem("mtr_role", json.role); } catch {}
+            setHintRole(json.role);
+          }
+        } else {
+          setMe(null);
+        }
+      } catch {
+        if (alive) setMe(null);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const isClient =
+    mode === "client" || me?.role === "client" || hintRole === "client" || urlClient === true;
+
+  /* home href qui conserve ?client=1 */
+  const homeHref = `/${locale}${isClient ? "?client=1" : ""}`;
+
+  /* catégories */
   useEffect(() => {
     let alive = true;
     const controller = new AbortController();
@@ -79,61 +125,59 @@ export default function SiteHeader() {
         const data = await res.json();
         if (!alive) return;
         setCategories(Array.isArray(data?.categories) ? data.categories : []);
-      } catch (err) {
-        const isAbort =
-          err?.name === "AbortError" ||
-          err?.message === "component-unmounted" ||
-          err === "component-unmounted";
-        if (isAbort) return;
+      } catch {
         if (alive) setCategories([]);
-        // Optionnel: console.warn("SiteHeader: échec chargement catégories:", err);
       } finally {
         if (alive) setLoadingCats(false);
       }
     })();
     return () => {
       alive = false;
-      if (!controller.signal.aborted) controller.abort(); // abort silencieux
+      if (!controller.signal.aborted) controller.abort();
     };
   }, []);
 
-  /* -------- scroll helper: descendre sans # dans l'URL -------- */
+  /* scroll vers section home (en conservant ?client=1) */
   const goToSection = useCallback(
     async (id, closeMenu) => {
-      const homePaths = ["/", "/fr", "/en", "/fr/", "/en/"];
       const doScroll = () => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         if (closeMenu) setOpen(false);
       };
       if (!homePaths.includes(pathname)) {
-        await router.push(`/${locale}`, { scroll: true });
+        await router.push(homeHref, { scroll: true });
         setTimeout(doScroll, 60);
       } else {
         doScroll();
       }
     },
-    [pathname, router, locale]
+    [pathname, router, homeHref]
   );
 
-  /* -------- Sélecteur de langue (drapeaux) -------- */
+  /* switch langue (préserver ?client=1) */
   const switchLang = useCallback(
     (next) => {
       if (next === locale) return;
-      document.documentElement.lang = next; // pour ton observer
+      document.documentElement.lang = next;
       setLocale(next);
-      const nextPath = swapLocaleInPath(pathname, next);
+      let nextPath = swapLocaleInPath(pathname, next);
+      try {
+        const search = new URLSearchParams(window.location.search);
+        if (isClient) search.set("client", "1");
+        const qs = search.toString();
+        if (qs) nextPath = `${nextPath.split("?")[0]}?${qs}`;
+      } catch {}
       router.push(nextPath, { scroll: false });
-      try { localStorage.setItem("mtr_locale", next); } catch { }
+      try { localStorage.setItem("mtr_locale", next); } catch {}
     },
-    [pathname, router, locale]
+    [pathname, router, locale, isClient]
   );
 
-  /* -------- Menu Produits (parents → enfants) -------- */
+  /* menu Produits (parents → enfants) */
   const ProductsMenu = ({ cats, locale }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [hoveredParent, setHoveredParent] = useState(null);
-
     const childrenMap = new Map();
     const getParentId = (c) => c?.parent?._id || c?.parent || c?.parentId || c?.parent_id || null;
     const getId = (c) => c?._id || pickName(c, locale);
@@ -164,7 +208,6 @@ export default function SiteHeader() {
 
         {menuOpen && (
           <div className="absolute left-0 top-full z-50 before:content-[''] before:absolute before:top-0 before:left-0 before:w-full before:h-2">
-            {/* liste parents */}
             <ul className="relative w-64 rounded-lg bg-white p-2 shadow-2xl ring-1 ring-slate-200 after:content-[''] after:absolute after:top-0 after:right-[-8px] after:w-2 after:h-full">
               {tops.map((parent) => {
                 const id = getId(parent);
@@ -187,10 +230,9 @@ export default function SiteHeader() {
               })}
             </ul>
 
-            {/* sous-menu enfants */}
             {hoveredParent && (childrenMap.get(hoveredParent) || []).length > 0 && (
               <ul className="absolute left-[100%] top-0 ml-2 w-64 rounded-lg bg-white p-2 shadow-2xl ring-1 ring-slate-200">
-                {childrenMap.get(hoveredParent).map((child) => (
+                {(childrenMap.get(hoveredParent) || []).map((child) => (
                   <li key={getId(child)}>
                     <Link
                       href={makeCatHref(child, locale)}
@@ -208,13 +250,100 @@ export default function SiteHeader() {
     );
   };
 
-  /* --------------------------- RENDER --------------------------- */
+  /* items client */
+  const ClientNavItemsDesktop = () => {
+    const [servicesOpen, setServicesOpen] = useState(false);
+    const ref = useRef(null);
+    useEffect(() => {
+      const onDoc = (e) => { if (!ref.current?.contains(e.target)) setServicesOpen(false); };
+      document.addEventListener("mousedown", onDoc);
+      return () => document.removeEventListener("mousedown", onDoc);
+    }, []);
+
+    return (
+      <>
+        <Link href={`/${locale}/client/profile`} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
+          Mon Profil
+        </Link>
+        <Link href={`/${locale}/client/reclamations`} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
+          Réclamer
+        </Link>
+
+        <div ref={ref} className="relative">
+          <button
+            type="button"
+            onClick={() => setServicesOpen((s) => !s)}
+            className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]"
+            aria-haspopup="menu"
+            aria-expanded={servicesOpen}
+          >
+            Mes services ▾
+          </button>
+          {servicesOpen && (
+            <div role="menu" className="absolute left-0 top-full mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
+              <Link href={`/${locale}/client/mes-devis`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                Mes devis
+              </Link>
+              <Link href={`/${locale}/client/reclamations`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                Réclamations
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <Link href={`/${locale}/client/devis`} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
+          Demander un devis
+        </Link>
+      </>
+    );
+  };
+
+  const ClientNavItemsMobile = () => (
+    <>
+      <Link href={`/${locale}/client/profile`} className="rounded px-3 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>
+        Mon Profil
+      </Link>
+      <details>
+        <summary className="px-3 py-2 cursor-pointer select-none">Mes services</summary>
+        <div className="pl-4 flex flex-col">
+          <Link href={`/${locale}/client/mes-devis`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
+            Mes devis
+          </Link>
+          <Link href={`/${locale}/client/reclamations`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
+            Réclamations
+          </Link>
+        </div>
+      </details>
+      <Link href={`/${locale}/client/devis`} className="rounded px-3 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>
+        Demander un devis
+      </Link>
+    </>
+  );
+
+  /* ✅ Logout par défaut (si onLogout n'est pas fourni) */
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    } catch (e) {
+      console.error("Erreur logout", e);
+    } finally {
+      try {
+        localStorage.removeItem("mtr_role");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("rememberMe");
+      } catch {}
+      // redirection vers la page de login locale
+      router.push(`/${locale}/login`);
+    }
+  };
+  const effectiveLogout = onLogout || handleLogout;
+
+  /* render */
   return (
     <header className="sticky top-0 z-40">
-      {/* --------- Top bar bleu marine --------- */}
+      {/* top bar */}
       <div className="bg-[#0B2239] text-white">
         <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-xs sm:text-sm">
-          {/* liens à gauche */}
           <nav className="flex items-center gap-4">
             <button type="button" onClick={() => goToSection("apropos")} className="opacity-90 transition hover:text-[#F5B301]" role="link">
               À propos
@@ -229,99 +358,77 @@ export default function SiteHeader() {
             </button>
           </nav>
 
-          {/* droite : réseaux + sélecteur langue par drapeaux */}
           <div className="flex items-center gap-3">
-            <a
-              href="https://www.facebook.com/profile.php?id=100076355199317&locale=fr_FR"
-              target="_blank" rel="noreferrer"
-              className="rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="Facebook"
-            >
+            <a href="https://www.facebook.com/profile.php?id=100076355199317&locale=fr_FR" target="_blank" rel="noreferrer" className="rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="Facebook">
               <Facebook className="h-4 w-4" />
             </a>
-            <a
-              href="https://www.linkedin.com/in/manufacutre-tunisienne-des-ressorts-22b388276/"
-              target="_blank" rel="noreferrer"
-              className="rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="LinkedIn"
-            >
+            <a href="https://www.linkedin.com/in/manufacutre-tunisienne-des-ressorts-22b388276/" target="_blank" rel="noreferrer" className="rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="LinkedIn">
               <Linkedin className="h-4 w-4" />
             </a>
 
-            {/* Sélecteur langue (corrigé) */}
             <div className="flex items-center gap-2 ml-2">
-              <button
-                onClick={() => switchLang("fr")}
-                className={`${locale === "fr" ? "ring-2 ring-[#F5B301] rounded-full" : ""} p-0 bg-transparent border-0`}
-                title="Français"
-                aria-pressed={locale === "fr"}
-              >
-                <CircleFlag countryCode="fr" style={{ width: "20px", height: "20px" }} />
+              <button onClick={() => switchLang("fr")} className={`${locale === "fr" ? "ring-2 ring-[#F5B301] rounded-full" : ""} p-0 bg-transparent border-0`} title="Français" aria-pressed={locale === "fr"}>
+                <CircleFlag countryCode="fr" style={{ width: 20, height: 20 }} />
               </button>
-
-              <button
-                onClick={() => switchLang("en")}
-                className={`${locale === "en" ? "ring-2 ring-[#F5B301] rounded-full" : ""} p-0 bg-transparent border-0`}
-                title="English"
-                aria-pressed={locale === "en"}
-              >
-                <CircleFlag countryCode="us" style={{ width: "20px", height: "20px" }} />
+              <button onClick={() => switchLang("en")} className={`${locale === "en" ? "ring-2 ring-[#F5B301] rounded-full" : ""} p-0 bg-transparent border-0`} title="English" aria-pressed={locale === "en"}>
+                <CircleFlag countryCode="us" style={{ width: 20, height: 20 }} />
               </button>
             </div>
-
-
-
           </div>
         </div>
       </div>
 
-      {/* --------- Barre principale --------- */}
+      {/* barre principale */}
       <div className="border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+            {/* logo → home (garde ?client=1) */}
+            <Link href={homeHref} className="flex items-center gap-3">
               <Image src="/logo.png" alt="MTR logo" width={100} height={100} className="object-contain" priority />
             </Link>
 
             {/* nav desktop */}
             <nav className="hidden items-center gap-1 md:flex">
-              <Link href="/" className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
+              <Link href={homeHref} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
                 Accueil
               </Link>
 
-              <button
-                type="button"
-                onClick={() => goToSection("presentation")}
-                className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link"
-              >
-                L&apos;entreprise
-              </button>
+              {/* sections home : public partout / client seulement sur home */}
+              {(!isClient || isHome) && (
+                <>
+                  <button type="button" onClick={() => goToSection("presentation")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
+                    L&apos;entreprise
+                  </button>
+                  {!loadingCats && <ProductsMenu cats={categories} locale={locale} />}
+                  <button type="button" onClick={() => goToSection("contact")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
+                    Contact
+                  </button>
+                  <button type="button" onClick={() => goToSection("localisation")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
+                    Localisation
+                  </button>
+                </>
+              )}
 
-              {!loadingCats && <ProductsMenu cats={categories} locale={locale} />}
-
-              <button
-                type="button"
-                onClick={() => goToSection("contact")}
-                className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link"
-              >
-                Contact
-              </button>
-
-              <button
-                type="button"
-                onClick={() => goToSection("localisation")}
-                className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link"
-              >
-                Localisation
-              </button>
+              {isClient && <ClientNavItemsDesktop />}
             </nav>
 
-            {/* CTA + burger */}
+            {/* actions droite */}
             <div className="flex items-center gap-3">
-              <Link
-                href={`/${locale}/devis`}
-                className="hidden rounded-full bg-[#F5B301] px-4 py-2 text-sm font-semibold text-[#0B2239] shadow hover:brightness-95 md:inline-block"
-              >
-                Demander un devis
-              </Link>
+              {isClient ? (
+                <button
+                  onClick={effectiveLogout}
+                  className="hidden md:inline-block rounded-xl px-4 py-2 text-sm font-semibold bg-[#F5B301] hover:brightness-95 text-[#0B2239] shadow"
+                >
+                  Se déconnecter
+                </button>
+              ) : (
+                <Link
+                  href={`/${locale}/devis`}
+                  className="hidden md:inline-block rounded-full bg-[#F5B301] px-4 py-2 text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
+                >
+                  Demander un devis
+                </Link>
+              )}
               <button
                 onClick={() => setOpen((s) => !s)}
                 aria-label="Ouvrir le menu"
@@ -335,55 +442,49 @@ export default function SiteHeader() {
 
         {/* menu mobile */}
         {open && (
-          <div className="md:hidden border-t border-slate-200 bg-white">
+          <div className="md:hidden border-top border-slate-200 bg-white">
             <div className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1">
-              <Link href="/" className="rounded px-3 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>
+              <Link href={homeHref} className="rounded px-3 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>
                 Accueil
               </Link>
 
-              <button
-                type="button"
-                onClick={() => goToSection("presentation", true)}
-                className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link"
-              >
-                L&apos;entreprise
-              </button>
+              {(!isClient || isHome) && (
+                <>
+                  <button type="button" onClick={() => goToSection("presentation", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                    L&apos;entreprise
+                  </button>
+                  <button type="button" onClick={() => goToSection("specialites", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                    Produits
+                  </button>
+                  <button type="button" onClick={() => goToSection("contact", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                    Contact
+                  </button>
+                  <button type="button" onClick={() => goToSection("localisation", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                    Localisation
+                  </button>
+                </>
+              )}
 
-              <button
-                type="button"
-                onClick={() => goToSection("specialites", true)}
-                className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link"
-              >
-                Produits
-              </button>
+              {isClient && <ClientNavItemsMobile />}
 
-              <button
-                type="button"
-                onClick={() => goToSection("contact", true)}
-                className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link"
-              >
-                Contact
-              </button>
-
-              <button
-                type="button"
-                onClick={() => goToSection("localisation", true)}
-                className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link"
-              >
-                Localisation
-              </button>
-
-              <Link
-                href={`/${locale}/devis`}
-                onClick={() => setOpen(false)}
-                className="mt-2 rounded-xl bg-[#F5B301] px-4 py-2 text-center text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
-              >
-                Demander un devis
-              </Link>
+              <div className="h-px bg-slate-200 my-2" />
+              {isClient ? (
+                <button onClick={effectiveLogout} className="rounded-xl px-4 py-2 text-sm font-semibold bg-[#F5B301] hover:brightness-95 text-[#0B2239] shadow">
+                  Se déconnecter
+                </button>
+              ) : (
+                <Link
+                  href={`/${locale}/devis`}
+                  onClick={() => setOpen(false)}
+                  className="rounded-xl bg-[#F5B301] px-4 py-2 text-center text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
+                >
+                  Demander un devis
+                </Link>
+              )}
             </div>
           </div>
         )}
       </div>
-    </header >
+    </header>
   );
 }

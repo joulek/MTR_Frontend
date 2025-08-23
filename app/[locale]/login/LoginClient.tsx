@@ -41,13 +41,24 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data?.message || t("errors.loginFailed"));
       } else {
-        localStorage.setItem("userRole", data.role || data.user?.role || "");
-        localStorage.setItem("rememberMe", remember ? "1" : "0");
+        // ✅ on garde tes clés et on ajoute mtr_role (pour le header)
+        const role = data.role || data.user?.role || "";
+        try {
+          localStorage.setItem("userRole", role);
+          localStorage.setItem("mtr_role", role);
+          localStorage.setItem("rememberMe", remember ? "1" : "0");
+        } catch {}
 
-        const role = data.role || data.user?.role;
-        if (role === "admin") router.push(`/${locale}/admin`);
-        else if (role === "client") router.push(`/${locale}/client`);
-        else router.push(`/${locale}/home`);
+        if (role === "admin") {
+          router.push(`/${locale}/admin`);
+        } else if (role === "client") {
+          // ✅ Home locale en mode client (conserve le header client partout)
+          router.push(`/${locale}?client=1`);
+          // si tu préfères l’espace client au lieu de la home, remplace par :
+          // router.push(`/${locale}/client`);
+        } else {
+          router.push(`/${locale}/home`);
+        }
       }
     } catch {
       setError(t("errors.network"));
@@ -58,8 +69,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
-      {/* ✅ Ajout du SiteHeader en haut */}
-      <SiteHeader />
+      {/* ✅ Header */}
+      <SiteHeader onLogout={undefined} />
 
       <div className="flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-2xl shadow-2xl border border-[#ffb400]/50 bg-white">
