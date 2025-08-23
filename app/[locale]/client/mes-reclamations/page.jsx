@@ -2,13 +2,12 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import Link from "next/link";
+// import Link from "next/link"; // (inutile ici, retiré)
 import { useLocale, useTranslations } from "next-intl";
-import { FiSearch, FiXCircle, FiEye, FiFileText } from "react-icons/fi";
+import { FiSearch, FiXCircle, FiFileText } from "react-icons/fi";
 import Pagination from "@/components/Pagination";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
-const NOT_YET = "Pas encore";
 
 /* -------------------- helpers -------------------- */
 function getCookie(name) {
@@ -26,7 +25,7 @@ const STATUS_COLORS = {
 /* ------------------------------------------------- */
 
 export default function MesReclamationsPage() {
-  const t = useTranslations("auth.client.claimsPage"); // optionnel si tu as des traductions
+  const t = useTranslations("auth.client.claimsPage");
   const locale = useLocale();
 
   const [allItems, setAllItems] = useState([]);
@@ -36,6 +35,8 @@ export default function MesReclamationsPage() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const NOT_YET = t("notYet");
 
   /* --------- fetch --------- */
   const fetchAll = useCallback(async () => {
@@ -52,7 +53,6 @@ export default function MesReclamationsPage() {
       const headers = {};
       if (token) headers.Authorization = `Bearer ${token}`;
 
-      // On récupère tout, la pagination se fait côté client (comme ta page MesDevis)
       const res = await fetch(`${BACKEND}/api/reclamations/me`, {
         credentials: "include",
         headers,
@@ -93,7 +93,7 @@ export default function MesReclamationsPage() {
     try {
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) {
-        setError("Fichier introuvable");
+        setError(t("errors.fileNotFound"));
         return;
       }
       const blob = await res.blob();
@@ -101,7 +101,7 @@ export default function MesReclamationsPage() {
       window.open(obj, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(obj), 60000);
     } catch {
-      setError("Impossible d’ouvrir ce fichier.");
+      setError(t("errors.cannotOpen"));
     }
   };
 
@@ -143,11 +143,9 @@ export default function MesReclamationsPage() {
     <div className="mx-auto w-full max-w-6xl px-3 sm:px-6 py-6 space-y-6 sm:space-y-8">
       <header className="text-center space-y-2">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0B1E3A]">
-          {/* t("title") || */} Mes réclamations
+          {t("title")}
         </h1>
-        <p className="text-sm text-slate-500">
-          {/* t("subtitle") || */} Suivez vos réclamations et téléchargez leurs PDF.
-        </p>
+        <p className="text-sm text-slate-500">{t("subtitle")}</p>
         {error && <p className="mt-1 text-sm text-rose-600">{error}</p>}
       </header>
 
@@ -161,15 +159,15 @@ export default function MesReclamationsPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher (numéro, type, nature, attente, date…) "
+            placeholder={t("searchPlaceholder")}
             className="w-full rounded-xl border border-gray-300 bg-white px-9 pr-9 py-2 text-sm text-[#0B1E3A] shadow focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
           />
           {q && (
             <button
               type="button"
               onClick={() => setQ("")}
-              aria-label="Effacer"
-              title="Effacer"
+              aria-label={t("clear")}
+              title={t("clear")}
               className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition"
             >
               <FiXCircle size={16} />
@@ -181,11 +179,11 @@ export default function MesReclamationsPage() {
       {/* desktop table */}
       <div className="rounded-2xl border border-[#F7C60022] bg-white shadow-[0_6px_22px_rgba(0,0,0,.06)]">
         {loading ? (
-          <p className="px-6 py-6 text-slate-500">Chargement…</p>
+          <p className="px-6 py-6 text-slate-500">{t("loading")}</p>
         ) : error ? (
           <p className="px-6 py-6 text-rose-600">{error}</p>
         ) : pageItems.length === 0 ? (
-          <p className="px-6 py-6 text-slate-500">Aucune réclamation.</p>
+          <p className="px-6 py-6 text-slate-500">{t("noData")}</p>
         ) : (
           <>
             <table className="w-full table-auto">
@@ -193,27 +191,27 @@ export default function MesReclamationsPage() {
                 <tr className="bg-white">
                   <th className="p-3 text-left">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Document
+                      {t("table.document")}
                     </div>
                   </th>
                   <th className="p-3 text-left">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Nature
+                      {t("table.nature")}
                     </div>
                   </th>
                   <th className="p-3 text-left">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Attente
+                      {t("table.attente")}
                     </div>
                   </th>
                   <th className="p-3 text-left">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Créée
+                      {t("table.createdAt")}
                     </div>
                   </th>
                   <th className="p-3 text-left">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      PDF
+                      {t("table.pdf")}
                     </div>
                   </th>
                 </tr>
@@ -228,7 +226,6 @@ export default function MesReclamationsPage() {
                 {pageItems.map((it) => {
                   const typeDoc = (it?.commande?.typeDoc || "-").toUpperCase();
                   const numero = it?.commande?.numero || "—";
-                  const status = it?.status || "open";
                   const hasPdf = !!it?.demandePdf?.generatedAt; // expose ceci côté API
 
                   return (
@@ -243,22 +240,21 @@ export default function MesReclamationsPage() {
                       <td className="p-3 align-top text-[#0B1E3A]">{it?.nature || "-"}</td>
                       <td className="p-3 align-top text-[#0B1E3A]">{it?.attente || "-"}</td>
                       <td className="p-3 align-top text-[#0B1E3A]">{prettyDateTime(it?.createdAt)}</td>
-                      
+
                       <td className="p-3 align-top">
                         {hasPdf ? (
                           <button
                             type="button"
                             onClick={() => openPdf(it._id)}
                             className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-                            title="Ouvrir le PDF"
+                            title={t("aria.openPdf")}
                           >
-                            <FiFileText /> Ouvrir
+                            <FiFileText /> {t("actions.open")}
                           </button>
                         ) : (
                           <span className="text-slate-500">{NOT_YET}</span>
                         )}
                       </td>
-                     
                     </tr>
                   );
                 })}
@@ -279,8 +275,7 @@ export default function MesReclamationsPage() {
         )}
       </div>
 
-      {/* Mobile: simple cartes (optionnel) */}
-      {/* Tu peux ajouter un rendu mobile comme sur MesDevis si tu veux */}
+      {/* Mobile: tu peux ajouter un rendu cartes si besoin */}
     </div>
   );
 }

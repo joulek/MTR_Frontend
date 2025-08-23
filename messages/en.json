@@ -1,6 +1,5 @@
 {
   "auth": {
-    
     "forgot": "Forgot password?",
     "forgotTitle": "Mot de passe oublié",
     "code": "Code",
@@ -68,6 +67,33 @@
       "registerFailed": "Account creation failed!"
     },
     "client": {
+      "claimsPage": {
+        "title": "My Claims",
+        "subtitle": "Track your claims and download their PDFs.",
+        "searchPlaceholder": "Search (number, type, nature, expectation, date…)",
+        "clear": "Clear",
+        "loading": "Loading…",
+        "noData": "No claims.",
+        "table": {
+          "document": "Document",
+          "nature": "Nature",
+          "attente": "Expectation",
+          "createdAt": "Created",
+          "pdf": "PDF"
+        },
+        "actions": {
+          "open": "Open"
+        },
+        "notYet": "Not yet",
+        "errors": {
+          "fileNotFound": "File not found",
+          "cannotOpen": "Unable to open this file."
+        },
+        "aria": {
+          "openPdf": "Open PDF",
+          "clear": "Clear"
+        }
+      },
       "welcome": "Welcome {name}",
       "home": "Home",
       "profile": "My Profile",
@@ -599,6 +625,8 @@
       "title": "Shortcuts",
       "home": "Home",
       "homeHint": "Back to home",
+      "claimsHint": "My claims",
+      "claims": "My Claims",
       "orders": "My orders",
       "ordersHint": "History & tracking",
       "help": "Help",

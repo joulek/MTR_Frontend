@@ -299,7 +299,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
               <Link href={`/${locale}/client/mes-devis`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                 Mes demandes devis
               </Link>
-              <Link href={`/${locale}/client/reclamations`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+              <Link href={`/${locale}/client/mes-reclamations`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                 Mes réclamations
               </Link>
             </div>
@@ -319,10 +319,10 @@ export default function SiteHeader({ mode = "public", onLogout }) {
         <summary className="px-3 py-2 cursor-pointer select-none">Mes services</summary>
         <div className="pl-4 flex flex-col">
           <Link href={`/${locale}/client/mes-devis`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
-            Mes devis
+            Mes demandes devis
           </Link>
-          <Link href={`/${locale}/client/reclamations`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
-            Réclamations
+          <Link href={`/${locale}/client/mes-reclamations`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
+            Mes réclamations
           </Link>
         </div>
       </details>

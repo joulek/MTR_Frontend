@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Home, FileText, HelpCircle } from "lucide-react";
+import { Home, MessageSquareWarning, HelpCircle } from "lucide-react";
 
 const NAVY = "#0B1E3A";
 const YELLOW = "#F7C600";
@@ -11,10 +11,10 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
 /* ---------- UI PRIMITIVES ---------- */
 
-function Section({ title, children }) {
+function Section({ title, children, className = "" }) {
   return (
     <section
-      className="rounded-2xl border bg-white p-6"
+      className={`rounded-2xl border bg-white p-6 ${className}`}
       style={{ borderColor: `${YELLOW}55`, boxShadow: "0 6px 22px rgba(0,0,0,.05)" }}
     >
       <h2 className="text-lg font-extrabold mb-4" style={{ color: NAVY }}>
@@ -56,33 +56,6 @@ function Row({ icon, label, hint, onClick }) {
   );
 }
 
-function LanguagePicker() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const locale = useLocale();
-  const t = useTranslations("profile");
-  const locales = ["fr", "en"];
-
-  function switchLocale(next) {
-    if (!pathname) return;
-    const segs = pathname.split("/").filter(Boolean);
-    if (locales.includes(segs[0])) segs[0] = next; else segs.unshift(next);
-    router.push("/" + segs.join("/"));
-  }
-
-  return (
-    <select
-      className="rounded-md border px-3 py-2 bg-white text-sm"
-      style={{ borderColor: `${YELLOW}66`, color: NAVY }}
-      value={locale}
-      onChange={(e) => switchLocale(e.target.value)}
-    >
-      <option value="fr">{t("lang.fr")}</option>
-      <option value="en">{t("lang.en")}</option>
-    </select>
-  );
-}
-
 /* ---------- PAGE ---------- */
 
 export default function ClientProfileReadOnly() {
@@ -94,136 +67,116 @@ export default function ClientProfileReadOnly() {
 
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
       try {
         const res = await fetch(`${BACKEND}/api/users/me`, {
           method: "GET",
           credentials: "include",
         });
-
         if (!res.ok) throw new Error("Unauthorized");
-
         const u = await res.json();
         if (cancelled) return;
-
         setMe(u);
       } catch (err) {
         console.warn("Non authentifié ou erreur:", err.message);
       }
     })();
-
     return () => { cancelled = true; };
   }, []);
 
   if (!me) return <p className="text-center mt-10">{t("loading")}</p>;
 
-  const fullName =
-    [me?.prenom, me?.nom].filter(Boolean).join(" ") || t("userFallback");
+  const fullName = [me?.prenom, me?.nom].filter(Boolean).join(" ") || t("userFallback");
   const initial = (fullName && fullName[0]) || "U";
 
   return (
     <div className="min-h-screen bg-white px-4 py-8">
-      <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* COLONNE GAUCHE : Compte */}
-        <div className="lg:col-span-2 space-y-6">
-          <Section title={t("account.title")}>
-            {/* Bandeau identité */}
-            <div className="flex items-center gap-4">
-              <div
-                className="grid place-items-center rounded-xl"
-                style={{
-                  width: 56,
-                  height: 56,
-                  backgroundColor: `${YELLOW}22`,
-                  border: `1px solid ${YELLOW}66`,
-                  color: NAVY,
-                  fontWeight: 800,
-                  fontSize: 22,
-                }}
-              >
-                {initial}
-              </div>
-              <div className="flex-1">
-                <div className="text-xl font-extrabold" style={{ color: NAVY }}>
-                  {fullName}
-                </div>
-                <div className="text-sm text-gray-500">{me.email || t("account.unknownEmail")}</div>
-              </div>
+      {/* Grille : 3 colonnes sur desktop → Mon compte (2 cols) + Raccourcis (1 col) */}
+      <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* MON COMPTE (col-span-2) */}
+        <Section title={t("account.title")} className="lg:col-span-2">
+          {/* Bandeau identité */}
+          <div className="flex items-center gap-4">
+            <div
+              className="grid place-items-center rounded-xl"
+              style={{
+                width: 56,
+                height: 56,
+                backgroundColor: `${YELLOW}22`,
+                border: `1px solid ${YELLOW}66`,
+                color: NAVY,
+                fontWeight: 800,
+                fontSize: 22,
+              }}
+            >
+              {initial}
             </div>
-
-            {/* Infos communes */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem label={t("account.fields.lastName")} value={me.nom} />
-              <InfoItem label={t("account.fields.firstName")} value={me.prenom} />
-              <InfoItem label={t("account.fields.phone")} value={me.numTel} />
-              <InfoItem label={t("account.fields.address")} value={me.adresse} />
-              <InfoItem label={t("account.fields.accountType")} value={me.accountType} />
-              <InfoItem label={t("account.fields.loginEmail")} value={me.email} />
-            </div>
-
-            {/* Infos dynamiques */}
-            {me.accountType === "personnel" && (
-              <div className="mt-6">
-                <h3 className="font-bold text-gray-700 mb-3">{t("account.personalInfo")}</h3>
-                <InfoItem label={t("account.fields.cin")} value={me?.personal?.cin} />
-                <InfoItem label={t("account.fields.currentPosition")} value={me?.personal?.posteActuel} />
+            <div className="flex-1">
+              <div className="text-xl font-extrabold" style={{ color: NAVY }}>
+                {fullName}
               </div>
-            )}
-
-            {me.accountType === "societe" && (
-              <div className="mt-6">
-                <h3 className="font-bold text-gray-700 mb-3">{t("account.companyInfo")}</h3>
-                <InfoItem label={t("account.fields.matriculeFiscal")} value={me?.company?.matriculeFiscal} />
-                <InfoItem label={t("account.fields.companyName")} value={me?.company?.nomSociete} />
-                <InfoItem label={t("account.fields.currentPosition")} value={me?.company?.posteActuel} />
-              </div>
-            )}
-          </Section>
-
-          {/* Raccourcis */}
-          <Section title={t("shortcuts.title")}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Row
-                icon={<Home className="w-5 h-5 text-[#FDC500]" />}
-                label={t("shortcuts.home")}
-                hint={t("shortcuts.homeHint")}
-                onClick={() => router.push(`/${locale}/client`)}
-              />
-              <Row
-                icon={<FileText className="w-5 h-5 text-[#FDC500]" />}
-                label={t("shortcuts.orders")}
-                hint={t("shortcuts.ordersHint")}
-                onClick={() => router.push(`/${locale}/client/orders`)}
-              />
-              <Row
-                icon={<HelpCircle className="w-5 h-5 text-[#FDC500]" />}
-                label={t("shortcuts.help")}
-                hint={t("shortcuts.helpHint")}
-                onClick={() => router.push(`/${locale}/support`)}
-              />
+              <div className="text-sm text-gray-500">{me.email || t("account.unknownEmail")}</div>
             </div>
-          </Section>
-        </div>
+          </div>
 
-        {/* COLONNE DROITE */}
-        <div className="space-y-6">
-          <Section title={t("settings.title")}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold" style={{ color: NAVY }}>
-                  {t("settings.language")}
-                </div>
-                <div className="text-xs text-gray-500">{t("settings.languageHint")}</div>
-              </div>
-              <LanguagePicker />
+          {/* Infos communes */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InfoItem label={t("account.fields.lastName")} value={me.nom} />
+            <InfoItem label={t("account.fields.firstName")} value={me.prenom} />
+            <InfoItem label={t("account.fields.phone")} value={me.numTel} />
+            <InfoItem label={t("account.fields.address")} value={me.adresse} />
+            <InfoItem label={t("account.fields.accountType")} value={me.accountType} />
+            <InfoItem label={t("account.fields.loginEmail")} value={me.email} />
+          </div>
+
+          {/* Infos dynamiques */}
+          {me.accountType === "personnel" && (
+            <div className="mt-6">
+              <h3 className="font-bold text-gray-700 mb-3">{t("account.personalInfo")}</h3>
+              <InfoItem label={t("account.fields.cin")} value={me?.personal?.cin} />
+              <InfoItem label={t("account.fields.currentPosition")} value={me?.personal?.posteActuel} />
             </div>
-          </Section>
+          )}
 
-          <Section title={t("about.title")}>
-            <div className="text-sm text-gray-600">{t("about.text")}</div>
-          </Section>
-        </div>
+          {me.accountType === "societe" && (
+            <div className="mt-6">
+              <h3 className="font-bold text-gray-700 mb-3">{t("account.companyInfo")}</h3>
+              <InfoItem label={t("account.fields.matriculeFiscal")} value={me?.company?.matriculeFiscal} />
+              <InfoItem label={t("account.fields.companyName")} value={me?.company?.nomSociete} />
+              <InfoItem label={t("account.fields.currentPosition")} value={me?.company?.posteActuel} />
+            </div>
+          )}
+        </Section>
+
+        {/* RACCOURCIS (à côté de Mon compte) */}
+        <Section title={t("shortcuts.title")} className="lg:col-span-1">
+          <div className="grid grid-cols-1 gap-3">
+            <Row
+              icon={<Home className="w-5 h-5 text-[#FDC500]" />}
+              label={t("shortcuts.home")}
+              hint={t("shortcuts.homeHint")}
+              onClick={() => router.push(`/${locale}/`)}
+            />
+            {/* ⬇️ Mes réclamations remplace Mes commandes */}
+            <Row
+              icon={<MessageSquareWarning className="w-5 h-5 text-[#FDC500]" />}
+              label={t("shortcuts.claims", { defaultMessage: "Mes réclamations" })}
+              hint={t("shortcuts.claimsHint", { defaultMessage: "Soumettre et suivre vos réclamations" })}
+              onClick={() => router.push(`/${locale}/client/mes-reclamations`)}
+            />
+            <Row
+              icon={<HelpCircle className="w-5 h-5 text-[#FDC500]" />}
+              label={t("shortcuts.help")}
+              hint={t("shortcuts.helpHint")}
+              onClick={() => router.push(`/${locale}/support`)}
+            />
+          </div>
+        </Section>
+
+        {/* À PROPOS (ligne suivante, pleine largeur) */}
+        <Section title={t("about.title")} className="lg:col-span-3">
+          <div className="text-sm text-gray-600">{t("about.text")}</div>
+        </Section>
       </div>
     </div>
   );
