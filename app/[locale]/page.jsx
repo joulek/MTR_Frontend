@@ -13,7 +13,10 @@ import {
   Linkedin,
   ArrowUp,
   ChevronRight,
+  Factory, Cog, Wrench
 } from "lucide-react";
+
+
 
 /* ---------------------------- Données vitrines ---------------------------- */
 const specialites = [
@@ -273,7 +276,7 @@ export default function HomeMTR() {
 
                 {/* Stats compactes sous l’image */}
                 <div className="mt-6 grid grid-cols-3 gap-3">
-                  <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white py-3">
+                  <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white py-3 ">
                     <div className="text-2xl font-extrabold text-[#0B2239]">{yearsExp}</div>
                     <div className="text-[11px] uppercase text-slate-500">Années</div>
                   </div>
@@ -302,9 +305,9 @@ export default function HomeMTR() {
               {/* 3 cartes qui structurent la longue description */}
               <div className="grid gap-6">
                 {/* Carte 1 : Fondation */}
-                <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <article className="rounded-3xl border-2 border-[#F4D06F] bg-white p-6 shadow-sm transition hover:shadow-lg hover:shadow-[#F4D06F]/20">
                   <h3 className="mb-2 text-lg font-bold text-[#0B2239]">Fondation & activité</h3>
-                  <p className="leading-relaxed text-slate-700">
+                  <p className="leading-relaxed text-slate-700 bo">
                     Fondée en 1994 par <strong>Monsieur Hbaieb Chokri</strong>, la
                     <strong> Manufacture Tunisienne des Ressorts (MTR)</strong> est une entreprise tunisienne de type SARL,
                     spécialisée depuis plus de 30 ans dans la conception et la fabrication de ressorts :
@@ -313,7 +316,7 @@ export default function HomeMTR() {
                 </article>
 
                 {/* Carte 2 : Savoir-faire */}
-                <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <article className="rounded-3xl border-2 border-[#F5B301] bg-white p-6 shadow-sm">
                   <h3 className="mb-2 text-lg font-bold text-[#0B2239]">Savoir-faire & qualité</h3>
                   <p className="leading-relaxed text-slate-700">
                     Forte d’un savoir-faire éprouvé et d’une maîtrise technique reconnue, MTR propose des
@@ -328,7 +331,7 @@ export default function HomeMTR() {
                 </article>
 
                 {/* Carte 3 : Travail du fil & secteurs */}
-                <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <article className="rounded-3xl border-2 border-[#F5B301] bg-white p-6 shadow-sm">
                   <h3 className="mb-2 text-lg font-bold text-[#0B2239]">Travail du fil & secteurs servis</h3>
                   <p className="leading-relaxed text-slate-700">
                     En complément de son expertise en ressorts, MTR développe un savoir-faire avancé dans le
@@ -415,16 +418,123 @@ export default function HomeMTR() {
         </div>
       </section>
 
-      {/* A PROPOS */}
-      <section id="apropos" className="bg-white py-16 md:py-24">
+      {/* A PROPOS — Résumé (sans répéter la présentation) */}
+      <section id="apropos" className="relative bg-white py-16 md:py-24">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_40%_at_15%_10%,rgba(245,179,1,0.06),transparent),radial-gradient(60%_40%_at_85%_80%,rgba(11,34,57,0.05),transparent)]" />
         <div className="mx-auto max-w-7xl px-4">
-          <h2 className="mb-6 text-center text-3xl font-extrabold text-[#0B2239] md:text-4xl">À propos de MTR</h2>
-          <p className="mx-auto max-w-3xl text-center text-slate-600">
-            Depuis des années, MTR accompagne ses clients avec des ressorts de compression, traction et torsion
-            conçus selon les normes de l’industrie, avec traçabilité et contrôle.
-          </p>
+          <div className="mx-auto mb-16 md:mb-20 max-w-3xl text-center">
+            <h2 className="text-3xl font-extrabold text-[#0B2239] md:text-4xl">À propos de MTR</h2>
+            <p className="mt-3 text-slate-600">
+              L’essentiel en trois points : capacités, qualité et travail du fil.
+            </p>
+          </div>
+
+          {/* Raised grid */}
+          <div className="grid gap-6 md:grid-cols-3 -mt-6 md:-mt-10">
+            {/* Fondation & activité — résumé */}
+            <motion.article
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
+            >
+              <div className="mb-4 inline-flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0B2239]/5">
+                  <Factory className="h-5 w-5 text-[#F5B301] " />
+                </span>
+                <h3 className="text-xl font-bold text-[#0B2239] ">Fondation & activité</h3>
+              </div>
+
+              <ul className="mx-auto max-w-sm space-y-2 text-slate-700">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Ressorts & pièces en fil métallique (proto → série)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Fils 0,1–10&nbsp;mm, fabrication sur plan / cahier des charges</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>{yearsExp}+ ans d’expérience industrielle</span>
+                </li>
+              </ul>
+            </motion.article>
+
+            {/* Savoir-faire & qualité — résumé */}
+            <motion.article
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
+            >
+              <div className="mb-4 inline-flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0B2239]/5">
+                  <Cog className="h-5 w-5 text-[#F5B301]" />
+                </span>
+                <h3 className="text-xl font-bold text-[#0B2239]">Savoir-faire & qualité</h3>
+              </div>
+
+              <ul className="mx-auto max-w-sm space-y-2 text-slate-700">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Études & co-design, prototypage rapide</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Tolérances maîtrisées, essais charge/dimension</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Traçabilité complète matière & process</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Petites → grandes séries, délais courts</span>
+                </li>
+              </ul>
+            </motion.article>
+
+            {/* Travail du fil & secteurs servis — résumé */}
+            <motion.article
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
+            >
+              <div className="mb-4 inline-flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0B2239]/5">
+                  <Wrench className="h-5 w-5 text-[#F5B301]" />
+                </span>
+                <h3 className="text-xl font-bold text-[#0B2239]">Travail du fil & secteurs servis</h3>
+              </div>
+
+              <ul className="mx-auto max-w-sm space-y-2 text-slate-700">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Dressage & coupe 1–12&nbsp;mm, cintrage 2D/3D</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Grilles, cadres, formes et ensembles soudés</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-[#F5B301]" />
+                  <span>Finitions : zingage, peinture, traitement thermique</span>
+                </li>
+              </ul>
+
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                {["Automobile", "Électroménager", "Agriculture", "Électricité", "Bâtiment", "Sports & loisirs"].map(t => (
+                  <span key={t} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-700">{t}</span>
+                ))}
+              </div>
+            </motion.article>
+          </div>
         </div>
       </section>
+
+
 
       {/* CONTACT */}
       <section id="contact" className="relative overflow-hidden bg-slate-50 py-20">
