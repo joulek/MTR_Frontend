@@ -23,12 +23,8 @@ export default function DevisModal({ open, onClose, demande }) {
 
   // Aller vers la création d’article (avec pré-remplissage via query params)
   function goCreateArticle() {
-    const q = new URLSearchParams({
-      demandeId: demande?._id || "",
-      demandeNumero: demande?.numero || "",
-    });
-    // adapte le chemin si ta page "nouvel article" est différente
-    router.push(`/fr/admin/articles/new?${q.toString()}`);
+  
+    router.push(`/fr/admin/articles`);
   }
 
   // Récupérer l’article lié à la demande
