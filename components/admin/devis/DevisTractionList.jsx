@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Pagination from "@/components/Pagination";
 import { FiSearch, FiXCircle } from "react-icons/fi";
+import DevisModal from "@/components/admin/devis/DevisModal";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -12,7 +13,8 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 function humanSize(bytes = 0) {
   if (!bytes) return "0 B";
   const u = ["B", "KB", "MB", "GB"];
-  let i = 0, n = bytes;
+  let i = 0,
+    n = bytes;
   while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
   return `${n.toFixed(n < 10 && i > 0 ? 1 : 0)} ${u[i]}`;
 }
@@ -33,22 +35,26 @@ function shortDate(d) {
   } catch { return ""; }
 }
 
-// Conteneur resserré
+// Conteneur
 const WRAP = "mx-auto w-full max-w-4xl px-3 sm:px-4";
 
-export default function AdminDevisPage() {
+export default function AdminDevisTractionPage() {
   const t = useTranslations("devisTraction");
 
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Recherche (compacte)
   const [q, setQ] = useState("");
 
-  // Pagination (client)
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // 👇 Modale + map des devis existants
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDemande, setSelectedDemande] = useState(null);
+  // { [demandeId]: { numero, pdf } }
+  const [devisMap, setDevisMap] = useState({});
 
   const router = useRouter();
 
@@ -59,8 +65,14 @@ export default function AdminDevisPage() {
         cache: "no-store",
         credentials: "include",
       });
-      if (res.status === 401) { router.push(`/fr/login?next=${encodeURIComponent("/fr/admin/devis/traction")}`); return; }
-      if (res.status === 403) { router.push(`/fr/unauthorized?code=403`); return; }
+      if (res.status === 401) {
+        router.push(`/fr/login?next=${encodeURIComponent("/fr/admin/devis/traction")}`);
+        return;
+      }
+      if (res.status === 403) {
+        router.push(`/fr/unauthorized?code=403`);
+        return;
+      }
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.success) throw new Error(data?.message || `Erreur (${res.status})`);
       setItems(data.items || []);
@@ -73,6 +85,35 @@ export default function AdminDevisPage() {
   }, [router, t]);
 
   useEffect(() => { load(); }, [load]);
+
+  // 🔎 Vérifier s’il existe un devis pour chaque demande
+  useEffect(() => {
+    if (!items.length) { setDevisMap({}); return; }
+    let cancelled = false;
+
+    (async () => {
+      const pairs = await Promise.all(
+        items.map(async (d) => {
+          try {
+            const r = await fetch(
+              `${BACKEND}/api/devis/admin/by-demande/${d._id}?numero=${encodeURIComponent(d?.numero || "")}`,
+              { credentials: "include" }
+            );
+            const j = await r.json().catch(() => null);
+            // backend: { success:true, exists:true, devis:{numero}, pdf } ou { success:false, exists:false }
+            if (j?.success && j?.exists) return [d._id, { numero: j.devis?.numero, pdf: j.pdf }];
+            return null;
+          } catch { return null; }
+        })
+      );
+      if (cancelled) return;
+      const map = {};
+      for (const p of pairs) if (p) map[p[0]] = p[1];
+      setDevisMap(map);
+    })();
+
+    return () => { cancelled = true; };
+  }, [items]);
 
   // Filtre local (N°, Client, Date)
   const filtered = useMemo(() => {
@@ -87,20 +128,17 @@ export default function AdminDevisPage() {
     });
   }, [items, q]);
 
-  // Slice selon pagination (sur la liste filtrée)
   const total = filtered.length;
   const pageItems = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
-  // Clamp page si total/pageSize change
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     if (page > totalPages) setPage(totalPages);
   }, [total, page, pageSize]);
 
-  // Reset page quand on tape une recherche
   useEffect(() => { setPage(1); }, [q]);
 
   async function viewPdfById(id) {
@@ -124,8 +162,14 @@ export default function AdminDevisPage() {
     } catch { alert(t("errors.docOpenError")); }
   }
 
-  // ✅ Aucune whitespace dans <colgroup>
-  const colWidths = ["w-[150px]", "w-[200px]", "w-[160px]", "w-[90px]", "w-auto"];
+  // ➕ Ouvrir la modale création de devis
+  function openDevis(d) {
+    setSelectedDemande({ ...d, demandeNumero: d?.numero || "" });
+    setModalOpen(true);
+  }
+
+  // Colonnes (inclut “Actions”)
+  const colWidths = ["w-[150px]", "w-[200px]", "w-[160px]", "w-[90px]", "w-[130px]", "w-auto"];
 
   return (
     <div className="py-6 space-y-4">
@@ -184,14 +228,12 @@ export default function AdminDevisPage() {
             <div className="hidden sm:block">
               <table className="w-full table-fixed text-sm border-separate border-spacing-0">
                 <colgroup>
-                  {colWidths.map((w, i) => (
-                    <col key={i} className={w} />
-                  ))}
+                  {colWidths.map((w, i) => <col key={i} className={w} />)}
                 </colgroup>
 
                 <thead>
                   <tr>
-                    {[t("columns.number"), t("columns.client"), t("columns.date"), t("columns.pdf"), t("columns.attachments")].map((h) => (
+                    {[t("columns.number"), t("columns.client"), t("columns.date"), t("columns.pdf"), "Actions", t("columns.attachments")].map((h) => (
                       <th key={h} className="p-2 text-left align-bottom">
                         <div className="text-[13px] font-semibold uppercase tracking-wide text-slate-600">
                           {h}
@@ -208,6 +250,8 @@ export default function AdminDevisPage() {
                     const docs = (d?.documents || [])
                       .map((doc, idx) => ({ ...doc, index: doc.index ?? idx, filename: cleanFilename(doc.filename) }))
                       .filter((doc) => doc.filename && (doc.size ?? 0) > 0);
+
+                    const devisInfo = devisMap[d._id]; // { numero, pdf } si existe
 
                     return (
                       <tr key={d._id} className="hover:bg-[#0B1E3A]/[0.03] transition-colors">
@@ -231,7 +275,7 @@ export default function AdminDevisPage() {
                           {shortDate(d.createdAt)}
                         </td>
 
-                        {/* PDF */}
+                        {/* PDF (demande) */}
                         <td className="p-2 align-top border-b border-gray-200">
                           {hasPdf ? (
                             <button
@@ -245,18 +289,40 @@ export default function AdminDevisPage() {
                           )}
                         </td>
 
+                        {/* Actions (Créer/Ouvrir devis) */}
+                        <td className="p-2 align-top border-b border-gray-200">
+                          {devisInfo?.pdf ? (
+                            <a
+                              href={devisInfo.pdf}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={`Devis ${devisInfo.numero || ""}`}
+                              className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
+                            >
+                              Ouvrir devis
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => openDevis(d)}
+                              className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-yellow-500 hover:text-white"
+                            >
+                              ➕ Créer devis
+                            </button>
+                          )}
+                        </td>
+
                         {/* Fichiers joints */}
                         <td className="p-2 align-top border-b border-gray-200">
                           {docs.length === 0 ? (
                             <span className="text-gray-400">—</span>
                           ) : (
                             <div className="flex flex-wrap gap-2">
-                              {docs.map((doc, i) => (
+                              {docs.map((doc) => (
                                 <button
                                   key={doc.index}
                                   onClick={() => viewDocByIndex(d._id, doc.index)}
                                   className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[11px] hover:bg-[#0B1E3A]/5"
-                                  aria-label={t("attachmentsOpenAria", { index: (i + 1) })}
+                                  aria-label={t("attachmentsOpenAria", { index: (doc.index ?? 0) + 1 })}
                                 >
                                   {t("open")}
                                 </button>
@@ -269,6 +335,16 @@ export default function AdminDevisPage() {
                   })}
                 </tbody>
               </table>
+
+              {/* Pagination desktop/tablette */}
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                onPageChange={setPage}
+                onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+                pageSizeOptions={[5, 10, 20, 50]}
+              />
             </div>
 
             {/* Mobile */}
@@ -278,6 +354,7 @@ export default function AdminDevisPage() {
                 const docs = (d?.documents || [])
                   .map((doc, idx) => ({ ...doc, index: doc.index ?? idx, filename: cleanFilename(doc.filename) }))
                   .filter((doc) => doc.filename && (doc.size ?? 0) > 0);
+                const devisInfo = devisMap[d._id];
 
                 return (
                   <div key={d._id} className="py-3">
@@ -297,18 +374,41 @@ export default function AdminDevisPage() {
                       </div>
                     </div>
 
-                    <div className="mt-2 text-sm">
-                      <span className="text-xs font-semibold text-gray-500">{t("columns.pdf")}</span>
-                      {hasPdf ? (
-                        <button
-                          onClick={() => viewPdfById(d._id)}
-                          className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
-                        >
-                          {t("open")}
-                        </button>
-                      ) : (
-                        <span className="text-gray-500">—</span>
-                      )}
+                    <div className="mt-2 flex gap-2 text-sm">
+                      <div>
+                        <span className="text-xs font-semibold text-gray-500">{t("columns.pdf")}</span>{" "}
+                        {hasPdf ? (
+                          <button
+                            onClick={() => viewPdfById(d._id)}
+                            className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
+                          >
+                            {t("open")}
+                          </button>
+                        ) : (
+                          <span className="text-gray-500">—</span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span className="text-xs font-semibold text-gray-500">Devis</span>{" "}
+                        {devisInfo?.pdf ? (
+                          <a
+                            href={devisInfo.pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-[#0B1E3A]/5"
+                          >
+                            Ouvrir
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => openDevis(d)}
+                            className="inline-flex items-center gap-1 rounded-full border border-[#0B1E3A]/20 px-2 py-0.5 text-[12px] text-[#0B1E3A] hover:bg-yellow-500 hover:text-white"
+                          >
+                            Créer
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <p className="mt-2 text-xs font-semibold text-gray-500">{t("columns.attachments")}</p>
@@ -335,19 +435,30 @@ export default function AdminDevisPage() {
                   </div>
                 );
               })}
-            </div>
 
-            {/* Pagination sous la table */}
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-              onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
-            />
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                onPageChange={setPage}
+                onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+                pageSizeOptions={[5, 10, 20, 50]}
+              />
+            </div>
           </>
         )}
       </div>
+
+      {/* Modale création de devis */}
+      <DevisModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        demande={selectedDemande}
+        onCreated={() => {
+          setModalOpen(false);
+          load(); // refresh + recompute devisMap
+        }}
+      />
     </div>
   );
 }

@@ -95,7 +95,7 @@ export default function DevisAutrePage() {
         items.map(async (d) => {
           try {
             const r = await fetch(
-              `${BACKEND}/api/admin/devis/by-demande/${d._id}?numero=${encodeURIComponent(
+              `${BACKEND}/api/devis/admin/by-demande/${d._id}?numero=${encodeURIComponent(
                 d?.numero || ""
               )}`,
               { credentials: "include" }
