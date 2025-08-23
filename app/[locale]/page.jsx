@@ -4,55 +4,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  PhoneCall,
-  Mail,
-  MapPin,
-  CheckCircle,
-  Send,
-  Facebook,
-  Linkedin,
-  ArrowUp,
-  ChevronRight,
-  Factory, Cog, Wrench
+  PhoneCall, Mail, MapPin, CheckCircle, Send, Facebook, Linkedin,
+  ArrowUp, ChevronRight, Factory, Cog, Wrench
 } from "lucide-react";
 
-
-
-/* ---------------------------- Données vitrines ---------------------------- */
-const specialites = [
-  {
-    title: "Ressorts de compression",
-    img: "/compression_ressorts.jpg",
-    desc:
-      "Ressorts robustes pour applications industrielles, grande précision et longue durée de vie.",
-  },
-  {
-    title: "Ressorts de traction",
-    img: "/traction.jpg",
-    desc:
-      "Ressorts conçus pour résister aux charges de traction et garantir fiabilité.",
-  },
-  {
-    title: "Ressorts de torsion",
-    img: "/torsion.jpeg",
-    desc: "Solutions adaptées aux mouvements angulaires et applications spécifiques.",
-  },
-  {
-    title: "Ressorts de forme",
-    img: "/ressort_de_frome.png",
-    desc: "Solutions adaptées aux mouvements angulaires et applications spécifiques.",
-  },
-  {
-    title: "Fil métallique cambré et cintré ",
-    img: "/images.jpeg",
-    desc: "Barres et fils métalliques dressés et coupés selon vos besoins.",
-  },
-  {
-    title: "Grilles & Formes Soudées",
-    img: "/grille.jpg",
-    desc: "Fabrication de grilles métalliques robustes et durables.",
-  }
-];
+/* ---------------------------- API backend ---------------------------- */
+const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000").replace(/\/$/, "");
+const API = `${BACKEND}/api`;
 
 /* ------------------------- Section active au scroll ------------------------ */
 function useActiveSection() {
@@ -77,6 +35,57 @@ export default function HomeMTR() {
   const [open, setOpen] = useState(false);
   const yearsExp = new Date().getFullYear() - 1994;
 
+  /* --------- Langue (FR par défaut, EN si <html lang="en">) --------- */
+  const [locale, setLocale] = useState("fr");
+  useEffect(() => {
+    const pick = () => {
+      const htmlLang = document?.documentElement?.lang || "";
+      const navLang = navigator?.language || "";
+      const l = (htmlLang || navLang || "fr").toLowerCase();
+      setLocale(l.startsWith("en") ? "en" : "fr");
+    };
+    pick();
+    const el = document.documentElement;
+    const mo = new MutationObserver(pick);
+    mo.observe(el, { attributes: true, attributeFilter: ["lang"] });
+    return () => mo.disconnect();
+  }, []);
+
+  /* ------------------ Récupération des catégories depuis la BD ------------------ */
+  const [categories, setCategories] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        setLoadingCats(true);
+        const res = await fetch(`${API}/categories`, {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!alive) return;
+        setCategories(Array.isArray(data?.categories) ? data.categories : []);
+      } catch (err) {
+        console.error("Erreur chargement catégories:", err);
+        if (!alive) return;
+        setCategories([]);
+      } finally {
+        if (alive) setLoadingCats(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+      controller.abort();
+    };
+  }, []); // charge au montage
+
   const NavLink = ({ href, id, children }) => {
     const isActive = active === id;
     return (
@@ -94,6 +103,7 @@ export default function HomeMTR() {
       </a>
     );
   };
+
 
   return (
     <div className="min-h-screen bg-white text-slate-800">
@@ -385,7 +395,7 @@ export default function HomeMTR() {
       </section>
 
 
-      {/* SPÉCIALITÉS */}
+      {/* SPÉCIALITÉS (catégories depuis la BD) */}
       <section id="specialites" className="bg-slate-50 py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mb-12 text-center">
@@ -394,26 +404,48 @@ export default function HomeMTR() {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {specialites.map((s, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="group relative h-64 overflow-hidden rounded-2xl shadow-lg"
-              >
-                <img
-                  src={s.img}
-                  alt={s.title}
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  <h3 className="mb-2 text-lg font-bold">{s.title}</h3>
-                  <p className="text-sm text-gray-200">{s.desc}</p>
-                </div>
-              </motion.div>
-            ))}
+            {loadingCats
+              ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-64 rounded-2xl bg-slate-200 animate-pulse" />
+              ))
+              : categories.map((c) => {
+                const title =
+                  (c?.translations && (c.translations[locale] || c.translations.fr || c.translations.en)) ||
+                  c?.label ||
+                  "";
+                // FR si locale=fr, sinon EN
+                const desc =
+                  (c?.description && (c.description[locale] || c.description.fr || c.description.en)) ||
+                  c?.image?.[`alt_${locale}`] ||
+                  c?.image?.alt_fr ||
+                  "";
+
+                const raw = c?.image?.url || "";
+                const imgUrl = raw.startsWith("http")
+                  ? raw
+                  : `${BACKEND}${raw.startsWith("/") ? "" : "/"}${raw}`;
+
+                return (
+                  <motion.div
+                    key={c._id || title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="group relative h-64 overflow-hidden rounded-2xl shadow-lg"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={c?.image?.[`alt_${locale}`] || c?.image?.alt_fr || title}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="relative z-10 flex h-full flex-col items-center justify-center p-4 text-center text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <h3 className="mb-2 text-lg font-bold">{title}</h3>
+                      {desc && <p className="text-sm text-gray-200">{desc}</p>}
+                    </div>
+                  </motion.div>
+                );
+              })}
           </div>
         </div>
       </section>
@@ -463,9 +495,7 @@ export default function HomeMTR() {
 
             {/* Savoir-faire & qualité — résumé */}
             <motion.article
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
             >
               <div className="mb-4 inline-flex items-center gap-3">
@@ -497,9 +527,7 @@ export default function HomeMTR() {
 
             {/* Travail du fil & secteurs servis — résumé */}
             <motion.article
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-xl"
             >
               <div className="mb-4 inline-flex items-center gap-3">
@@ -533,7 +561,6 @@ export default function HomeMTR() {
           </div>
         </div>
       </section>
-
 
 
       {/* CONTACT */}
