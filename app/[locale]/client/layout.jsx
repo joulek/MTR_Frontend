@@ -76,8 +76,7 @@ export default function ClientLayout({ children }) {
 
   // actif si on est dans une page du groupe "Mes services"
   const isServicesActive = (p) =>
-    p.startsWith(`/${locale}/client/mes-devis`) ||
-    p.startsWith(`/${locale}/client/orders`);
+    p.startsWith(`/${locale}/client/mes-devis`);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -188,13 +187,6 @@ export default function ClientLayout({ children }) {
                         className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                       >
                         {t("services.claims")}
-                      </Link>
-                      <Link
-                        href={`/${locale}/client/orders`}
-                        role="menuitem"
-                        className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                      >
-                        {t("services.orders")}
                       </Link>
                     </div>
                   )}

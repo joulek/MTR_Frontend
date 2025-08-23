@@ -66,8 +66,15 @@ export default function HomeMTR() {
         if (!alive) return;
         setCategories(Array.isArray(data?.categories) ? data.categories : []);
       } catch (err) {
-        if (err?.name === "AbortError") return; // fermeture propre
-        console.error("Erreur chargement catégories:", err);
+        // ✅ considérer toutes les formes d’annulation → ne rien logguer en erreur
+        const isAbort =
+          err?.name === "AbortError" ||
+          err?.message === "component-unmounted" ||
+          err === "component-unmounted";
+        if (isAbort) return;
+
+        // (optionnel) log non bloquant pour debug
+        console.warn("Chargement catégories — échec:", err);
         if (alive) setCategories([]);
       } finally {
         if (alive) setLoadingCats(false);
@@ -76,7 +83,8 @@ export default function HomeMTR() {
 
     return () => {
       alive = false;
-      if (!controller.signal.aborted) controller.abort("component-unmounted");
+      // ✅ abort silencieux (pas de raison passée) → pas d’overlay
+      if (!controller.signal.aborted) controller.abort();
     };
   }, []);
 
@@ -153,7 +161,7 @@ export default function HomeMTR() {
     );
   }
 
-  // ✅ Tu peux cliquer sur toute la tuile (lien Next.js)
+  // ✅ tuile cliquable
   function CategoryTilePro({ title, imgUrl, alt, href }) {
     return (
       <Link href={href} className="group relative block h-[340px] overflow-hidden rounded-2xl shadow-lg">
@@ -212,7 +220,6 @@ export default function HomeMTR() {
   /* -------------------------------- RENDER -------------------------------- */
   return (
     <div className="min-h-screen bg-white text-slate-800">
-      {/* ✅ NAVBAR réutilisée depuis ton composant */}
       <SiteHeader />
 
       {/* HERO */}
@@ -230,21 +237,26 @@ export default function HomeMTR() {
             Qualité, précision, fiabilité – MTR conçoit et fabrique vos ressorts sur mesure.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <a
-              href="#contact"
+            <button
+              onClick={() =>
+                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })
+              }
               className="rounded-full bg-[#F5B301] px-6 py-3 font-semibold text-[#0B2239] hover:brightness-95"
             >
               Contact rapide
-            </a>
-            <a
-              href="#specialites"
+            </button>
+            <button
+              onClick={() =>
+                document.getElementById("specialites")?.scrollIntoView({ behavior: "smooth" })
+              }
               className="rounded-full border border-[#F5B301] px-6 py-3 font-semibold text-[#F5B301] hover:bg-[#F5B301] hover:text-[#0B2239]"
             >
               Nos spécialités
-            </a>
+            </button>
           </div>
         </div>
       </section>
+
 
       {/* PRÉSENTATION */}
       <section id="presentation" className="bg-white py-16 md:py-24">
@@ -371,7 +383,6 @@ export default function HomeMTR() {
                   const imgUrl = raw.startsWith("http") ? raw : `${BACKEND}${raw.startsWith("/") ? "" : "/"}${raw}`;
                   const alt = c?.image?.[`alt_${locale}`] || c?.image?.alt_fr || title;
 
-                  // ✅ lien vers page produits par catégorie
                   const slug = c?.slug || slugify(title);
                   const href = `/${locale}/produits/${slug}`;
 
@@ -774,7 +785,7 @@ export default function HomeMTR() {
                 placeholder="Votre e-mail"
                 className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/60 outline-none focus:border-[#F5B301]"
               />
-              <button className="rounded-full bg-[#F5B301] px-5 py-3 text-sm font-semibold text-[#0B2239] hover:brightness-95">
+              <button className="rounded-full bg-[#F5B301] px-5 py-3 text-sm font-semibold text-[#0B2239]">
                 S’abonner
               </button>
             </form>
@@ -785,7 +796,7 @@ export default function HomeMTR() {
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-sm text-white/80 md:flex-row">
             <p>© {new Date().getFullYear()} MTR. Tous droits réservés.</p>
             <div className="flex items-center gap-4">
-              <a href="#presentation" className="hover:text-[#F5B301]">
+              <a href="#apropos" className="hover:text-[#F5B301]">
                 À propos
               </a>
               <a href="#contact" className="hover:text-[#F5B301]">
