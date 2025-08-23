@@ -61,6 +61,7 @@ function SectionTitle({ children, className = "" }) {
     </div>
   );
 }
+
 function Alert({ type = "info", message }) {
   const base = "w-full rounded-xl px-3 py-2 text-sm font-medium border flex items-start gap-2";
   const styles =
@@ -77,7 +78,7 @@ function Alert({ type = "info", message }) {
   );
 }
 
-/* ⬇️ corrigé: Input contrôlé */
+/* Inputs contrôlés */
 function Input({
   label,
   name,
@@ -102,8 +103,8 @@ function Input({
         min={min}
         placeholder={placeholder}
         required={required}
-        value={value ?? ""}          
-        onChange={onChange}         
+        value={value ?? ""}
+        onChange={onChange}
         className="w-full rounded-xl border border-gray-200 px-3 py-2
                    text-sm text-[#002147] placeholder:text-gray-400
                    focus:outline-none focus:ring-2 focus:ring-[#002147]/30 focus:border-[#002147]"
@@ -166,8 +167,10 @@ function PrettyDatePicker({ label, value, onChange, name, required }) {
   const [open, setOpen] = useState(false);
   const selected = fromISO(value);
   const [month, setMonth] = useState(
-    () => (selected ? new Date(selected.getFullYear(), selected.getMonth(), 1)
-                    : new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+    () =>
+      (selected
+        ? new Date(selected.getFullYear(), selected.getMonth(), 1)
+        : new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   );
   const wrapRef = useRef(null);
 
@@ -335,12 +338,12 @@ export default function ReclamationClient() {
     setField(name, value);
   };
 
-  /* ⬇️ efface l’avertissement si l’utilisateur a finalement saisi un numéro */
+  /* Efface l’avertissement si un numéro est saisi */
   useEffect(() => {
     if (message.startsWith("⚠️") && form.numero.trim()) setMessage("");
   }, [form.numero, message]);
 
-  // Dropzone compacte
+  // Dropzone
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
@@ -457,16 +460,9 @@ export default function ReclamationClient() {
 
       {/* Carte blanche derrière les champs */}
       <div className="rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,.06)] border border-gray-100 p-4 md:p-6">
-        {!loadingSession && !isAuthenticated && (
-          <Alert type="info" message="Vous devez être connecté pour soumettre une réclamation." />
-        )}
-        {isAuthenticated && !isClient && (
-          <div className="mt-2">
-            <Alert type="error" message="Cette action est réservée aux clients." />
-          </div>
-        )}
+        {/* ⬇️ ALERTES ENLEVÉES (non connecté / non client) */}
 
-        <form onSubmit={handleSubmit} className="mt-4">
+        <form onSubmit={handleSubmit} className="mt-0">
           <SectionTitle>Informations document</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
             <SelectBase
@@ -482,7 +478,7 @@ export default function ReclamationClient() {
               label="N° document"
               required
               placeholder="ex: DV2500016"
-              value={form.numero}          /* ✅ contrôlé */
+              value={form.numero}
               onChange={onChange}
             />
 
@@ -591,6 +587,7 @@ export default function ReclamationClient() {
             />
           </label>
 
+          {/* Zone messages (succès/erreur/validation) */}
           <div ref={alertRef} aria-live="polite" className="mt-4">
             {message && (
               <Alert
