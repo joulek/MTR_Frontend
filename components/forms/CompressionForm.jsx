@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
-import schemaImg from "@/public/devis/compression02.png";
-import typeImg from "@/public/devis/compression01.png";
+import schemaImg from "@/public/devis/compression01.png";
+import typeImg from "@/public/devis/compression02.png";
 
 const RequiredMark = () => <span className="text-red-500" aria-hidden="true"> *</span>;
 
