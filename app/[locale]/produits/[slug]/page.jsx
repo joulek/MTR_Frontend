@@ -112,9 +112,7 @@ function Carousel({ items, ariaLabel = "Carrousel", renderItem }) {
         style={{ scrollBehavior: "smooth" }}
       >
         {/* Hide scrollbars (Webkit) */}
-        <style jsx>{`
-          div::-webkit-scrollbar { display: none; }
-        `}</style>
+        <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
 
         {items.map((it, i) => (
           <div
@@ -162,7 +160,9 @@ function Carousel({ items, ariaLabel = "Carrousel", renderItem }) {
               key={i}
               aria-label={`Aller à l’élément ${i + 1}`}
               onClick={() => scrollTo(i)}
-              className={`h-2.5 rounded-full transition-all ${i === index ? "w-6 bg-[#0B2239]" : "w-2.5 bg-slate-300 hover:bg-slate-400"}`}
+              className={`h-2.5 rounded-full transition-all ${
+                i === index ? "w-6 bg-[#0B2239]" : "w-2.5 bg-slate-300 hover:bg-slate-400"
+              }`}
             />
           ))}
         </div>
@@ -170,6 +170,81 @@ function Carousel({ items, ariaLabel = "Carrousel", renderItem }) {
     </div>
   );
 }
+
+/* =======================
+   Tile style “Overlay”
+   ======================= */
+function ProductTileOverlay({ p, locale, slug, badge }) {
+  const title = pickName(p, locale);
+  const img = Array.isArray(p.images) && p.images[0] ? p.images[0] : "/placeholder.png";
+  const imgUrl = toUrl(img);
+  const cta = locale?.startsWith("en") ? "VIEW DETAIL" : "VOIR DÉTAIL";
+
+  return (
+    <a
+      href={`/${locale}/produits/${slug}/${p._id}`}
+      className="group relative block h-[420px] sm:h-[360px] overflow-hidden rounded-3xl ring-1 ring-slate-200 bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F5B301]"
+    >
+      {/* Image */}
+      <Image
+        src={imgUrl}
+        alt={title}
+        fill
+        sizes="(max-width: 440px) 92vw, (max-width: 1024px) 80vw, 60vw"
+        className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        priority={false}
+      />
+
+      {/* Voiles — ظاهرة وقت الـhover/keyboard-focus فقط */}
+      <div
+        className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+      </div>
+
+      {/* Badge ثابت */}
+      {badge ? (
+        <div className="absolute left-4 bottom-4 z-10">
+          <span className="inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#0B2239] shadow">
+            {badge}
+          </span>
+        </div>
+      ) : null}
+
+      {/* اللوحة البيضاء — مخفية عادي، تبان وقت hover/focus */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                   flex flex-col items-center w-[min(92vw,820px)] z-10
+                   opacity-0 scale-[.98] translate-y-2
+                   transition-all duration-300
+                   group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0
+                   group-focus-visible:opacity-100 group-focus-visible:scale-100 group-focus-visible:translate-y-0"
+      >
+       <div className="-mt rounded-3xl bg-white/85 backdrop-blur px-9 py-6 md:px-10 md:py-8 shadow-2xl ring-1 ring-slate-200 text-center">
+          <p className="text-[11px] font-extrabold tracking-[0.35em] text-[#F5B301]">MTR</p>
+          <h3 className="mt-1 text-xl md:text-2xl font-extrabold text-[#0B2239]">{title}</h3>
+        </div>
+
+        <div className="mt-1">
+          <span className="inline-flex items-center gap-3 rounded-full bg-[#F5B301] px-7 py-3 md:px-10 md:py-4
+                           text-base md:text-lg font-extrabold text-[#0B2239] shadow-xl
+                           underline decoration-2 underline-offset-4">
+            {cta}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="opacity-80">
+              <path d="M8 5l7 7-7 7" stroke="#0B2239" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+
+
+
 
 /* =======================================================
    Page
@@ -337,47 +412,15 @@ export default function ProductsByCategoryPage() {
             </motion.div>
           )}
 
-          {/* Carousel produits */}
+          {/* Carousel produits — style overlay (plus de “cards”) */}
           {!loadingCats && !loadingProds && !error && !didAutoOpen && products.length > 0 && (
             <motion.div {...fadeUp(0.06)}>
               <Carousel
                 items={products}
                 ariaLabel={`Produits de la catégorie ${pageTitle}`}
-                renderItem={(p) => {
-                  const title = pickName(p, locale);
-                  const desc = pickDesc(p, locale);
-                  const img = Array.isArray(p.images) && p.images[0] ? p.images[0] : "/placeholder.png";
-                  const imgUrl = toUrl(img);
-                  return (
-                    <article className="group overflow-hidden rounded-2xl bg-white/90 backdrop-blur shadow-md ring-1 ring-slate-200 h-full">
-                      <div className="relative h-56">
-                        <Image
-                          src={imgUrl}
-                          alt={title}
-                          fill
-                          sizes="(max-width: 640px) 88vw, (max-width: 1024px) 62vw, 34vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      </div>
-                      <div className="p-5">
-                        <h3 className="text-lg font-bold text-[#0B2239] line-clamp-2">{title}</h3>
-                        {desc && <p className="mt-1 line-clamp-3 text-sm text-slate-600">{desc}</p>}
-                        <div className="mt-4">
-                          <a
-                            href={`/${locale}/produits/${slug}/${p._id}`}
-                            className="inline-flex items-center gap-2 rounded-full bg-[#F5B301] px-4 py-2 text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
-                          >
-                            Voir détail
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="opacity-80">
-                              <path d="M8 5l7 7-7 7" stroke="#0B2239" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </a>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                }}
+                renderItem={(p) => (
+                  <ProductTileOverlay p={p} locale={locale} slug={slug} badge={pageTitle} />
+                )}
               />
             </motion.div>
           )}
