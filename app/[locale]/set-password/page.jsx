@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic"; // ⬅️ empêche le SSG pour cette page
+
 import { useState, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
@@ -15,7 +17,6 @@ export default function SetPasswordPage() {
   const token = searchParams.get("token") || "";
   const linkInvalid = useMemo(() => !uid || !token, [uid, token]);
 
-  // locale fiable (sans provider)
   const locale = useMemo(() => {
     const m = (pathname || "").match(/^\/(fr|en)(?:\/|$)/);
     if (m) return m[1];
@@ -29,18 +30,17 @@ export default function SetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState(null); // { type: "ok" | "err", text: string }
+  const [msg, setMsg] = useState(null);
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
 
-  // score robustesse
   const score = useMemo(() => {
     let s = 0;
     if (password.length >= 8) s++;
     if (/[A-Z]/.test(password) && /[a-z]/.test(password)) s++;
     if (/\d/.test(password)) s++;
     if (/[^A-Za-z0-9]/.test(password)) s++;
-    return s; // 0..4
+    return s;
   }, [password]);
 
   const strengthText = score <= 1 ? "Faible" : score === 2 ? "Moyen" : score === 3 ? "Bon" : "Très bon";
@@ -77,16 +77,13 @@ export default function SetPasswordPage() {
 
   return (
     <div className="relative min-h-screen bg-slate-50">
-      {/* Header du site */}
       <SiteHeader />
 
-      {/* décor thème MTR */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#F5B301]/20 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#0B2239]/10 blur-3xl" />
       </div>
 
-      {/* carte centrale */}
       <main className="mx-auto grid min-h-[70vh] max-w-7xl place-items-center px-4 py-10">
         <div className="w-full max-w-xl rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-slate-200 backdrop-blur">
           <div className="text-center">
@@ -102,7 +99,6 @@ export default function SetPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-              {/* Mot de passe */}
               <div className="relative">
                 <input
                   type={showPw ? "text" : "password"}
@@ -122,14 +118,11 @@ export default function SetPasswordPage() {
                   type="button"
                   onClick={() => setShowPw((s) => !s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-[#0B2239] hover:bg-slate-100"
-                  aria-label={showPw ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showPw ? "Masquer" : "Afficher"}
                 </button>
-
               </div>
 
-              {/* Confirmation */}
               <div className="relative">
                 <input
                   type={showPw2 ? "text" : "password"}
@@ -149,13 +142,11 @@ export default function SetPasswordPage() {
                   type="button"
                   onClick={() => setShowPw2((s) => !s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-[#0B2239] hover:bg-slate-100"
-                  aria-label={showPw2 ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showPw2 ? "Masquer" : "Afficher"}
                 </button>
               </div>
 
-              {/* CTA */}
               <button
                 type="submit"
                 disabled={loading}
@@ -164,15 +155,12 @@ export default function SetPasswordPage() {
                 {loading ? "Validation…" : "Valider"}
               </button>
 
-              {/* Messages */}
               {msg && (
                 <div
                   role="status"
                   aria-live="polite"
                   className={`mt-3 rounded-xl px-4 py-3 text-sm ${
-                    msg.type === "ok"
-                      ? "bg-green-50 text-green-700 ring-1 ring-green-200"
-                      : "bg-red-50 text-red-700 ring-1 ring-red-200"
+                    msg.type === "ok" ? "bg-green-50 text-green-700 ring-1 ring-green-200" : "bg-red-50 text-red-700 ring-1 ring-red-200"
                   }`}
                 >
                   {msg.text}
@@ -182,8 +170,6 @@ export default function SetPasswordPage() {
           )}
         </div>
       </main>
-
-     
     </div>
   );
 }
