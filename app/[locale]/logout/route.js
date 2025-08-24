@@ -1,23 +1,39 @@
 // app/api/logout/route.js
 import { NextResponse } from "next/server";
 
+// (optionnel) exécution edge = latence plus faible
+export const runtime = "edge";
+// (optionnel) jamais mis en cache
+export const dynamic = "force-dynamic";
+
+const COOKIE_BASE = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",   // ⚠️ doit matcher la config du login
+  path: "/",         // ⚠️ idem
+  // domain: ".ton-domaine.com", // si utilisé au login, remets-le ici
+};
+
 export async function POST() {
-  const response = NextResponse.json({
-    success: true,
-    message: "Déconnexion réussie"
+  const res = new NextResponse(null, {
+    status: 204, // plus léger/rapide qu'un JSON
+    headers: { "Cache-Control": "no-store" },
   });
 
-  const COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax", // <-- identique à login
-    path: "/",
-    expires: new Date(0) // date expirée
-  };
+  const gone = { ...COOKIE_BASE, maxAge: 0, expires: new Date(0) };
+  res.cookies.set("token", "", gone);
+  res.cookies.set("role",  "", gone);
+  // supprime ici d'autres cookies d'auth si tu en as (refresh, etc.)
 
-  // Supprimer token et role
-  response.cookies.set("token", "", COOKIE_OPTIONS);
-  response.cookies.set("role", "", COOKIE_OPTIONS);
+  return res;
+}
 
-  return response;
+// (facultatif) si tu appelles /api/logout depuis un autre origin
+export async function OPTIONS() {
+  const res = new NextResponse(null, { status: 204 });
+  res.headers.set("Access-Control-Allow-Origin", process.env.NEXT_PUBLIC_APP_ORIGIN ?? "*");
+  res.headers.set("Access-Control-Allow-Credentials", "true");
+  res.headers.set("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.headers.set("Access-Control-Allow-Headers", "content-type");
+  return res;
 }

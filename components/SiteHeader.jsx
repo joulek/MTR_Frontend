@@ -52,22 +52,11 @@ export default function SiteHeader({ mode = "public", onLogout }) {
   const [hintRole, setHintRole] = useState(() => {
     try { return localStorage.getItem("mtr_role") || null; } catch { return null; }
   });
-  const [urlClient, setUrlClient] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname() || "/";
   const homePaths = ["/", "/fr", "/en", "/fr/", "/en/"];
   const isHome = homePaths.includes(pathname);
-
-  /* lire ?client=1 à chaque navigation */
-  useEffect(() => {
-    try {
-      const sp = new URLSearchParams(window.location.search);
-      setUrlClient(sp.get("client") === "1");
-    } catch {
-      setUrlClient(false);
-    }
-  }, [pathname]);
 
   /* langue */
   useEffect(() => {
@@ -107,12 +96,11 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     return () => { alive = false; };
   }, []);
 
-  /* ⚙️ États “client connecté” vs “nav client” */
-  const isLoggedClient = mode === "client" || me?.role === "client" || hintRole === "client"; // ← garde les 3 points
-  const isClientNav   = isLoggedClient || urlClient === true; // nav client élargie (catégories, etc.)
+  /* ⚙️ État “client connecté” (plus de spoof via URL) */
+  const isLoggedClient = mode === "client" || me?.role === "client" || hintRole === "client";
 
-  /* home href qui conserve ?client=1 si nav client */
-  const homeHref = `/${locale}${isClientNav ? "?client=1" : ""}`;
+  /* home href (plus de ?client=1) */
+  const homeHref = `/${locale}`;
 
   /* catégories */
   useEffect(() => {
@@ -157,42 +145,22 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     [pathname, router, homeHref]
   );
 
-  /* Interception des liens internes #... / data-scrollto */
-  useEffect(() => {
-    const handler = (e) => {
-      const t = e.target.closest('a[href^="#"], [data-scrollto], button[data-scrollto]');
-      if (!t) return;
-      const raw = t.getAttribute("data-scrollto") || t.getAttribute("href");
-      if (!raw) return;
-      const id = raw.replace(/^#/, "").trim();
-      if (!id) return;
-      e.preventDefault();
-      goToSection(id, false);
-    };
-    document.addEventListener("click", handler, true);
-    return () => document.removeEventListener("click", handler, true);
-  }, [goToSection]);
-
-  /* switch langue */
+  /* switch langue (ne touche plus aux query params) */
   const switchLang = useCallback(
     (next) => {
       if (next === locale) return;
       document.documentElement.lang = next;
       setLocale(next);
-      let nextPath = swapLocaleInPath(pathname, next);
-      try {
-        const search = new URLSearchParams(window.location.search);
-        if (isClientNav) search.set("client", "1");
-        const qs = search.toString();
-        if (qs) nextPath = `${nextPath.split("?")[0]}?${qs}`;
-      } catch {}
+      const nextPath = swapLocaleInPath(pathname, next);
       router.push(nextPath, { scroll: false });
       try { localStorage.setItem("mtr_locale", next); } catch {}
     },
-    [pathname, router, locale, isClientNav]
+    [pathname, router, locale]
   );
 
-  /* menu Produits (parents → enfants) */
+  /* ======================= Sous-composants ======================= */
+
+  /* Menu Produits (parents → enfants) */
   const ProductsMenu = ({ cats, locale }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [hoveredParent, setHoveredParent] = useState(null);
@@ -391,7 +359,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     }
   }
 
-  /* render */
+  /* ======================= RENDER ======================= */
   return (
     <header className="sticky top-0 z-40">
       {/* top bar */}
@@ -435,7 +403,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
       <div className="border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex h-16 items-center justify-between">
-            {/* logo → home (garde ?client=1) */}
+            {/* logo → home */}
             <Link href={homeHref} className="flex items-center gap-3">
               <Image src="/logo.png" alt="MTR logo" width={100} height={100} className="object-contain" priority />
             </Link>
@@ -447,7 +415,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
               </Link>
 
               {/* sections home : public partout / client seulement sur home */}
-              {(!isClientNav || isHome) && (
+              {(!isLoggedClient || isHome) && (
                 <>
                   <button type="button" onClick={() => goToSection("presentation")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
                     L&apos;entreprise
@@ -462,7 +430,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                 </>
               )}
 
-              {isClientNav && <ClientNavItemsDesktop />}
+              {isLoggedClient && <ClientNavItemsDesktop />}
             </nav>
 
             {/* actions droite */}
@@ -498,7 +466,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                 Accueil
               </Link>
 
-              {(!isClientNav || isHome) && (
+              {(!isLoggedClient || isHome) && (
                 <>
                   <button type="button" onClick={() => goToSection("presentation", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
                     L&apos;entreprise
@@ -515,7 +483,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                 </>
               )}
 
-              {isClientNav && <ClientNavItemsMobile />}
+              {isLoggedClient && <ClientNavItemsMobile />}
 
               <div className="h-px bg-slate-200 my-2" />
 

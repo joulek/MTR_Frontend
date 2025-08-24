@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
 
   const router = useRouter();
   const pathname = usePathname();
-  const locale = pathname.split("/")[1] || "fr";
+  const locale = (pathname.split("/")[1] || "fr") || "fr";
 
   async function load() {
     try {
@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
       <div className="mx-auto w-full max-w-6xl space-y-6">
         {/* ======= Titre centré ======= */}
         <header className="space-y-4 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#0B1E3A]">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0B1E3A]">
             Gestion des Utilisateurs
           </h1>
           {err && <p className="text-sm text-red-600">{err}</p>}
@@ -110,7 +110,7 @@ export default function AdminUsersPage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Rechercher (nom, email, téléphone, type, rôle, adresse, date...)"
-                className="w-full rounded-xl border border-gray-300 bg-white px-9 pr-9 py-2 text-sm text-[#0B1E3A]
+                className="w-full rounded-xl border border-gray-300 bg-white pl-9 pr-9 py-2 text-sm text-[#0B1E3A]
                            shadow focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
               />
               {q && (
@@ -136,64 +136,121 @@ export default function AdminUsersPage() {
           </div>
         </header>
 
-        {/* ======= Table ======= */}
-        <section className="rounded-2xl border border-[#F7C60022] bg-white shadow-sm overflow-hidden">
-          <table className="min-w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-white">
-              <tr>
-                {["Nom", "Email", "Téléphone", "Type de compte", "Rôle", "Créé le", "Actions"].map((col) => (
-                  <th key={col} className="p-4 text-left">
-                    <div className="text-[11px] sm:text-[13px] font-semibold uppercase tracking-wide text-slate-500">{col}</div>
-                  </th>
-                ))}
-              </tr>
-              <tr>
-                <td colSpan={7}>
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </td>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500">Chargement…</td>
-                </tr>
-              ) : total === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500">Aucun utilisateur.</td>
-                </tr>
-              ) : (
-                pageItems.map((u, i) => (
-                  <tr key={u._id || i} className="group bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors">
-                    {/* Nom avec cercle jaune */}
-                    <td className="p-4 align-middle">
-                      <div className="flex items-center gap-3">
-                        <span className="h-2 w-2 rounded-full bg-[#F7C600]" />
-                        <span className="text-[#0B1E3A] font-medium">
+        {/* ======= États chargement/vide ======= */}
+        {loading ? (
+          <div className="text-center text-gray-500">Chargement…</div>
+        ) : total === 0 ? (
+          <div className="text-center text-gray-500">Aucun utilisateur.</div>
+        ) : (
+          <>
+            {/* ======= Mobile (<md) : Cartes ======= */}
+            <section className="grid grid-cols-1 gap-4 md:hidden">
+              {pageItems.map((u, i) => (
+                <div
+                  key={u._id || i}
+                  className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#F7C600] shrink-0" />
+                        <p className="text-[#0B1E3A] font-semibold truncate">
                           {`${u?.prenom || ""} ${u?.nom || ""}`.trim() || "—"}
-                        </span>
+                        </p>
                       </div>
-                    </td>
-                    <td className="p-4">{u?.email || "—"}</td>
-                    <td className="p-4">{u?.numTel || "—"}</td>
-                    <td className="p-4 capitalize">{u?.accountType || "—"}</td>
-                    <td className="p-4">{roleLabel(u?.role)}</td>
-                    <td className="p-4">{fmtDate(u?.createdAt)}</td>
-                    <td className="p-4">
-                      <button
-                        onClick={() => setSelected(u)}
-                        className="rounded-full border border-gray-200 px-3 py-1 text-xs hover:bg-gray-50"
-                      >
-                        Détails
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </section>
+                      <p className="text-gray-600 text-xs break-words">{u?.email || "—"}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Rôle</p>
+                      <p className="font-medium">{roleLabel(u?.role)}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Téléphone</p>
+                      <p className="break-words">{u?.numTel || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Type de compte</p>
+                      <p className="capitalize">{u?.accountType || "—"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Créé le</p>
+                      <p>{fmtDate(u?.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    <button
+                      onClick={() => setSelected(u)}
+                      className="rounded-full border border-gray-200 px-3 py-1.5 text-xs hover:bg-gray-50"
+                    >
+                      Détails
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </section>
+
+            {/* ======= Desktop (≥md) : Tableau + scroll ======= */}
+            <section className="rounded-2xl border border-[#F7C60022] bg-white shadow-sm overflow-hidden hidden md:block">
+              <div className="w-full overflow-x-auto">
+                <table className="min-w-[900px] w-full text-sm">
+                  <thead className="bg-white">
+                    <tr>
+                      {["Nom", "Email", "Téléphone", "Type de compte", "Rôle", "Créé le", "Actions"].map((col) => (
+                        <th key={col} className="p-4 text-left">
+                          <div className="text-[11px] sm:text-[13px] font-semibold uppercase tracking-wide text-slate-500">{col}</div>
+                        </th>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td colSpan={7}>
+                        <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                      </td>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-100">
+                    {pageItems.map((u, i) => (
+                      <tr key={u._id || i} className="group bg-white hover:bg-[#0B1E3A]/[0.03] transition-colors">
+                        {/* Nom */}
+                        <td className="p-4 align-middle">
+                          <div className="flex items-center gap-3">
+                            <span className="h-2 w-2 rounded-full bg-[#F7C600]" />
+                            <span className="text-[#0B1E3A] font-medium break-words">
+                              {`${u?.prenom || ""} ${u?.nom || ""}`.trim() || "—"}
+                            </span>
+                          </div>
+                        </td>
+                        {/* Email */}
+                        <td className="p-4 text-gray-800 break-all">{u?.email || "—"}</td>
+                        {/* Téléphone */}
+                        <td className="p-4 break-words">{u?.numTel || "—"}</td>
+                        {/* Type */}
+                        <td className="p-4 capitalize">{u?.accountType || "—"}</td>
+                        {/* Rôle */}
+                        <td className="p-4">{roleLabel(u?.role)}</td>
+                        {/* Créé le */}
+                        <td className="p-4 whitespace-nowrap">{fmtDate(u?.createdAt)}</td>
+                        {/* Actions */}
+                        <td className="p-4">
+                          <button
+                            onClick={() => setSelected(u)}
+                            className="rounded-full border border-gray-200 px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Détails
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
 
         {/* ======= Pagination ======= */}
         <div className="px-1 sm:px-0">
@@ -224,7 +281,7 @@ export default function AdminUsersPage() {
 
 /* -------------------- Modals -------------------- */
 
-/* ======= MODAL DÉTAILS — même composition que le modal d’ajout ======= */
+/* ======= MODAL DÉTAILS ======= */
 function DetailsModal({ user, onClose }) {
   return (
     <div
@@ -234,19 +291,19 @@ function DetailsModal({ user, onClose }) {
       aria-labelledby="details-title"
     >
       <div className="relative w-full max-w-3xl rounded-3xl bg-white shadow-[0_25px_80px_rgba(0,0,0,.25)] ring-1 ring-gray-100">
-        {/* pastille jaune centrée */}
+        {/* pastille jaune */}
         <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-14 w-14 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-400 shadow-lg ring-4 ring-white flex items-center justify-center text-[#0B1E3A]">
           <FiUser size={22} />
         </div>
 
-        {/* En-tête centrée (pas de bouton) */}
+        {/* En-tête */}
         <div className="px-6 pt-10 pb-4 border-b border-gray-100 text-center">
           <h3 id="details-title" className="text-xl font-semibold text-[#0B1E3A]">
             Détails utilisateur
           </h3>
         </div>
 
-        {/* Contenu en “cartes” */}
+        {/* Contenu */}
         <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FieldCard label="Nom" value={user?.nom} />
           <FieldCard label="Prénom" value={user?.prenom} />
@@ -255,7 +312,6 @@ function DetailsModal({ user, onClose }) {
           <FieldCard label="Adresse" value={user?.adresse || "—"} className="sm:col-span-2" />
           <FieldCard label="Type de compte" value={user?.accountType || "—"} />
           <FieldCard label="Rôle" value={user?.role === "admin" ? "admin" : "client"} />
-          {/* Champs conditionnels */}
           {user?.accountType === "personnel" && (
             <>
               <FieldCard label="CIN" value={user?.personal?.cin || "—"} />
@@ -272,7 +328,7 @@ function DetailsModal({ user, onClose }) {
           <FieldCard label="Créé le" value={fmtDate(user?.createdAt)} className="sm:col-span-2" />
         </div>
 
-        {/* Pied : bouton Fermer comme Annuler */}
+        {/* Pied */}
         <div className="px-6 pb-6 pt-2 border-t border-gray-100 flex items-center justify-end">
           <button
             type="button"
@@ -287,7 +343,7 @@ function DetailsModal({ user, onClose }) {
   );
 }
 
-/* Petit composant pour joli rendu d’un champ (label + carte) */
+/* Champ stylé (label + carte) */
 function FieldCard({ label, value, className = "", copy = false }) {
   return (
     <div className={className}>
@@ -309,7 +365,7 @@ function FieldCard({ label, value, className = "", copy = false }) {
   );
 }
 
-/* ======= MODAL D'AJOUT (style Catégories) ======= */
+/* ======= MODAL D'AJOUT ======= */
 function InviteUserModal({ onClose, onCreated }) {
   const [type, setType] = useState("");
   const [loading, setLoading] = useState(false);
@@ -369,12 +425,12 @@ function InviteUserModal({ onClose, onCreated }) {
       aria-labelledby="invite-title"
     >
       <div className="relative w-full max-w-2xl rounded-3xl bg-white shadow-[0_25px_80px_rgba(0,0,0,.25)] ring-1 ring-gray-100">
-        {/* pastille jaune centrée */}
+        {/* pastille jaune */}
         <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-14 w-14 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-400 shadow-lg ring-4 ring-white flex items-center justify-center text-[#0B1E3A]">
           <FiUserPlus size={22} />
         </div>
 
-        {/* En-tête centrée */}
+        {/* En-tête */}
         <div className="px-6 pt-10 pb-4 border-b border-gray-100 text-center">
           <h3 id="invite-title" className="text-xl font-semibold text-[#0B1E3A]">
             Ajouter un utilisateur
@@ -426,7 +482,7 @@ function InviteUserModal({ onClose, onCreated }) {
             </select>
           </div>
 
-          {/* Pied du modal : Annuler + Ajouter */}
+          {/* Pied */}
           <div className="sm:col-span-2 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
             <button
               type="button"
@@ -454,7 +510,10 @@ function Input({ label, className = "", ...props }) {
   return (
     <label className={`flex flex-col ${className}`}>
       <span className="text-gray-500 text-xs font-semibold mb-1">{label}</span>
-      <input {...props} className="rounded-xl border border-gray-200 px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition" />
+      <input
+        {...props}
+        className="rounded-xl border border-gray-200 px-3 py-2 text-[#0B1E3A] focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+      />
     </label>
   );
 }
