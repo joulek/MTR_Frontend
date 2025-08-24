@@ -9,20 +9,26 @@ import { Facebook, Linkedin, MoreVertical, User, LogOut } from "lucide-react";
 import { CircleFlag } from "react-circle-flags";
 
 /* ---------------------------- API backend ---------------------------- */
-const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000").replace(/\/$/, "");
+const BACKEND = (
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"
+).replace(/\/$/, "");
 const API = `${BACKEND}/api`;
 
 /* --------------------------- Helpers --------------------------- */
 function pickName(cat, locale) {
   return (
-    (cat?.translations && (cat.translations[locale] || cat.translations.fr || cat.translations.en)) ||
+    (cat?.translations &&
+      (cat.translations[locale] ||
+        cat.translations.fr ||
+        cat.translations.en)) ||
     cat?.label ||
     ""
   );
 }
 function slugify(s = "") {
   return String(s)
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
@@ -50,7 +56,11 @@ export default function SiteHeader({ mode = "public", onLogout }) {
   const [loadingCats, setLoadingCats] = useState(true);
   const [me, setMe] = useState(null);
   const [hintRole, setHintRole] = useState(() => {
-    try { return localStorage.getItem("mtr_role") || null; } catch { return null; }
+    try {
+      return localStorage.getItem("mtr_role") || null;
+    } catch {
+      return null;
+    }
   });
 
   const router = useRouter();
@@ -68,36 +78,55 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     };
     pick();
     const mo = new MutationObserver(pick);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["lang"],
+    });
     return () => mo.disconnect();
   }, []);
 
-  /* session */
+  /* session (⇐ BACKEND /api/me, pas /api/me côté Next) */
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const r = await fetch("/api/me", { credentials: "include", cache: "no-store" });
+        const r = await fetch(`${API}/users/me`, { credentials: "include", cache: "no-store" });
         if (!alive) return;
         if (r.ok) {
           const json = await r.json();
           setMe(json);
+          if (process.env.NODE_ENV !== "production")
+            console.log("[SiteHeader] session:", json);
           if (json?.role) {
-            try { localStorage.setItem("mtr_role", json.role); } catch {}
+            try {
+              localStorage.setItem("mtr_role", json.role);
+            } catch {}
             setHintRole(json.role);
           }
         } else {
           setMe(null);
+          setHintRole(null);
+          try {
+            localStorage.removeItem("mtr_role");
+          } catch {}
         }
-      } catch {
-        if (alive) setMe(null);
+      } catch (e) {
+        setMe(null);
+        setHintRole(null);
+        try {
+          localStorage.removeItem("mtr_role");
+        } catch {}
+        if (process.env.NODE_ENV !== "production")
+          console.warn("[SiteHeader] /me error:", e);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  /* ⚙️ État “client connecté” (plus de spoof via URL) */
-  const isLoggedClient = mode === "client" || me?.role === "client" || hintRole === "client";
+  /* ⚙️ État “client connecté” : UNIQUEMENT session (me) ou override explicite */
+  const isLoggedClient = mode === "client" || me?.role === "client";
 
   /* home href (plus de ?client=1) */
   const homeHref = `/${locale}`;
@@ -109,7 +138,11 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     (async () => {
       try {
         setLoadingCats(true);
-        const res = await fetch(`${API}/categories`, { method: "GET", cache: "no-store", signal: controller.signal });
+        const res = await fetch(`${API}/categories`, {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!alive) return;
@@ -132,7 +165,8 @@ export default function SiteHeader({ mode = "public", onLogout }) {
       const doScroll = () => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-        if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+        if (location.hash)
+          history.replaceState(null, "", location.pathname + location.search);
         if (closeMenu) setOpen(false);
       };
       if (!homePaths.includes(pathname)) {
@@ -145,7 +179,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     [pathname, router, homeHref]
   );
 
-  /* switch langue (ne touche plus aux query params) */
+  /* switch langue */
   const switchLang = useCallback(
     (next) => {
       if (next === locale) return;
@@ -153,19 +187,33 @@ export default function SiteHeader({ mode = "public", onLogout }) {
       setLocale(next);
       const nextPath = swapLocaleInPath(pathname, next);
       router.push(nextPath, { scroll: false });
-      try { localStorage.setItem("mtr_locale", next); } catch {}
+      try {
+        localStorage.setItem("mtr_locale", next);
+      } catch {}
     },
     [pathname, router, locale]
   );
 
+  /* sync multi-onglets (optionnel) */
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === "mtr_role" && e.newValue == null) {
+        setMe(null);
+        setHintRole(null);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   /* ======================= Sous-composants ======================= */
 
-  /* Menu Produits (parents → enfants) */
   const ProductsMenu = ({ cats, locale }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [hoveredParent, setHoveredParent] = useState(null);
     const childrenMap = new Map();
-    const getParentId = (c) => c?.parent?._id || c?.parent || c?.parentId || c?.parent_id || null;
+    const getParentId = (c) =>
+      c?.parent?._id || c?.parent || c?.parentId || c?.parent_id || null;
     const getId = (c) => c?._id || pickName(c, locale);
 
     cats.forEach((c) => {
@@ -181,7 +229,10 @@ export default function SiteHeader({ mode = "public", onLogout }) {
       <div
         className="relative"
         onMouseEnter={() => setMenuOpen(true)}
-        onMouseLeave={() => { setMenuOpen(false); setHoveredParent(null); }}
+        onMouseLeave={() => {
+          setMenuOpen(false);
+          setHoveredParent(null);
+        }}
       >
         <button
           type="button"
@@ -206,49 +257,61 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                       href={makeCatHref(parent, locale)}
                       onMouseEnter={() => setHoveredParent(id)}
                       className={`flex items-center justify-between rounded-md px-4 py-3 text-sm transition
-                        ${active ? "bg-[#F5B301] text-[#0B2239]" : "text-[#0B2239] hover:bg-[#F5B301] hover:text-[#0B2239]"}`}
+                        ${
+                          active
+                            ? "bg-[#F5B301] text-[#0B2239]"
+                            : "text-[#0B2239] hover:bg-[#F5B301] hover:text-[#0B2239]"
+                        }`}
                     >
                       {label}
-                      {hasChildren ? <span className="ml-3 text-xs opacity-70">›</span> : null}
+                      {hasChildren ? (
+                        <span className="ml-3 text-xs opacity-70">›</span>
+                      ) : null}
                     </Link>
                   </li>
                 );
               })}
             </ul>
 
-            {hoveredParent && (childrenMap.get(hoveredParent) || []).length > 0 && (
-              <ul className="absolute left-[100%] top-0 ml-2 w-64 rounded-lg bg-white p-2 shadow-2xl ring-1 ring-slate-200">
-                {(childrenMap.get(hoveredParent) || []).map((child) => (
-                  <li key={getId(child)}>
-                    <Link
-                      href={makeCatHref(child, locale)}
-                      className="block rounded-md px-4 py-3 text-sm text-[#0B2239] hover:bg-slate-50"
-                    >
-                      {pickName(child, locale)}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {hoveredParent &&
+              (childrenMap.get(hoveredParent) || []).length > 0 && (
+                <ul className="absolute left-[100%] top-0 ml-2 w-64 rounded-lg bg-white p-2 shadow-2xl ring-1 ring-slate-200">
+                  {(childrenMap.get(hoveredParent) || []).map((child) => (
+                    <li key={getId(child)}>
+                      <Link
+                        href={makeCatHref(child, locale)}
+                        className="block rounded-md px-4 py-3 text-sm text-[#0B2239] hover:bg-slate-50"
+                      >
+                        {pickName(child, locale)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
           </div>
         )}
       </div>
     );
   };
 
-  /* --------- NAV items pour client (SANS "Mon Profil") --------- */
+  /* --------- NAV items pour client --------- */
   const ClientNavItemsDesktop = () => {
     const [servicesOpen, setServicesOpen] = useState(false);
     const ref = useRef(null);
     useEffect(() => {
-      const onDoc = (e) => { if (!ref.current?.contains(e.target)) setServicesOpen(false); };
+      const onDoc = (e) => {
+        if (!ref.current?.contains(e.target)) setServicesOpen(false);
+      };
       document.addEventListener("mousedown", onDoc);
       return () => document.removeEventListener("mousedown", onDoc);
     }, []);
 
     return (
       <>
-        <Link href={`/${locale}/client/reclamations`} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
+        <Link
+          href={`/${locale}/client/reclamations`}
+          className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]"
+        >
           Réclamer
         </Link>
 
@@ -263,18 +326,32 @@ export default function SiteHeader({ mode = "public", onLogout }) {
             Mes services ▾
           </button>
           {servicesOpen && (
-            <div role="menu" className="absolute left-0 top-full mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
-              <Link href={`/${locale}/client/mes-devis`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+            <div
+              role="menu"
+              className="absolute left-0 top-full mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg z-50"
+            >
+              <Link
+                href={`/${locale}/client/mes-devis`}
+                role="menuitem"
+                className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
                 Mes demandes devis
               </Link>
-              <Link href={`/${locale}/client/mes-reclamations`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+              <Link
+                href={`/${locale}/client/mes-reclamations`}
+                role="menuitem"
+                className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              >
                 Mes réclamations
               </Link>
             </div>
           )}
         </div>
 
-        <Link href={`/${locale}/client/devis`} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
+        <Link
+          href={`/${locale}/client/devis`}
+          className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]"
+        >
           Demander un devis
         </Link>
       </>
@@ -284,17 +361,31 @@ export default function SiteHeader({ mode = "public", onLogout }) {
   const ClientNavItemsMobile = () => (
     <>
       <details>
-        <summary className="px-3 py-2 cursor-pointer select-none">Mes services</summary>
+        <summary className="px-3 py-2 cursor-pointer select-none">
+          Mes services
+        </summary>
         <div className="pl-4 flex flex-col">
-          <Link href={`/${locale}/client/mes-devis`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
+          <Link
+            href={`/${locale}/client/mes-devis`}
+            className="px-3 py-2 rounded hover:bg-slate-50"
+            onClick={() => setOpen(false)}
+          >
             Mes demandes devis
           </Link>
-          <Link href={`/${locale}/client/mes-reclamations`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
+          <Link
+            href={`/${locale}/client/mes-reclamations`}
+            className="px-3 py-2 rounded hover:bg-slate-50"
+            onClick={() => setOpen(false)}
+          >
             Mes réclamations
           </Link>
         </div>
       </details>
-      <Link href={`/${locale}/client/devis`} className="rounded px-3 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>
+      <Link
+        href={`/${locale}/client/devis`}
+        className="rounded px-3 py-2 hover:bg-slate-50"
+        onClick={() => setOpen(false)}
+      >
         Demander un devis
       </Link>
     </>
@@ -305,7 +396,9 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     const [uOpen, setUOpen] = useState(false);
     const ref = useRef(null);
     useEffect(() => {
-      const onDoc = (e) => { if (!ref.current?.contains(e.target)) setUOpen(false); };
+      const onDoc = (e) => {
+        if (!ref.current?.contains(e.target)) setUOpen(false);
+      };
       document.addEventListener("mousedown", onDoc);
       return () => document.removeEventListener("mousedown", onDoc);
     }, []);
@@ -331,7 +424,10 @@ export default function SiteHeader({ mode = "public", onLogout }) {
               Profil
             </Link>
             <button
-              onClick={() => { setUOpen(false); (onLogout || handleLogout)(); }}
+              onClick={() => {
+                setUOpen(false);
+                (onLogout || handleLogout)();
+              }}
               className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
             >
               <LogOut className="h-4 w-4" />
@@ -346,7 +442,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
   /* Logout (fallback si onLogout non fourni) */
   async function handleLogout() {
     try {
-      await fetch("/api/logout", { method: "POST", credentials: "include" });
+        await fetch(`${API}/auth/logout`, { method: "POST", credentials: "include" });
     } catch (e) {
       console.error("Erreur logout", e);
     } finally {
@@ -355,7 +451,9 @@ export default function SiteHeader({ mode = "public", onLogout }) {
         localStorage.removeItem("userRole");
         localStorage.removeItem("rememberMe");
       } catch {}
-      router.push(`/${locale}/login`);
+      setMe(null);
+      setHintRole(null);
+      router.replace(`/${locale}`);
     }
   }
 
@@ -366,33 +464,80 @@ export default function SiteHeader({ mode = "public", onLogout }) {
       <div className="bg-[#0B2239] text-white">
         <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-xs sm:text-sm">
           <nav className="flex items-center gap-4">
-            <button type="button" onClick={() => goToSection("apropos")} className="opacity-90 transition hover:text-[#F5B301]" role="link">
+            <button
+              type="button"
+              onClick={() => goToSection("apropos")}
+              className="opacity-90 transition hover:text-[#F5B301]"
+              role="link"
+            >
               À propos
             </button>
             <span className="opacity-40">|</span>
-            <button type="button" onClick={() => goToSection("contact")} className="opacity-90 transition hover:text-[#F5B301]" role="link">
+            <button
+              type="button"
+              onClick={() => goToSection("contact")}
+              className="opacity-90 transition hover:text-[#F5B301]"
+              role="link"
+            >
               Help Desk
             </button>
             <span className="opacity-40">|</span>
-            <button type="button" onClick={() => goToSection("presentation")} className="opacity-90 transition hover:text-[#F5B301]" role="link">
+            <button
+              type="button"
+              onClick={() => goToSection("presentation")}
+              className="opacity-90 transition hover:text-[#F5B301]"
+              role="link"
+            >
               Présentation
             </button>
           </nav>
 
           <div className="flex items-center gap-3">
-            <a href="https://www.facebook.com/profile.php?id=100076355199317&locale=fr_FR" target="_blank" rel="noreferrer" className="rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="Facebook">
+            <a
+              href="https://www.facebook.com/profile.php?id=100076355199317&locale=fr_FR"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full bg-white/10 p-1.5 hover:bg-white/20"
+              aria-label="Facebook"
+            >
               <Facebook className="h-4 w-4" />
             </a>
-            <a href="https://www.linkedin.com/in/manufacutre-tunisienne-des-ressorts-22b388276/" target="_blank" rel="noreferrer" className="rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="LinkedIn">
+            <a
+              href="https://www.linkedin.com/in/manufacutre-tunisienne-des-ressorts-22b388276/"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full bg-white/10 p-1.5 hover:bg-white/20"
+              aria-label="LinkedIn"
+            >
               <Linkedin className="h-4 w-4" />
             </a>
 
             <div className="flex items-center gap-2 ml-2">
-              <button onClick={() => switchLang("fr")} className={`${locale === "fr" ? "ring-2 ring-[#F5B301] rounded-full" : ""} p-0 bg-transparent border-0`} title="Français" aria-pressed={locale === "fr"}>
-                <CircleFlag countryCode="fr" style={{ width: 20, height: 20 }} />
+              <button
+                onClick={() => switchLang("fr")}
+                className={`${
+                  locale === "fr" ? "ring-2 ring-[#F5B301] rounded-full" : ""
+                } p-0 bg-transparent border-0`}
+                title="Français"
+                aria-pressed={locale === "fr"}
+              >
+                <CircleFlag
+                  countryCode="fr"
+                  style={{ width: 20, height: 20 }}
+                />
               </button>
-              <button onClick={() => switchLang("en")} className={`${locale === "en" ? "ring-2 ring-[#F5B301] rounded-full" : ""} p-0 bg-transparent border-0`} title="English" aria-pressed={locale === "en"}>
-                <CircleFlag countryCode="us" style={{ width: 20, height: 20 }} />
+              <button
+                onClick={() => switchLang("en")}
+                className={`${
+                  locale === "en" ? "ring-2 ring-[#F5B301] rounded-full" : ""
+                } p-0 bg-transparent border-0`}
+                title="English"
+                aria-pressed={locale === "en"}
+              >
+                <CircleFlag
+                  countryCode="us"
+                  style={{ width: 20, height: 20 }}
+                />
               </button>
             </div>
           </div>
@@ -405,26 +550,53 @@ export default function SiteHeader({ mode = "public", onLogout }) {
           <div className="flex h-16 items-center justify-between">
             {/* logo → home */}
             <Link href={homeHref} className="flex items-center gap-3">
-              <Image src="/logo.png" alt="MTR logo" width={100} height={100} className="object-contain" priority />
+              <Image
+                src="/logo.png"
+                alt="MTR logo"
+                width={100}
+                height={100}
+                className="object-contain"
+                priority
+              />
             </Link>
 
             {/* nav desktop */}
             <nav className="hidden items-center gap-1 md:flex">
-              <Link href={homeHref} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
+              <Link
+                href={homeHref}
+                className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]"
+              >
                 Accueil
               </Link>
 
               {/* sections home : public partout / client seulement sur home */}
               {(!isLoggedClient || isHome) && (
                 <>
-                  <button type="button" onClick={() => goToSection("presentation")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
+                  <button
+                    type="button"
+                    onClick={() => goToSection("presentation")}
+                    className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]"
+                    role="link"
+                  >
                     L&apos;entreprise
                   </button>
-                  {!loadingCats && <ProductsMenu cats={categories} locale={locale} />}
-                  <button type="button" onClick={() => goToSection("contact")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
+                  {!loadingCats && (
+                    <ProductsMenu cats={categories} locale={locale} />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => goToSection("contact")}
+                    className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]"
+                    role="link"
+                  >
                     Contact
                   </button>
-                  <button type="button" onClick={() => goToSection("localisation")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
+                  <button
+                    type="button"
+                    onClick={() => goToSection("localisation")}
+                    className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]"
+                    role="link"
+                  >
                     Localisation
                   </button>
                 </>
@@ -462,22 +634,46 @@ export default function SiteHeader({ mode = "public", onLogout }) {
         {open && (
           <div className="md:hidden border-top border-slate-200 bg-white">
             <div className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1">
-              <Link href={homeHref} className="rounded px-3 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>
+              <Link
+                href={homeHref}
+                className="rounded px-3 py-2 hover:bg-slate-50"
+                onClick={() => setOpen(false)}
+              >
                 Accueil
               </Link>
 
               {(!isLoggedClient || isHome) && (
                 <>
-                  <button type="button" onClick={() => goToSection("presentation", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                  <button
+                    type="button"
+                    onClick={() => goToSection("presentation", true)}
+                    className="text-left rounded px-3 py-2 hover:bg-slate-50"
+                    role="link"
+                  >
                     L&apos;entreprise
                   </button>
-                  <button type="button" onClick={() => goToSection("specialites", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                  <button
+                    type="button"
+                    onClick={() => goToSection("specialites", true)}
+                    className="text-left rounded px-3 py-2 hover:bg-slate-50"
+                    role="link"
+                  >
                     Produits
                   </button>
-                  <button type="button" onClick={() => goToSection("contact", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                  <button
+                    type="button"
+                    onClick={() => goToSection("contact", true)}
+                    className="text-left rounded px-3 py-2 hover:bg-slate-50"
+                    role="link"
+                  >
                     Contact
                   </button>
-                  <button type="button" onClick={() => goToSection("localisation", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
+                  <button
+                    type="button"
+                    onClick={() => goToSection("localisation", true)}
+                    className="text-left rounded px-3 py-2 hover:bg-slate-50"
+                    role="link"
+                  >
                     Localisation
                   </button>
                 </>
@@ -487,7 +683,6 @@ export default function SiteHeader({ mode = "public", onLogout }) {
 
               <div className="h-px bg-slate-200 my-2" />
 
-              {/* Demander un devis seulement si NON connecté */}
               {!isLoggedClient && (
                 <Link
                   href={`/${locale}/devis`}
