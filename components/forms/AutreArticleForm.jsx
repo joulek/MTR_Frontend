@@ -103,84 +103,95 @@ export default function AutreArticleForm() {
     if (e.dataTransfer?.files?.length) handleFileList(e.dataTransfer.files);
   }
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    setOk(""); setErr("");
-    finishedRef.current = false;
+ const onSubmit = async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  setOk(""); setErr("");
+  finishedRef.current = false;
 
-    if (!user?.authenticated) {
-      setErr(t.has("loginToSend") ? t("loginToSend") : "Vous devez être connecté pour envoyer un devis.");
+  if (!user?.authenticated) {
+    setErr(t.has("loginToSend") ? t("loginToSend") : "Vous devez être connecté pour envoyer un devis.");
+    return;
+  }
+  if (user.role !== "client") {
+    setErr(t.has("reservedClients") ? t("reservedClients") : "Seuls les clients peuvent envoyer une demande de devis.");
+    return;
+  }
+
+  // ⚠️ petit garde-fou: au moins un fichier si tu le veux “obligatoire”
+  // if (files.length === 0) { setErr("Veuillez joindre au moins un document."); return; }
+
+  setLoading(true);
+  try {
+    const fd = new FormData(form);
+    fd.append("type", "autre");
+
+    // --- lecture propre + trim ---
+    const designation = (fd.get("designation") || "").toString().trim();
+    const dimensions  = (fd.get("dimensions")  || "").toString().trim();
+    const matiere     = (fd.get("matiere")     || "").toString().trim();
+    const exigences   = (fd.get("exigences")   || "").toString().trim();
+    const remarques   = (fd.get("remarques")   || "").toString().trim();
+    const descLibre   = (fd.get("description") || "").toString().trim();
+    const qRaw        = (fd.get("quantite")    || "").toString().trim();
+
+    // --- quantité en nombre >= 1 ---
+    const qte = Math.max(1, Number.isFinite(Number(qRaw)) ? Number(qRaw) : 1);
+    fd.set("quantite", String(qte)); // le back lira Number(quantite)
+
+    // --- titre/description (compat back) ---
+    const titre = designation || (matiere ? `Article (${matiere})` : "Article");
+    let description = descLibre;
+    if (!description) {
+      const parts = [];
+      if (dimensions) parts.push(`Dimensions : ${dimensions}`);
+      if (exigences)  parts.push(`Exigences : ${exigences}`);
+      if (remarques)  parts.push(`Remarques : ${remarques}`);
+      description = parts.join("\n");
+    }
+    fd.set("titre", titre);
+    fd.set("description", description);
+
+    // --- S'assure que ces champs existent clairement dans le corps ---
+    fd.set("designation", designation);
+    fd.set("dimensions", dimensions);
+    fd.set("matiere", matiere);
+    fd.set("exigences", exigences);
+    fd.set("remarques", remarques);
+
+    // --- normalisation EN -> FR de "matiere" (aucun impact UI) ---
+    normalizeMatiere(fd);
+
+    // (inutile d'envoyer l'user; le back lit req.user)
+    const res = await fetch("/api/devis/autre", {
+      method: "POST",
+      body: fd,
+      credentials: "include",
+    });
+
+    let payload = null;
+    try { payload = await res.json(); } catch {}
+
+    if (res.ok) {
+      finishedRef.current = true;
+      setErr("");
+      setOk(t.has("sendSuccess") ? t("sendSuccess") : "Demande envoyée. Merci !");
+      form.reset();
+      setFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    if (user.role !== "client") {
-      setErr(t.has("reservedClients") ? t("reservedClients") : "Seuls les clients peuvent envoyer une demande de devis.");
-      return;
-    }
 
-    setLoading(true);
-    try {
-      const fd = new FormData(form);
-      fd.append("type", "autre");
+    const msg = payload?.message || `Erreur lors de l’envoi. (HTTP ${res.status})`;
+    setErr(msg);
+  } catch (e) {
+    console.error("submit autre error:", e);
+    if (!finishedRef.current) setErr("Erreur réseau.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-      // ----- MAPPING requis par le contrôleur -----
-      const designation = (fd.get("designation") || "").toString().trim();
-      const dimensions = (fd.get("dimensions") || "").toString().trim();
-      const matiere = (fd.get("matiere") || "").toString().trim();
-      const exigences = (fd.get("exigences") || "").toString().trim();
-      const remarques = (fd.get("remarques") || "").toString().trim();
-      const descLibre = (fd.get("description") || "").toString().trim(); // <-- nouveau champ
-
-      const titre = designation || (matiere ? `Article (${matiere})` : "Article");
-
-      // Si l’utilisateur n’a pas saisi de description, on reconstruit depuis les autres champs
-      let description = descLibre;
-      if (!description) {
-        const parts = [];
-        if (dimensions) parts.push(`Dimensions : ${dimensions}`);
-        if (exigences) parts.push(`Exigences : ${exigences}`);
-        if (remarques) parts.push(`Remarques : ${remarques}`);
-        description = parts.join("\n");
-      }
-
-      // Remplace/ajoute les champs attendus par le back
-      fd.set("titre", titre);
-      fd.set("description", description);
-
-      const userId = localStorage.getItem("id");
-      if (userId) fd.append("user", userId);
-
-      // ✅ NORMALISATION EN -> FR (aucun impact visuel/UX)
-      normalizeMatiere(fd);
-
-      const res = await fetch("/api/devis/autre", {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-      });
-
-      let payload = null;
-      try { payload = await res.json(); } catch { }
-
-      if (res.ok) {
-        finishedRef.current = true;
-        setErr("");
-        setOk(t.has("sendSuccess") ? t("sendSuccess") : "Demande envoyée. Merci !");
-        form.reset();
-        setFiles([]);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        return;
-      }
-
-      const msg = payload?.message || `Erreur lors de l’envoi. (HTTP ${res.status})`;
-      setErr(msg);
-    } catch (e) {
-      console.error("submit autre error:", e);
-      if (!finishedRef.current) setErr("Erreur réseau.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const disabled = loading || !user?.authenticated || user?.role !== "client";
 
