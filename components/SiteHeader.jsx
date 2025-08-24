@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Facebook, Linkedin } from "lucide-react";
+import { Facebook, Linkedin, MoreVertical, User, LogOut } from "lucide-react";
 import { CircleFlag } from "react-circle-flags";
 
 /* ---------------------------- API backend ---------------------------- */
@@ -107,11 +107,12 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     return () => { alive = false; };
   }, []);
 
-  const isClient =
-    mode === "client" || me?.role === "client" || hintRole === "client" || urlClient === true;
+  /* ⚙️ États “client connecté” vs “nav client” */
+  const isLoggedClient = mode === "client" || me?.role === "client" || hintRole === "client"; // ← garde les 3 points
+  const isClientNav   = isLoggedClient || urlClient === true; // nav client élargie (catégories, etc.)
 
-  /* home href qui conserve ?client=1 */
-  const homeHref = `/${locale}${isClient ? "?client=1" : ""}`;
+  /* home href qui conserve ?client=1 si nav client */
+  const homeHref = `/${locale}${isClientNav ? "?client=1" : ""}`;
 
   /* catégories */
   useEffect(() => {
@@ -137,12 +138,13 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     };
   }, []);
 
-  /* scroll vers section home (en conservant ?client=1) */
+  /* scroll vers section home (SANS hash) */
   const goToSection = useCallback(
     async (id, closeMenu) => {
       const doScroll = () => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (location.hash) history.replaceState(null, "", location.pathname + location.search);
         if (closeMenu) setOpen(false);
       };
       if (!homePaths.includes(pathname)) {
@@ -155,7 +157,23 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     [pathname, router, homeHref]
   );
 
-  /* switch langue (préserver ?client=1) */
+  /* Interception des liens internes #... / data-scrollto */
+  useEffect(() => {
+    const handler = (e) => {
+      const t = e.target.closest('a[href^="#"], [data-scrollto], button[data-scrollto]');
+      if (!t) return;
+      const raw = t.getAttribute("data-scrollto") || t.getAttribute("href");
+      if (!raw) return;
+      const id = raw.replace(/^#/, "").trim();
+      if (!id) return;
+      e.preventDefault();
+      goToSection(id, false);
+    };
+    document.addEventListener("click", handler, true);
+    return () => document.removeEventListener("click", handler, true);
+  }, [goToSection]);
+
+  /* switch langue */
   const switchLang = useCallback(
     (next) => {
       if (next === locale) return;
@@ -164,14 +182,14 @@ export default function SiteHeader({ mode = "public", onLogout }) {
       let nextPath = swapLocaleInPath(pathname, next);
       try {
         const search = new URLSearchParams(window.location.search);
-        if (isClient) search.set("client", "1");
+        if (isClientNav) search.set("client", "1");
         const qs = search.toString();
         if (qs) nextPath = `${nextPath.split("?")[0]}?${qs}`;
       } catch {}
       router.push(nextPath, { scroll: false });
       try { localStorage.setItem("mtr_locale", next); } catch {}
     },
-    [pathname, router, locale, isClient]
+    [pathname, router, locale, isClientNav]
   );
 
   /* menu Produits (parents → enfants) */
@@ -250,7 +268,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     );
   };
 
-  /* items client */
+  /* --------- NAV items pour client (SANS "Mon Profil") --------- */
   const ClientNavItemsDesktop = () => {
     const [servicesOpen, setServicesOpen] = useState(false);
     const ref = useRef(null);
@@ -262,9 +280,6 @@ export default function SiteHeader({ mode = "public", onLogout }) {
 
     return (
       <>
-        <Link href={`/${locale}/client/profile`} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
-          Mon Profil
-        </Link>
         <Link href={`/${locale}/client/reclamations`} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]">
           Réclamer
         </Link>
@@ -282,10 +297,10 @@ export default function SiteHeader({ mode = "public", onLogout }) {
           {servicesOpen && (
             <div role="menu" className="absolute left-0 top-full mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
               <Link href={`/${locale}/client/mes-devis`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                Mes devis
+                Mes demandes devis
               </Link>
-              <Link href={`/${locale}/client/reclamations`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                Réclamations
+              <Link href={`/${locale}/client/mes-reclamations`} role="menuitem" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                Mes réclamations
               </Link>
             </div>
           )}
@@ -300,17 +315,14 @@ export default function SiteHeader({ mode = "public", onLogout }) {
 
   const ClientNavItemsMobile = () => (
     <>
-      <Link href={`/${locale}/client/profile`} className="rounded px-3 py-2 hover:bg-slate-50" onClick={() => setOpen(false)}>
-        Mon Profil
-      </Link>
       <details>
         <summary className="px-3 py-2 cursor-pointer select-none">Mes services</summary>
         <div className="pl-4 flex flex-col">
           <Link href={`/${locale}/client/mes-devis`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
-            Mes devis
+            Mes demandes devis
           </Link>
-          <Link href={`/${locale}/client/reclamations`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
-            Réclamations
+          <Link href={`/${locale}/client/mes-reclamations`} className="px-3 py-2 rounded hover:bg-slate-50" onClick={() => setOpen(false)}>
+            Mes réclamations
           </Link>
         </div>
       </details>
@@ -320,8 +332,51 @@ export default function SiteHeader({ mode = "public", onLogout }) {
     </>
   );
 
-  /* ✅ Logout par défaut (si onLogout n'est pas fourni) */
-  const handleLogout = async () => {
+  /* --------- Menu utilisateur (icône 3 points) --------- */
+  const UserMenu = () => {
+    const [uOpen, setUOpen] = useState(false);
+    const ref = useRef(null);
+    useEffect(() => {
+      const onDoc = (e) => { if (!ref.current?.contains(e.target)) setUOpen(false); };
+      document.addEventListener("mousedown", onDoc);
+      return () => document.removeEventListener("mousedown", onDoc);
+    }, []);
+    return (
+      <div ref={ref} className="relative">
+        <button
+          type="button"
+          onClick={() => setUOpen((s) => !s)}
+          aria-label="Menu utilisateur"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-[#0B2239] hover:bg-slate-50"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {uOpen && (
+          <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl z-50">
+            <Link
+              href={`/${locale}/client/profile`}
+              onClick={() => setUOpen(false)}
+              className="flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <User className="h-4 w-4" />
+              Profil
+            </Link>
+            <button
+              onClick={() => { setUOpen(false); (onLogout || handleLogout)(); }}
+              className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Se déconnecter
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  /* Logout (fallback si onLogout non fourni) */
+  async function handleLogout() {
     try {
       await fetch("/api/logout", { method: "POST", credentials: "include" });
     } catch (e) {
@@ -332,11 +387,9 @@ export default function SiteHeader({ mode = "public", onLogout }) {
         localStorage.removeItem("userRole");
         localStorage.removeItem("rememberMe");
       } catch {}
-      // redirection vers la page de login locale
       router.push(`/${locale}/login`);
     }
-  };
-  const effectiveLogout = onLogout || handleLogout;
+  }
 
   /* render */
   return (
@@ -394,7 +447,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
               </Link>
 
               {/* sections home : public partout / client seulement sur home */}
-              {(!isClient || isHome) && (
+              {(!isClientNav || isHome) && (
                 <>
                   <button type="button" onClick={() => goToSection("presentation")} className="px-3 py-2 text-sm font-semibold text-[#0B2239] hover:text-[#F5B301]" role="link">
                     L&apos;entreprise
@@ -409,18 +462,13 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                 </>
               )}
 
-              {isClient && <ClientNavItemsDesktop />}
+              {isClientNav && <ClientNavItemsDesktop />}
             </nav>
 
             {/* actions droite */}
             <div className="flex items-center gap-3">
-              {isClient ? (
-                <button
-                  onClick={effectiveLogout}
-                  className="hidden md:inline-block rounded-xl px-4 py-2 text-sm font-semibold bg-[#F5B301] hover:brightness-95 text-[#0B2239] shadow"
-                >
-                  Se déconnecter
-                </button>
+              {isLoggedClient ? (
+                <UserMenu />
               ) : (
                 <Link
                   href={`/${locale}/devis`}
@@ -429,6 +477,8 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                   Demander un devis
                 </Link>
               )}
+
+              {/* bouton hamburger pour le menu mobile global */}
               <button
                 onClick={() => setOpen((s) => !s)}
                 aria-label="Ouvrir le menu"
@@ -448,7 +498,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                 Accueil
               </Link>
 
-              {(!isClient || isHome) && (
+              {(!isClientNav || isHome) && (
                 <>
                   <button type="button" onClick={() => goToSection("presentation", true)} className="text-left rounded px-3 py-2 hover:bg-slate-50" role="link">
                     L&apos;entreprise
@@ -465,14 +515,12 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                 </>
               )}
 
-              {isClient && <ClientNavItemsMobile />}
+              {isClientNav && <ClientNavItemsMobile />}
 
               <div className="h-px bg-slate-200 my-2" />
-              {isClient ? (
-                <button onClick={effectiveLogout} className="rounded-xl px-4 py-2 text-sm font-semibold bg-[#F5B301] hover:brightness-95 text-[#0B2239] shadow">
-                  Se déconnecter
-                </button>
-              ) : (
+
+              {/* Demander un devis seulement si NON connecté */}
+              {!isLoggedClient && (
                 <Link
                   href={`/${locale}/devis`}
                   onClick={() => setOpen(false)}

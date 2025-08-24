@@ -59,6 +59,33 @@
       "registerFailed": "Création du compte a échoué !"
     },
     "client": {
+      "claimsPage": {
+        "title": "Mes réclamations",
+        "subtitle": "Suivez vos réclamations et téléchargez leurs PDF.",
+        "searchPlaceholder": "Rechercher (numéro, type, nature, attente, date…)",
+        "clear": "Effacer",
+        "loading": "Chargement…",
+        "noData": "Aucune réclamation.",
+        "table": {
+          "document": "Document",
+          "nature": "Nature",
+          "attente": "Attente",
+          "createdAt": "Créée",
+          "pdf": "PDF"
+        },
+        "actions": {
+          "open": "Ouvrir"
+        },
+        "notYet": "Pas encore",
+        "errors": {
+          "fileNotFound": "Fichier introuvable",
+          "cannotOpen": "Impossible d’ouvrir ce fichier."
+        },
+        "aria": {
+          "openPdf": "Ouvrir le PDF",
+          "clear": "Effacer"
+        }
+      },
       "welcome": "Bienvenue {name}",
       "you": "vous",
       "orders": "Mes commandes",
@@ -81,7 +108,7 @@
       },
       "quoteRequest": "Demander un devis",
       "logout": "Se déconnecter",
-       "quotesPage": {
+      "quotesPage": {
         "title": "Mes demandes de devis",
         "subtitle": "Toutes vos demandes envoyées, triées du plus récent au plus ancien.",
         "searchPlaceholder": "Rechercher par n° de devis, type…",
@@ -593,7 +620,9 @@
       "title": "Raccourcis",
       "home": "Accueil",
       "homeHint": "Retour à l’accueil",
+      "claimsHint": "Mes réclamations",
       "orders": "Mes commandes",
+      "claims": "Mes réclamations",
       "ordersHint": "Historique & suivi",
       "help": "Aide & support",
       "helpHint": "FAQ, contact",

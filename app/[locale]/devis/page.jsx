@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 
@@ -22,6 +23,80 @@ import autreImg from "@/public/devis/autre.jpg";
 export default function DevisPage() {
   const [type, setType] = useState("compression");
   const t = useTranslations("auth.devis");
+  const router = useRouter();
+  const pathname = usePathname();
+  const locale = useLocale();
+
+  const hasLocalePrefix = /^\/(fr|en)(\/|$)/.test(pathname || "");
+  const loginHref = hasLocalePrefix ? `/${locale}/login` : "/login";
+
+  // Rendre le CTA cliquable ET bleu
+  useEffect(() => {
+    const labels = [
+      "Connectez-vous pour envoyer",
+      "Se connecter pour envoyer",
+      "Sign in to submit",
+      "Login to submit",
+    ];
+
+    const enhance = () => {
+      const buttons = Array.from(document.querySelectorAll("button"));
+      buttons.forEach((btn) => {
+        if (btn.dataset._loginEnhanced === "1") return;
+
+        const text = (btn.textContent || "").trim();
+        if (!text || !labels.some((l) => text.includes(l))) return;
+
+        // rendre cliquable
+        btn.removeAttribute("disabled");
+        btn.dataset._loginEnhanced = "1";
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          router.push(loginHref);
+        });
+
+        // nettoyer le style "désactivé" gris
+        btn.classList.remove(
+          "cursor-not-allowed",
+          "opacity-60",
+          "bg-gray-100",
+          "bg-gray-200",
+          "bg-gray-300",
+          "bg-slate-100",
+          "bg-slate-200",
+          "bg-slate-300",
+          "text-gray-500",
+          "text-slate-500",
+        );
+
+        // supprimer toute classe bg/text grise résiduelle (au cas où)
+        [...btn.classList]
+          .filter((c) => /^bg-(gray|slate)-/.test(c) || /^text-(gray|slate)-/.test(c))
+          .forEach((c) => btn.classList.remove(c));
+
+        // appliquer le bleu (brand)
+        btn.classList.add(
+          "bg-[#0B1E3A]",
+          "text-white",
+          "hover:bg-[#0A1B33]",
+          "focus:outline-none",
+          "focus:ring-2",
+          "focus:ring-[#0B1E3A]/40",
+          "transition-colors",
+          "duration-150",
+          "cursor-pointer",
+          "rounded-lg",
+          "px-4",
+          "py-2"
+        );
+      });
+    };
+
+    enhance();
+    const mo = new MutationObserver(enhance);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [router, loginHref, type]);
 
   const TYPES = [
     { key: "compression", label: t("types.compression") || "", img: compressionImg },
@@ -46,14 +121,11 @@ export default function DevisPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* NAVBAR réutilisée */}
       <SiteHeader />
-
       <div className="max-w-6xl mx-auto p-6">
         <h1 className="text-3xl font-bold text-[#002147] text-center">{t("title")}</h1>
         <p className="text-gray-600 mt-1 text-center">{t("subtitle")}</p>
 
-        {/* Liste des types */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {TYPES.map(({ key, label, img }) => {
             const active = type === key;
@@ -76,7 +148,6 @@ export default function DevisPage() {
           })}
         </div>
 
-        {/* Formulaire affiché */}
         <div className="mt-8 bg-white rounded-2xl shadow p-6">
           {renderForm()}
         </div>

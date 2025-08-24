@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { FiSearch, FiXCircle } from "react-icons/fi";
+import { FiSearch, FiXCircle, FiExternalLink } from "react-icons/fi";
 import Pagination from "@/components/Pagination";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -30,6 +30,38 @@ function writeOrdered(map) {
   } catch {}
 }
 /* ------------------------------------------------- */
+
+/* === Chip “Ouvrir” (icône lien, hover jaune, icône qui glisse) === */
+/* === Chip “Ouvrir” : bordure JAUNE + hover inchangé === */
+function OpenChip({ onClick, label = "Ouvrir", tooltip, className = "" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={tooltip || label}
+      aria-label={tooltip || label}
+      className={[
+        "group inline-flex items-center gap-1.5 rounded-full",
+        "px-3 py-1 text-sm font-medium",
+        // bordure jaune par défaut
+        "bg-white/80 backdrop-blur border border-[#F5B301] text-[#0B1E3A]",
+        "shadow-[0_1px_0_rgba(0,0,0,0.03)]",
+        // hover: fond jaune léger (on garde l’animation)
+        "hover:bg-[#F5B301]/10",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F5B301]/60",
+        "transition-colors duration-200 active:scale-[0.98]",
+        className,
+      ].join(" ")}
+    >
+      <FiExternalLink
+        className="h-4 w-4 opacity-80 transition-transform duration-200 group-hover:translate-x-0.5"
+        aria-hidden="true"
+      />
+      <span>{label}</span>
+    </button>
+  );
+}
+
 
 export default function MesDevisPage() {
   const t = useTranslations("auth.client.quotesPage");
@@ -271,13 +303,12 @@ export default function MesDevisPage() {
         throw new Error(j?.message || "Erreur envoi");
       }
 
-      // succès : on met à jour l’état, pas de popup
       setOrdered((prev) => {
         const next = { ...prev, [it._id]: true };
         writeOrdered(next);
         return next;
       });
-      setError(""); // efface un éventuel ancien message
+      setError("");
     } catch (e) {
       setError(e.message || "Impossible d’envoyer la commande");
     } finally {
@@ -322,15 +353,13 @@ export default function MesDevisPage() {
     return (
       <div className="flex flex-wrap gap-2">
         {shown.map((f, i) => (
-          <button
+          <OpenChip
             key={i}
-            type="button"
             onClick={() => openDoc(it, f, f.index ?? i)}
-            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-            title={f?.name || "Fichier joint"}
-          >
-            Ouvrir
-          </button>
+            label="Ouvrir"
+            tooltip={f?.name || "Fichier joint"}
+            className="!px-3 !py-1"
+          />
         ))}
         {extra > 0 && <span className="text-xs text-slate-600">+{extra}</span>}
       </div>
@@ -351,31 +380,27 @@ export default function MesDevisPage() {
         <div className="text-xs text-slate-500">{t("table.type")}</div>
         <div>{it.typeLabel || it.type || "-"}</div>
 
-        <div className="text-xs text-slate-500">PDF DDV</div>
+        <div className="text-xs text-slate-500">Demande de devis</div>
         <div>
           {it.hasPdf || it.pdfUrl ? (
-            <button
-              onClick={() => openDdvPdf(it)}
-              className="inline-flex items-center justify-center rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-            >
-              Ouvrir
-            </button>
+            <OpenChip onClick={() => openDdvPdf(it)} label="Ouvrir" tooltip="Ouvrir le PDF" />
           ) : (
             <span className="text-slate-400">—</span>
           )}
         </div>
 
-        <div className="text-xs text-slate-500">DV (Devis)</div>
+        <div className="text-xs text-slate-500">Devis</div>
         <div>
           {existeDevis ? (
-            <button
+            <OpenChip
               onClick={() => openDevisPdf(it._id)}
-              className="inline-flex items-center justify-center rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-            >
-              Ouvrir
-            </button>
+              label="Ouvrir"
+              tooltip={devisMap[it._id]?.numero ? `Devis ${devisMap[it._id].numero}` : "Ouvrir"}
+            />
           ) : (
-            <span className="text-slate-500">{NOT_YET}</span>
+            <span className="inline-block rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-xs font-medium">
+              {NOT_YET}
+            </span>
           )}
         </div>
 
@@ -383,7 +408,6 @@ export default function MesDevisPage() {
         <FilesCell it={it} />
 
         <div className="text-xs text-slate-500">{t("table.createdAt")}</div>
-        <div className="text-slate-700">{prettyDate(it.createdAt)}</div>
 
         {/* Action (remplace le statut) */}
         <div className="pt-1">
@@ -395,12 +419,14 @@ export default function MesDevisPage() {
             <button
               onClick={() => placeOrder(it)}
               disabled={placing[it._id]}
-              className="mt-1 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+              className="mt-1 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
               {placing[it._id] ? "Envoi..." : t("actions.order")}
             </button>
           ) : (
-            <span className="text-xs text-slate-600">Commande non confirmée</span>
+            <span className="inline-block rounded-full bg-rose-50 text-rose-700 px-2 py-0.5 text-xs font-medium">
+              Commande non confirmée
+            </span>
           )}
         </div>
       </div>
@@ -415,9 +441,7 @@ export default function MesDevisPage() {
           {t("title")}
         </h1>
         <p className="text-sm text-slate-500">{t("subtitle")}</p>
-        {error && (
-          <p className="mt-1 text-sm text-rose-600">{error}</p>
-        )}
+        {error && <p className="mt-1 text-sm text-rose-600">{error}</p>}
       </header>
 
       {/* recherche */}
@@ -431,7 +455,7 @@ export default function MesDevisPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-xl border border-gray-300 bg-white px-9 pr-9 py-2 text-sm text-[#0B1E3A] shadow focus:border-[#F7C600] focus:ring-2 focus:ring-[#F7C600]/30 outline-none transition"
+            className="w-full rounded-xl border border-gray-300 bg-white px-9 pr-9 py-2 text-sm text-[#0B1E3A] shadow focus:border-[#F5B301] focus:ring-2 focus:ring-[#F5B301]/30 outline-none transition"
           />
           {q && (
             <button
@@ -474,37 +498,33 @@ export default function MesDevisPage() {
               <thead>
                 <tr className="bg-white">
                   <th className="p-3 text-left">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                       {t("table.number")}
                     </div>
                   </th>
                   <th className="p-3 text-left">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                       {t("table.type")}
                     </div>
                   </th>
                   <th className="p-3 text-left">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      PDF DDV
+                    <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
+                      Demande de devis
                     </div>
                   </th>
+                 
                   <th className="p-3 text-left">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      DV
-                    </div>
-                  </th>
-                  <th className="p-3 text-left">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                       {t("table.files")}
                     </div>
                   </th>
-                  <th className="p-3 text-left">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      {t("table.createdAt")}
+                   <th className="p-3 text-left">
+                    <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
+                      Devis
                     </div>
                   </th>
                   <th className="p-3 text-right whitespace-nowrap">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">
                       {t("table.order")}
                     </div>
                   </th>
@@ -518,7 +538,6 @@ export default function MesDevisPage() {
               <tbody className="divide-y divide-gray-100">
                 {pageItems.map((it) => {
                   const existeDevis = hasDevis(it._id);
-                  const devisInfo = devisMap[it._id];
                   const dejaCommande = !!ordered[it._id];
                   return (
                     <tr
@@ -536,36 +555,27 @@ export default function MesDevisPage() {
                       </td>
                       <td className="p-3 align-top">
                         {(it.hasPdf || it.pdfUrl) ? (
-                          <button
-                            type="button"
-                            onClick={() => openDdvPdf(it)}
-                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-                          >
-                            Ouvrir
-                          </button>
+                          <OpenChip onClick={() => openDdvPdf(it)} label="Ouvrir" tooltip="Ouvrir le PDF" />
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
-                      <td className="p-3 align-top">
-                        {existeDevis ? (
-                          <button
-                            type="button"
-                            onClick={() => openDevisPdf(it._id)}
-                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-0.5 text-xs hover:bg-slate-50 text-[#0B1E3A]"
-                            title={devisInfo?.numero ? `Devis ${devisInfo.numero}` : "Devis"}
-                          >
-                            Ouvrir
-                          </button>
-                        ) : (
-                          <span className="text-slate-500">{NOT_YET}</span>
-                        )}
-                      </td>
+                    
                       <td className="p-3 align-top">
                         <FilesCell it={it} />
                       </td>
-                      <td className="p-3 align-top text-[#0B1E3A]">
-                        {prettyDate(it.createdAt)}
+                        <td className="p-3 align-top">
+                        {existeDevis ? (
+                          <OpenChip
+                            onClick={() => openDevisPdf(it._id)}
+                            label="Ouvrir"
+                            tooltip={devisMap[it._id]?.numero ? `Devis ${devisMap[it._id].numero}` : "Ouvrir"}
+                          />
+                        ) : (
+                          <span className="inline-block rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-xs font-medium">
+                            {NOT_YET}
+                          </span>
+                        )}
                       </td>
                       <td className="p-3 align-top text-right whitespace-nowrap">
                         {dejaCommande ? (
@@ -581,7 +591,9 @@ export default function MesDevisPage() {
                             {placing[it._id] ? "Envoi..." : t("actions.order")}
                           </button>
                         ) : (
-                          <span className="text-sm text-slate-600">Commande non confirmée</span>
+                          <span className="inline-block rounded-full bg-rose-50 text-rose-700 px-2 py-0.5 text-sm font-medium">
+                            Commande non confirmée
+                          </span>
                         )}
                       </td>
                     </tr>
