@@ -8,7 +8,7 @@ import SiteHeader from "@/components/SiteHeader";
 const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000").replace(/\/$/, "");
 const API = `${BACKEND}/api`;
 
-// ترجّع نص بالفرنسي أو الانجليزي حسب المتوفر
+// Helper: retourner fr/en selon locale avec fallback
 const pick = (obj, frKey, enKey, locale = "fr") =>
   (locale?.startsWith("en") ? obj?.[enKey] : obj?.[frKey]) ||
   obj?.[frKey] || obj?.[enKey] || "";
@@ -22,6 +22,7 @@ export default function ProductDetailPage() {
   const [err, setErr] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
 
+  // Charger le produit (essaie /produits/:id puis /products/:id)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -29,7 +30,6 @@ export default function ProductDetailPage() {
         setLoading(true);
         setErr("");
 
-        // نحاول أولا /produits/:id وإذا ما لقاهاش نجرّب /products/:id
         let res = await fetch(`${API}/produits/${productId}`, { cache: "no-store" });
         if (!res.ok) {
           const res2 = await fetch(`${API}/products/${productId}`, { cache: "no-store" });
@@ -52,7 +52,8 @@ export default function ProductDetailPage() {
   const desc = product ? pick(product, "description_fr", "description_en", locale) : "";
   const images = Array.isArray(product?.images) ? product.images : [];
 
-  const toUrl = (src) => (src?.startsWith("http") ? src : `${BACKEND}${src?.startsWith("/") ? "" : "/"}${src || ""}`);
+  const toUrl = (src) =>
+    src?.startsWith("http") ? src : `${BACKEND}${src?.startsWith("/") ? "" : "/"}${src || ""}`;
 
   return (
     <>
@@ -63,8 +64,11 @@ export default function ProductDetailPage() {
           <nav className="text-sm text-slate-500 mb-6">
             <button onClick={() => router.push(`/${locale}`)} className="hover:underline">Accueil</button>
             <span className="mx-2">/</span>
-            <button onClick={() => router.push(`/${locale}/produits/${slug}`)} className="hover:underline capitalize">
-              {slug?.replace(/-/g, " ")}
+            <button
+              onClick={() => router.push(`/${locale}/produits/${slug}`)}
+              className="hover:underline capitalize"
+            >
+              {String(slug || "").replace(/-/g, " ")}
             </button>
             <span className="mx-2">/</span>
             <span className="text-slate-700 font-semibold">{name || "Produit"}</span>
@@ -84,7 +88,7 @@ export default function ProductDetailPage() {
                   <Image
                     key={activeIdx}
                     src={toUrl(images[activeIdx] || "/placeholder.png")}
-                    alt={name}
+                    alt={name || "Produit"}
                     fill
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover"
@@ -97,8 +101,9 @@ export default function ProductDetailPage() {
                       <button
                         key={i}
                         onClick={() => setActiveIdx(i)}
-                        className={`relative h-24 rounded-lg overflow-hidden ring-2 transition
-                          ${i === activeIdx ? "ring-[#F5B301]" : "ring-transparent hover:ring-slate-300"}`}
+                        className={`relative h-24 rounded-lg overflow-hidden ring-2 transition ${
+                          i === activeIdx ? "ring-[#F5B301]" : "ring-transparent hover:ring-slate-300"
+                        }`}
                         aria-label={`Image ${i + 1}`}
                       >
                         <Image
