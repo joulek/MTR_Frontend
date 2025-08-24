@@ -21,7 +21,7 @@ import {
   Line,
 } from "recharts";
 
-const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000").replace(/\/$/, "");
+const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/").replace(/\/$/, "");
 
 /* -------------------- helpers -------------------- */
 function iso(d) {

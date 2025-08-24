@@ -23,7 +23,7 @@ export default function RegisterPage() {
   const [okMsg, setOkMsg] = useState("");
 
   const BACKEND =
-    (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000").replace(/\/$/, "");
+    (process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/").replace(/\/$/, "");
 
   const handleSubmit = async (e) => {
     e.preventDefault();

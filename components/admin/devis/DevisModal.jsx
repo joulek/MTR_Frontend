@@ -2,32 +2,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
 
 export default function DevisModal({ open, onClose, demande }) {
   const router = useRouter();
 
   const [article, setArticle] = useState(null);
-  const [articleLoaded, setArticleLoaded] = useState(false); // ✅ nouvel état
+  const [articleLoaded, setArticleLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
-  // N° devis
   const [numero, setNumero] = useState("");
   const [customNum, setCustomNum] = useState(false);
 
-  // Qté / Remise / TVA
   const [quantite, setQuantite] = useState(1);
   const [remise, setRemise] = useState(0);
   const [tva, setTva] = useState(19);
 
-  // Aller vers la création d’article (avec pré-remplissage via query params)
   function goCreateArticle() {
-  
     router.push(`/fr/admin/articles`);
   }
 
-  // Récupérer l’article lié à la demande
   async function fetchArticle() {
     setArticleLoaded(false);
     try {
@@ -46,10 +41,8 @@ export default function DevisModal({ open, onClose, demande }) {
   useEffect(() => {
     if (!open || !demande?._id) return;
 
-    // 1) article lié
     fetchArticle();
 
-    // 2) preview prochain numéro de devis
     (async () => {
       try {
         const r = await fetch(`${BACKEND}/api/devis/admin/next-number`, { credentials: "include" });
@@ -95,7 +88,19 @@ export default function DevisModal({ open, onClose, demande }) {
         body: JSON.stringify(body),
       });
       const json = await res.json().catch(() => null);
-      if (json?.success) setPdfUrl(json.pdf || "");
+
+      if (json?.success) {
+        setPdfUrl(json.pdf || "");
+        // ⬇️ Fermer le modal immédiatement après la création
+        onClose?.();
+        // (optionnel) rafraîchir l’écran parent pour voir la liste à jour
+        router.refresh?.();
+      } else {
+        alert(json?.message || "Échec de création du devis.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erreur réseau lors de la création du devis.");
     } finally {
       setLoading(false);
     }
@@ -118,39 +123,12 @@ export default function DevisModal({ open, onClose, demande }) {
           />
         </div>
 
-        {/* N° devis */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <label className="block">N° devis</label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={customNum}
-                onChange={(e) => setCustomNum(e.target.checked)}
-              />
-              Personnaliser
-            </label>
-          </div>
-          <input
-            value={numero}
-            onChange={(e) => setNumero(e.target.value)}
-            readOnly={!customNum}
-            className={`w-full border rounded-lg p-2 ${customNum ? "bg-white" : "bg-gray-100 cursor-not-allowed"}`}
-            placeholder="DV2500001"
-          />
-          {!customNum && <p className="text-xs text-gray-500 mt-1">Généré automatiquement.</p>}
-        </div>
-
         {/* Article lié */}
         <div className="mb-3">
           <label className="block text-sm mb-1">Article lié à la demande</label>
 
-          {/* 1) Chargement */}
-          {!articleLoaded && (
-            <div className="rounded-lg border p-3 bg-gray-50 animate-pulse h-16" />
-          )}
+          {!articleLoaded && <div className="rounded-lg border p-3 bg-gray-50 animate-pulse h-16" />}
 
-          {/* 2) Trouvé */}
           {articleLoaded && article && (
             <div className="rounded-lg border p-3 bg-gray-50">
               <div className="font-medium">
@@ -167,7 +145,6 @@ export default function DevisModal({ open, onClose, demande }) {
             </div>
           )}
 
-          {/* 3) Non trouvé */}
           {articleLoaded && !article && (
             <div className="flex items-center gap-2">
               <button
@@ -239,14 +216,6 @@ export default function DevisModal({ open, onClose, demande }) {
             {loading ? "Création..." : "Créer & envoyer"}
           </button>
         </div>
-
-        {pdfUrl && (
-          <div className="mt-4">
-            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-              Ouvrir le PDF
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ import { CircleFlag } from "react-circle-flags";
 
 /* ---------------------------- API backend ---------------------------- */
 const BACKEND = (
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/"
 ).replace(/\/$/, "");
 const API = `${BACKEND}/api`;
 
@@ -100,7 +100,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
           if (json?.role) {
             try {
               localStorage.setItem("mtr_role", json.role);
-            } catch {}
+            } catch { }
             setHintRole(json.role);
           }
         } else {
@@ -108,14 +108,14 @@ export default function SiteHeader({ mode = "public", onLogout }) {
           setHintRole(null);
           try {
             localStorage.removeItem("mtr_role");
-          } catch {}
+          } catch { }
         }
       } catch (e) {
         setMe(null);
         setHintRole(null);
         try {
           localStorage.removeItem("mtr_role");
-        } catch {}
+        } catch { }
         if (process.env.NODE_ENV !== "production")
           console.warn("[SiteHeader] /me error:", e);
       }
@@ -189,7 +189,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
       router.push(nextPath, { scroll: false });
       try {
         localStorage.setItem("mtr_locale", next);
-      } catch {}
+      } catch { }
     },
     [pathname, router, locale]
   );
@@ -257,10 +257,9 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                       href={makeCatHref(parent, locale)}
                       onMouseEnter={() => setHoveredParent(id)}
                       className={`flex items-center justify-between rounded-md px-4 py-3 text-sm transition
-                        ${
-                          active
-                            ? "bg-[#F5B301] text-[#0B2239]"
-                            : "text-[#0B2239] hover:bg-[#F5B301] hover:text-[#0B2239]"
+                        ${active
+                          ? "bg-[#F5B301] text-[#0B2239]"
+                          : "text-[#0B2239] hover:bg-[#F5B301] hover:text-[#0B2239]"
                         }`}
                     >
                       {label}
@@ -442,7 +441,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
   /* Logout (fallback si onLogout non fourni) */
   async function handleLogout() {
     try {
-        await fetch(`${API}/auth/logout`, { method: "POST", credentials: "include" });
+      await fetch(`${API}/auth/logout`, { method: "POST", credentials: "include" });
     } catch (e) {
       console.error("Erreur logout", e);
     } finally {
@@ -450,7 +449,7 @@ export default function SiteHeader({ mode = "public", onLogout }) {
         localStorage.removeItem("mtr_role");
         localStorage.removeItem("userRole");
         localStorage.removeItem("rememberMe");
-      } catch {}
+      } catch { }
       setMe(null);
       setHintRole(null);
       router.replace(`/${locale}`);
@@ -515,9 +514,8 @@ export default function SiteHeader({ mode = "public", onLogout }) {
             <div className="flex items-center gap-2 ml-2">
               <button
                 onClick={() => switchLang("fr")}
-                className={`${
-                  locale === "fr" ? "ring-2 ring-[#F5B301] rounded-full" : ""
-                } p-0 bg-transparent border-0`}
+                className={`${locale === "fr" ? "ring-2 ring-[#F5B301] rounded-full" : ""
+                  } p-0 bg-transparent border-0`}
                 title="Français"
                 aria-pressed={locale === "fr"}
               >
@@ -528,9 +526,8 @@ export default function SiteHeader({ mode = "public", onLogout }) {
               </button>
               <button
                 onClick={() => switchLang("en")}
-                className={`${
-                  locale === "en" ? "ring-2 ring-[#F5B301] rounded-full" : ""
-                } p-0 bg-transparent border-0`}
+                className={`${locale === "en" ? "ring-2 ring-[#F5B301] rounded-full" : ""
+                  } p-0 bg-transparent border-0`}
                 title="English"
                 aria-pressed={locale === "en"}
               >
@@ -610,12 +607,23 @@ export default function SiteHeader({ mode = "public", onLogout }) {
               {isLoggedClient ? (
                 <UserMenu />
               ) : (
-                <Link
-                  href={`/${locale}/devis`}
-                  className="hidden md:inline-block rounded-full bg-[#F5B301] px-4 py-2 text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
-                >
-                  Demander un devis
-                </Link>
+                <>
+                  {/* Se connecter */}
+                  <Link
+                    href={`/${locale}/login`}
+                    className="hidden md:inline-block rounded-full bg-[#F5B301] px-4 py-2 text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
+                  >
+                    Se connecter
+                  </Link>
+
+                  {/* Demander un devis */}
+                  <Link
+                    href={`/${locale}/devis`}
+                    className="hidden md:inline-block rounded-full bg-[#F5B301] px-4 py-2 text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
+                  >
+                    Demander un devis
+                  </Link>
+                </>
               )}
 
               {/* bouton hamburger pour le menu mobile global */}
@@ -679,19 +687,26 @@ export default function SiteHeader({ mode = "public", onLogout }) {
                 </>
               )}
 
-              {isLoggedClient && <ClientNavItemsMobile />}
-
-              <div className="h-px bg-slate-200 my-2" />
-
               {!isLoggedClient && (
-                <Link
-                  href={`/${locale}/devis`}
-                  onClick={() => setOpen(false)}
-                  className="rounded-xl bg-[#F5B301] px-4 py-2 text-center text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
-                >
-                  Demander un devis
-                </Link>
+                <>
+                  <Link
+                    href={`/${locale}/devis`}
+                    onClick={() => setOpen(false)}
+                    className="rounded-xl bg-[#F5B301] px-4 py-2 text-center text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
+                  >
+                    Demander un devis
+                  </Link>
+
+                  <Link
+                    href={`/${locale}/login`}
+                    onClick={() => setOpen(false)}
+                    className="rounded-xl bg-[#F5B301] px-4 py-2 text-center text-sm font-semibold text-[#0B2239] shadow hover:brightness-95"
+                  >
+                    Se connecter
+                  </Link>
+                </>
               )}
+
             </div>
           </div>
         )}

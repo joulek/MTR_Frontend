@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { FiSearch, FiXCircle, FiExternalLink } from "react-icons/fi";
 import Pagination from "@/components/Pagination";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
 const NOT_YET = "Pas encore";
 
 /* -------------------- helpers -------------------- */

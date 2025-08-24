@@ -1,6 +1,6 @@
 // app/api/register/route.js
 import { NextResponse } from "next/server";
-const BACKEND_URL = "http://localhost:4000";
+const BACKEND_URL = "https://mtr-backend-fbq8.onrender.com/";
 
 export async function POST(request) {
   try {
