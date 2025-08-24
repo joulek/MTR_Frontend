@@ -37,6 +37,14 @@ function slugify(s = "") {
     .replace(/(^-|-$)+/g, "");
 }
 
+/* ---------- Label flottant (commun aux 4 champs) ---------- */
+const labelFloat =
+  "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 bg-white px-1 text-sm text-slate-500 " +
+  "transition-all duration-150 " +
+  "peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-slate-400 " +
+  "peer-focus:-top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-[#F5B301] " +
+  "peer-[&:not(:placeholder-shown)]:-top-2 peer-[&:not(:placeholder-shown)]:text-xs";
+
 /* =============================== PAGE =============================== */
 export default function HomeMTR() {
   const [form, setForm] = useState({
@@ -91,14 +99,11 @@ export default function HomeMTR() {
         if (!alive) return;
         setCategories(Array.isArray(data?.categories) ? data.categories : []);
       } catch (err) {
-        // ✅ considérer toutes les formes d’annulation → ne rien logguer en erreur
         const isAbort =
           err?.name === "AbortError" ||
           err?.message === "component-unmounted" ||
           err === "component-unmounted";
         if (isAbort) return;
-
-        // (optionnel) log non bloquant pour debug
         console.warn("Chargement catégories — échec:", err);
         if (alive) setCategories([]);
       } finally {
@@ -108,7 +113,6 @@ export default function HomeMTR() {
 
     return () => {
       alive = false;
-      // ✅ abort silencieux (pas de raison passée) → pas d’overlay
       if (!controller.signal.aborted) controller.abort();
     };
   }, []);
@@ -147,6 +151,7 @@ export default function HomeMTR() {
       setLoading(false);
     }
   };
+
   /* --------------------------- Petits composants --------------------------- */
   function AutoCarousel({ images = [], interval = 4000 }) {
     const [index, setIndex] = useState(0);
@@ -302,7 +307,7 @@ export default function HomeMTR() {
       {/* HERO */}
       <section
         id="accueil"
-        className="relative -mt-10 min-h-[86vh] flex items-center justify-center bg-cover bg-center md:bg-[center_top] text-white"
+        className="relative -mt-10 min-h-[86vh] flex items-center justify-center bg-cover bg-center md:bg[center_top] text-white"
         style={{ backgroundImage: "url('/hero.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/50" />
@@ -393,10 +398,7 @@ export default function HomeMTR() {
                   <p className="leading-relaxed text-slate-700">
                     Fondée en 1994 par <strong>Monsieur Hbaieb Chokri</strong>,
                     la
-                    <strong>
-                      {" "}
-                      Manufacture Tunisienne des Ressorts (MTR)
-                    </strong>{" "}
+                    <strong> Manufacture Tunisienne des Ressorts (MTR)</strong>{" "}
                     est une entreprise tunisienne de type SARL, spécialisée
                     depuis plus de 30 ans dans la conception et la fabrication
                     de ressorts : ressorts de <strong>compression</strong>, de{" "}
@@ -700,6 +702,7 @@ export default function HomeMTR() {
                 className="group rounded-3xl bg-white/90 p-6 shadow-xl ring-1 ring-slate-200 backdrop-blur"
               >
                 <div className="grid gap-5 sm:grid-cols-2">
+                  {/* Nom */}
                   <div className="relative">
                     <input
                       id="nom"
@@ -713,10 +716,12 @@ export default function HomeMTR() {
                       placeholder=" "
                       required
                     />
-                    <label htmlFor="nom" className="...">
+                    <label htmlFor="nom" className={labelFloat}>
                       Nom complet
                     </label>
                   </div>
+
+                  {/* Email */}
                   <div className="relative">
                     <input
                       id="email"
@@ -731,10 +736,12 @@ export default function HomeMTR() {
                       placeholder=" "
                       required
                     />
-                    <label htmlFor="email" className="...">
+                    <label htmlFor="email" className={labelFloat}>
                       E-mail
                     </label>
                   </div>
+
+                  {/* Sujet */}
                   <div className="relative sm:col-span-2">
                     <input
                       id="sujet"
@@ -747,10 +754,12 @@ export default function HomeMTR() {
                       placeholder=" "
                       required
                     />
-                    <label htmlFor="sujet" className="...">
+                    <label htmlFor="sujet" className={labelFloat}>
                       Sujet
                     </label>
                   </div>
+
+                  {/* Message */}
                   <div className="relative sm:col-span-2">
                     <textarea
                       id="message"
@@ -764,7 +773,7 @@ export default function HomeMTR() {
                       placeholder=" "
                       required
                     />
-                    <label htmlFor="message" className="...">
+                    <label htmlFor="message" className={labelFloat}>
                       Message
                     </label>
                   </div>
@@ -939,8 +948,7 @@ export default function HomeMTR() {
                 { label: "À propos", href: "#presentation" },
                 { label: "Produits", href: "#specialites" },
                 { label: "Demande de devis", href: "#contact" },
-                { label: "Politique de remboursement", href: "#" },
-                { label: "Projets", href: "#" },
+
               ].map((l, i) => (
                 <li key={i}>
                   <a
@@ -962,8 +970,7 @@ export default function HomeMTR() {
                 { label: "Help Desk", href: "#contact" },
                 { label: "Catalogue", href: "#specialites" },
                 { label: "Contact", href: "#contact" },
-                { label: "Portfolio", href: "#specialites" },
-                { label: "Équipe", href: "#presentation" },
+
               ].map((l, i) => (
                 <li key={i}>
                   <a

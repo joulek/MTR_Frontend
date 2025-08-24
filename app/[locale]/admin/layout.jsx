@@ -164,9 +164,6 @@ export default function AdminLayout({ children }) {
               <NavItem href={`${rootAdmin}`} icon={FaTachometerAlt}>
                 {t("dashboard")}
               </NavItem>
-              <NavItem href={`${rootAdmin}/orders`} icon={FaShoppingCart}>
-                {t("orders")}
-              </NavItem>
               <NavItem href={`${rootAdmin}/categories`} icon={FaTags}>
                 {t.has("categories") ? t("categories") : "Catégories"}
               </NavItem>
@@ -236,9 +233,6 @@ export default function AdminLayout({ children }) {
                 <nav className="mt-3 space-y-1 pb-2">
                   <NavItem href={`${rootAdmin}`} icon={FaTachometerAlt}>
                     {t("dashboard")}
-                  </NavItem>
-                  <NavItem href={`${rootAdmin}/orders`} icon={FaShoppingCart}>
-                    {t("orders")}
                   </NavItem>
                   <NavItem href={`${rootAdmin}/categories`} icon={FaTags}>
                     {t.has("categories") ? t("categories") : "Catégories"}

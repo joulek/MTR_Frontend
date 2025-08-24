@@ -2,12 +2,15 @@
 
 import { useState, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useLocale } from "next-intl";
+
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
 export default function SetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const locale = pathname.split("/")[1] || "fr";
+  const locale = useLocale(); // ✅ la vraie locale (ex: "fr" ou "en")
 
   const uid = searchParams.get("uid") || "";
   const token = searchParams.get("token") || "";
@@ -38,7 +41,7 @@ export default function SetPasswordPage() {
 
     try {
       setLoading(true);
-      // 👉 on passe par le proxy Next.js, pas par l'URL backend
+
       const res = await fetch(`${BACKEND}/api/users/set-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,13 +49,15 @@ export default function SetPasswordPage() {
       });
 
       const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.message || `Erreur (${res.status})`);
-      }
+      if (!res.ok || !data?.success) throw new Error(data?.message || `Erreur (${res.status})`);
 
       setMsg({ type: "ok", text: "Mot de passe défini avec succès. Redirection…" });
-      setTimeout(() => router.push(`/${locale}/login`), 1500);
+
+      // ✅ Redirection correcte (avec ou sans préfixe de locale)
+      const hasLocalePrefix = /^\/(fr|en)(\/|$)/.test(pathname || "");
+      const dest = hasLocalePrefix ? `/${locale}/login` : "/login";
+
+      setTimeout(() => router.replace(dest), 1200); // replace pour éviter de revenir sur cette page
     } catch (e: any) {
       setMsg({ type: "err", text: e?.message || "Erreur réseau" });
     } finally {
