@@ -1,11 +1,15 @@
 // app/[locale]/layout.tsx
 import '../globals.css';
-import {NextIntlClientProvider} from 'next-intl';
-import {notFound} from 'next/navigation';
-import {ReactNode} from 'react';
+import { NextIntlClientProvider } from 'next-intl';
+import { notFound } from 'next/navigation';
+import { ReactNode } from 'react';
+
+// ⬇️ AJOUTS
+import CookieBanner from '@/components/CookieBanner';
+import AnalyticsGate from '@/components/AnalyticsGate';
 
 export function generateStaticParams() {
-  return [{locale:'fr'},{locale:'en'}];
+  return [{ locale: 'fr' }, { locale: 'en' }];
 }
 
 async function getMessages(locale: string) {
@@ -21,16 +25,20 @@ export default async function LocaleLayout({
   params
 }: {
   children: ReactNode;
-  params: Promise<{locale: string}>;  // ← Next 15
+  params: Promise<{ locale: string }>; // Next 15
 }) {
-  const {locale} = await params;      // ← await
+  const { locale } = await params;     // await le promise params
   const messages = await getMessages(locale);
 
   return (
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {children}
 
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+      {/* ⬇️ Bannière cookies visible si pas encore de consentement */}
+      <CookieBanner />
 
+      {/* ⬇️ Charge GA (ou autres scripts) seulement si consentement analytics = true */}
+      <AnalyticsGate />
+    </NextIntlClientProvider>
   );
 }
