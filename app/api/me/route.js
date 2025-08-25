@@ -2,32 +2,21 @@
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const BACKEND = (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com").replace(/\/$/,"");
 
 export async function GET() {
-  try {
-    // 🔁 Récupère le cookie de session du client et le forward au backend
-    const cookieHeader = cookies().toString(); // ex: "connect.sid=xxx; other=yyy"
-    const auth = headers().get("authorization") || "";
-
-    const res = await fetch(`${BACKEND_URL.replace(/\/$/, "")}/api/users/me`, {
-      method: "GET",
-      cache: "no-store",
-      headers: {
-        cookie: cookieHeader,            // ⬅️ indispensable pour la session !
-        authorization: auth,             // (si jamais tu utilises un Bearer)
-        "x-forwarded-by": "next-app",    // optionnel
-      },
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    // On renvoie le même code au front pour que le header sache si 401/403
-    return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    return NextResponse.json(
-      { message: "Erreur lors de la récupération du profil" },
-      { status: 500 }
-    );
-  }
+  const cookieHeader = cookies().toString();
+  const auth = headers().get("authorization") || "";
+  const res = await fetch(`${BACKEND}/api/users/me`, {
+    method: "GET",
+    cache: "no-store",
+    headers: { cookie: cookieHeader, authorization: auth }
+  });
+  const txt = await res.text();
+  const data = txt ? JSON.parse(txt) : {};
+  return NextResponse.json(data, { status: res.status });
 }

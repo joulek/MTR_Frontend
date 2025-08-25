@@ -69,10 +69,7 @@ export default function ClientProfileReadOnly() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${BACKEND}/api/users/me`, {
-          method: "GET",
-          credentials: "include",
-        });
+        const res = await fetch("/api/me"); 
         if (!res.ok) throw new Error("Unauthorized");
         const u = await res.json();
         if (cancelled) return;
