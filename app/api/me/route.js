@@ -10,7 +10,7 @@ export async function GET() {
     const cookieHeader = cookies().toString(); // ex: "connect.sid=xxx; other=yyy"
     const auth = headers().get("authorization") || "";
 
-    const res = await fetch(`${BACKEND_URL.replace(/\/$/, "")}/api/auth/me`, {
+    const res = await fetch(`${BACKEND_URL.replace(/\/$/, "")}/api/users/me`, {
       method: "GET",
       cache: "no-store",
       headers: {
