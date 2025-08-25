@@ -6,9 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "mtr-backend-fbq8.onrender.com", pathname: "/**" },
-      { protocol: "http", hostname: "localhost", port: "4000", pathname: "/uploads/**" },
-      { protocol: "http", hostname: "127.0.0.1", port: "4000", pathname: "/uploads/**" },
+      { protocol: "https", hostname: "mtr-backend-fbq8.onrender.com", pathname: "/**" }
     ],
     // 🔧 bouton ON/OFF : mets NEXT_PUBLIC_UNOPTIMIZED_IMAGES=1 sur Render (service frontend)
     unoptimized: process.env.NEXT_PUBLIC_UNOPTIMIZED_IMAGES === "1",

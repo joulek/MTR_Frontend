@@ -1,7 +1,7 @@
 // app/[locale]/admin/categories/page.jsx
 import AdminCategoriesPage from "./AdminCategoriesClient";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ;
 
 export async function generateMetadata({ params }) {
   // ⬅️ ICI : on attend params avant d’en extraire locale
