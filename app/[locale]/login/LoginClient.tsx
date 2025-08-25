@@ -27,15 +27,11 @@ export default function LoginPage() {
     const password = formData.get("password");
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", // cookie HttpOnly
-          body: JSON.stringify({ email, password, rememberMe: remember }),
-        }
-      );
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, rememberMe: remember }),
+      });
 
       const data = await res.json();
       if (!res.ok) {
@@ -47,7 +43,7 @@ export default function LoginPage() {
           localStorage.setItem("userRole", role);
           localStorage.setItem("mtr_role", role);
           localStorage.setItem("rememberMe", remember ? "1" : "0");
-        } catch {}
+        } catch { }
 
         if (role === "admin") {
           router.push(`/${locale}/admin`);
@@ -155,18 +151,16 @@ export default function LoginPage() {
                       name="password"
                       type={showPwd ? "text" : "password"}
                       autoComplete="current-password"
-                      className={`w-full rounded-xl border border-[#ddd] bg-white py-3 text-[#002147] placeholder-[#555] outline-none focus:border-[#ffb400] focus:ring-2 focus:ring-[#ffb400]/25 transition ${
-                        locale === "ar" ? "pl-10 pr-4" : "pr-10 pl-4"
-                      }`}
+                      className={`w-full rounded-xl border border-[#ddd] bg-white py-3 text-[#002147] placeholder-[#555] outline-none focus:border-[#ffb400] focus:ring-2 focus:ring-[#ffb400]/25 transition ${locale === "ar" ? "pl-10 pr-4" : "pr-10 pl-4"
+                        }`}
                       placeholder="********"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPwd((v) => !v)}
-                      className={`absolute inset-y-0 my-auto px-3 ${
-                        locale === "ar" ? "left-3" : "right-3"
-                      }`}
+                      className={`absolute inset-y-0 my-auto px-3 ${locale === "ar" ? "left-3" : "right-3"
+                        }`}
                       style={{ color: "#555" }}
                       aria-label="Afficher / masquer le mot de passe"
                     >
