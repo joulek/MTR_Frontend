@@ -5,43 +5,52 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const BACKEND =
-  (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com")
-    .replace(/\/$/, "");
+const BACKEND = (
+  process.env.BACKEND_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://mtr-backend-fbq8.onrender.com"
+).replace(/\/$/, "");
 
 export async function POST(request) {
+  // 1) Lire le body JSON proprement
+  let payload;
   try {
-    const body = await request.json();
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ message: "Body JSON invalide" }, { status: 400 });
+  }
 
-    const res = await fetch(`${BACKEND}/api/auth/login`, {
+  // 2) Appeler le backend et capturer les erreurs réseau
+  let res;
+  try {
+    res = await fetch(`${BACKEND}/api/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password, rememberMe: remember }),
-      // credentials n'a aucun effet côté serveur ; on relaie Set-Cookie ci-dessous
+      body: JSON.stringify(payload),
     });
-
-    const text = await res.text();
-    let data;
-    try { data = text ? JSON.parse(text) : {}; }
-    catch { data = { message: text || "Réponse non JSON du backend" }; }
-
-    // On renvoie le même statut/JSON
-    const out = NextResponse.json(data, { status: res.status });
-
-    // 🔁 RELAIS des cookies du backend -> navigateur
-    // Certains runtimes concatènent les Set-Cookie ; on découpe proprement
-    const sc = res.headers.get("set-cookie");
-    if (sc) {
-      const parts = sc.split(/,(?=[^;]+=[^;]+)/g); // découpe sans casser "Expires=..."
-      for (const p of parts) out.headers.append("set-cookie", p);
-    }
-
-    return out;
-  } catch (err) {
-    console.error("Erreur /api/login:", err);
+  } catch (e) {
     return NextResponse.json(
-      { message: "Erreur serveur interne (proxy login)" },
-      { status: 500 }
+      { message: "Backend unreachable", error: String(e) },
+      { status: 502 }
     );
   }
+
+  // 3) Renvoyer exactement le JSON (ou le texte brut si non-JSON)
+  const raw = await res.text();
+  let data;
+  try { data = raw ? JSON.parse(raw) : {}; }
+  catch { data = { raw }; }
+
+  const out = NextResponse.json(data, { status: res.status });
+
+  // 4) RELAYER les Set-Cookie du backend → navigateur
+  const sc = res.headers.get("set-cookie");
+  if (sc) {
+    // découpe sans casser Expires=..., puis ré-appends chaque cookie
+    for (const line of sc.split(/,(?=[^;]+=[^;]+)/g)) {
+      out.headers.append("set-cookie", line);
+    }
+  }
+
+  return out;
 }
