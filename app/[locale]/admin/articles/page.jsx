@@ -14,7 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import Pagination from "@/components/Pagination";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com";
 
 // Largeur/espacement général (même logique que catégories)
 const CARD_WRAPPER = "mx-auto w-full max-w-6xl px-3 sm:px-6";

@@ -1,7 +1,7 @@
 // app/api/reclamations/route.js
 import { NextResponse } from "next/server";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com";
 
 /**
  * POST /api/reclamations

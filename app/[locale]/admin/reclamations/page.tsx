@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Pagination from "@/components/Pagination";
 import { FiXCircle } from "react-icons/fi";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com";
 
 const fmtDateTime = (v: any) => {
   try {

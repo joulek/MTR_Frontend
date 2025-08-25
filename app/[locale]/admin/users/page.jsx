@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { FiSearch, FiXCircle, FiUserPlus, FiUser, FiCheck, FiX } from "react-icons/fi";
 import Pagination from "@/components/Pagination";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com";
 
 function fmtDate(d) {
   try {

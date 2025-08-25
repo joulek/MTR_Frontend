@@ -7,7 +7,7 @@ import Pagination from "@/components/Pagination";
 import { FiSearch, FiXCircle } from "react-icons/fi";
 import DevisModal from "@/components/admin/devis/DevisModal";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com/";
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mtr-backend-fbq8.onrender.com";
 const WRAP = "mx-auto w-full max-w-4xl px-3 sm:px-4";
 
 // Helpers
